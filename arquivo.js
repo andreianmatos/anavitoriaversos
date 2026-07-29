@@ -22,8 +22,6 @@
   const modalTitle = modal.querySelector(".arquivo-modal__title");
   const closeButton = modal.querySelector(".arquivo-modal__close");
 
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
   function shuffle(list) {
     const items = list.slice();
     for (let i = items.length - 1; i > 0; i -= 1) {
@@ -68,20 +66,49 @@
     closeModal();
   });
 
-  function placeImages() {
+  function waitForImage(img) {
+    return new Promise(function (resolve) {
+      if (img.complete) {
+        resolve();
+        return;
+      }
+      img.addEventListener("load", resolve, { once: true });
+      img.addEventListener("error", resolve, { once: true });
+    });
+  }
+
+  function overlaps(a, b, gap) {
+    return !(
+      a.right + gap < b.left ||
+      a.left > b.right + gap ||
+      a.bottom + gap < b.top ||
+      a.top > b.bottom + gap
+    );
+  }
+
+  function getRect(element, containerRect) {
+    const rect = element.getBoundingClientRect();
+    return {
+      left: rect.left - containerRect.left,
+      top: rect.top - containerRect.top,
+      right: rect.right - containerRect.left,
+      bottom: rect.bottom - containerRect.top,
+    };
+  }
+
+  async function scatterImages() {
     container.innerHTML = "";
+    container.style.minHeight = "calc(100dvh - var(--bottom-bar-offset))";
 
     const isMobile = window.innerWidth < 640;
-    const isTablet = window.innerWidth < 1024;
-    const maxImages = isMobile ? 8 : isTablet ? 12 : 16;
-    const images = shuffle(IMAGES).slice(0, maxImages);
+    const padding = isMobile ? 16 : 24;
+    const gap = isMobile ? 14 : 20;
+    const maxAttempts = 100;
+    const placed = [];
+    const files = shuffle(IMAGES);
 
-    const sizeMin = isMobile ? 28 : isTablet ? 22 : 18;
-    const sizeMax = isMobile ? 42 : isTablet ? 32 : 28;
-    const topMin = 4;
-    const topMax = 72;
-
-    images.forEach((file) => {
+    for (let i = 0; i < files.length; i += 1) {
+      const file = files[i];
       const button = document.createElement("button");
       button.type = "button";
       button.className = "arquivo-item";
@@ -90,40 +117,87 @@
       const img = document.createElement("img");
       img.src = "imagens/" + encodeURIComponent(file);
       img.alt = "";
-      img.loading = "lazy";
+      img.loading = i < 4 ? "eager" : "lazy";
       img.decoding = "async";
 
-      const width = randomBetween(sizeMin, sizeMax);
-      const left = randomBetween(2, Math.max(2, 98 - width));
-      const top = randomBetween(topMin, topMax);
-      const rotate = reducedMotion ? 0 : randomBetween(-10, 10);
-
-      button.style.width = "clamp(5rem, " + width + "vw, 18rem)";
-      button.style.top = top + "%";
-      button.style.left = left + "%";
-      button.style.transform = "rotate(" + rotate + "deg)";
-      button.style.zIndex = String(Math.floor(randomBetween(1, 5)));
+      button.appendChild(img);
+      container.appendChild(button);
 
       button.addEventListener("click", function () {
         openModal(file);
       });
 
-      img.addEventListener("error", function () {
-        button.remove();
-      });
+      await waitForImage(img);
 
-      button.appendChild(img);
-      container.appendChild(button);
-    });
+      if (!img.naturalWidth) {
+        button.remove();
+        continue;
+      }
+
+      const containerWidth = container.clientWidth;
+      const width = Math.round(
+        randomBetween(isMobile ? 0.3 : 0.16, isMobile ? 0.52 : 0.34) * containerWidth
+      );
+      button.style.width = width + "px";
+
+      const buttonHeight = button.offsetHeight;
+      const maxLeft = containerWidth - width - padding;
+      const maxTop = Math.max(
+        padding,
+        (placed.length ? Math.max(...placed.map(function (p) { return p.bottom; })) + gap : padding) + 120
+      );
+
+      let positioned = false;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const left = randomBetween(padding, Math.max(padding, maxLeft));
+        const top = randomBetween(padding, maxTop);
+
+        button.style.left = left + "px";
+        button.style.top = top + "px";
+
+        const containerRect = container.getBoundingClientRect();
+        const rect = getRect(button, containerRect);
+
+        if (rect.left < padding || rect.right > containerWidth - padding) {
+          continue;
+        }
+
+        const hasCollision = placed.some(function (existing) {
+          return overlaps(rect, existing, gap);
+        });
+
+        if (!hasCollision) {
+          placed.push(rect);
+          positioned = true;
+          break;
+        }
+      }
+
+      if (!positioned) {
+        const fallbackTop = placed.length
+          ? Math.max(...placed.map(function (p) { return p.bottom; })) + gap
+          : padding;
+        button.style.left = padding + randomBetween(0, Math.max(0, maxLeft - padding)) + "px";
+        button.style.top = fallbackTop + "px";
+
+        const containerRect = container.getBoundingClientRect();
+        placed.push(getRect(button, containerRect));
+      }
+
+      const lastBottom = Math.max(...placed.map(function (p) { return p.bottom; }));
+      const minHeight = lastBottom + padding + 48;
+      container.style.minHeight = "max(calc(100dvh - var(--bottom-bar-offset)), " + minHeight + "px)";
+    }
   }
 
-  placeImages();
+  scatterImages();
 
   let resizeTimer;
   window.addEventListener("resize", function () {
     if (modal.open) return;
 
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(placeImages, 250);
+    resizeTimer = setTimeout(scatterImages, 300);
   });
 })();

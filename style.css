@@ -10,6 +10,13 @@
 
 html {
   scroll-padding-bottom: var(--bottom-bar-offset);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }
 
 body {
@@ -18,6 +25,12 @@ body {
   background: #f4efe6;
   color: #000;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body::-webkit-scrollbar {
+  display: none;
 }
 
 .video-bg {
@@ -44,15 +57,18 @@ body {
 }
 
 .video-bg iframe {
-  width: 100vw;
+  width: 100%;
   height: 56.25vw;
-  min-height: 100vh;
+  min-height: 100%;
   min-width: 177.78vh;
 }
 
 .home {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: var(--bottom-bar-offset);
   z-index: 0;
 }
 
@@ -109,8 +125,7 @@ body {
 }
 
 .bottom-bar__link.is-active {
-  text-decoration: underline;
-  text-underline-offset: 0.3em;
+  font-style: italic;
 }
 
 .bottom-bar__title {
@@ -153,22 +168,24 @@ a.bottom-bar__title:hover {
   margin-bottom: 0;
 }
 
+.arquivo-page {
+  overflow-x: hidden;
+}
+
 .arquivo {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: var(--bottom-bar-offset);
+  position: relative;
   z-index: 5;
-  overflow: hidden;
+  width: 100%;
+  min-height: calc(100dvh - var(--bottom-bar-offset));
+  padding-bottom: var(--bottom-bar-offset);
+  overflow: visible;
 }
 
 .arquivo img {
   display: block;
   width: 100%;
   height: auto;
-  max-width: min(18rem, 85vw);
-  object-fit: cover;
+  object-fit: contain;
   user-select: none;
   pointer-events: none;
 }
@@ -179,11 +196,11 @@ a.bottom-bar__title:hover {
   border: none;
   background: none;
   cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .arquivo-item:hover {
-  opacity: 0.85;
+  opacity: 0.75;
 }
 
 .arquivo-item:focus-visible {
@@ -192,25 +209,32 @@ a.bottom-bar__title:hover {
 }
 
 .arquivo-modal {
-  position: relative;
   border: none;
   padding: 0;
-  width: min(50rem, 94vw);
-  max-height: 88vh;
-  max-height: 88dvh;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   overflow: auto;
-  background: transparent;
+  background: #f4efe6;
   color: #000;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.arquivo-modal::-webkit-scrollbar {
+  display: none;
 }
 
 .arquivo-modal::backdrop {
-  background: rgba(244, 239, 230, 0.88);
+  background: #f4efe6;
 }
 
 .arquivo-modal__close {
-  position: absolute;
-  top: 0;
-  right: 0;
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top, 0px));
+  right: 1.25rem;
   z-index: 2;
   border: none;
   background: none;
@@ -230,30 +254,40 @@ a.bottom-bar__title:hover {
 
 .arquivo-modal__content {
   position: relative;
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 2.5rem;
-  padding: 2rem 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  min-height: calc(100dvh - var(--bottom-bar-offset));
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem calc(2rem + var(--bottom-bar-offset));
+  text-align: center;
 }
 
 .arquivo-modal__image {
   width: 100%;
+  max-width: 22rem;
   height: auto;
   object-fit: contain;
-  max-height: 75vh;
 }
 
 .arquivo-modal__title {
   font-size: inherit;
   font-weight: 400;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.arquivo-modal__text {
+  width: 100%;
 }
 
 .arquivo-modal__text p {
   font-size: 0.9rem;
   line-height: 1.8;
   margin-bottom: 1rem;
-  text-align: left;
+  text-align: center;
   hyphens: auto;
 }
 
@@ -261,19 +295,34 @@ a.bottom-bar__title:hover {
   margin-bottom: 0;
 }
 
-@media (max-width: 639px) {
-  .arquivo img {
-    max-width: min(11rem, 70vw);
-  }
-
+@media (min-width: 768px) {
   .arquivo-modal__content {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    padding-top: 1.75rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    max-width: 52rem;
+    gap: 2.5rem;
+    text-align: left;
   }
 
   .arquivo-modal__image {
-    max-height: 42vh;
+    flex: 0 1 45%;
+    max-width: none;
+  }
+
+  .arquivo-modal__text {
+    flex: 1;
+  }
+
+  .arquivo-modal__text p {
+    text-align: left;
+  }
+}
+
+@media (max-width: 639px) {
+  .arquivo-modal__image {
+    max-width: 100%;
+    max-height: 38vh;
   }
 }
 
