@@ -6,10 +6,11 @@
 
 :root {
   --bottom-bar-offset: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+  --bottom-safe: env(safe-area-inset-bottom, 0px);
 }
 
 html {
-  scroll-padding-bottom: var(--bottom-bar-offset);
+  scroll-padding-bottom: calc(1rem + var(--bottom-safe));
   scrollbar-width: none;
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
@@ -22,7 +23,7 @@ html::-webkit-scrollbar {
 body {
   min-height: 100vh;
   min-height: 100dvh;
-  background: #f4efe6;
+  background: #fff;
   color: #000;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   scrollbar-width: none;
@@ -38,7 +39,7 @@ body::-webkit-scrollbar {
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: #f4efe6;
+  background: #fff;
 }
 
 .video-bg video,
@@ -98,29 +99,54 @@ body::-webkit-scrollbar {
   min-height: var(--bottom-bar-offset);
   padding: 0.85rem 1.25rem;
   padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
-  background: transparent;
   border: none;
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.18s ease;
 }
 
-.home-page .bottom-bar {
+.bottom-bar.is-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.bottom-bar.is-instant {
+  transition: none;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-bar-offset);
+  z-index: 9;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(255, 255, 255, 0.82) 55%,
+    transparent 100%
+  );
+}
+
+.home-page::after {
   background: linear-gradient(
     to top,
     rgba(0, 0, 0, 0.42) 0%,
     rgba(0, 0, 0, 0.18) 55%,
     transparent 100%
   );
-  transform: translateY(100%);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.35s ease;
 }
 
-.home-page .bottom-bar.is-visible {
-  transform: translateY(0);
-  opacity: 1;
-  pointer-events: auto;
+.home-page .bottom-bar,
+.content-page .bottom-bar {
+  background: transparent;
 }
 
 .home-page .bottom-bar__link,
@@ -131,10 +157,6 @@ body::-webkit-scrollbar {
 .home-page a.bottom-bar__link:hover,
 .home-page a.bottom-bar__title:hover {
   opacity: 0.7;
-}
-
-.content-page .bottom-bar {
-  background: #f4efe6;
 }
 
 .bottom-bar__link,
@@ -180,7 +202,7 @@ a.bottom-bar__title:hover {
   z-index: 5;
   max-width: 32rem;
   margin: 0 auto;
-  padding: 3rem 1.5rem calc(2rem + var(--bottom-bar-offset));
+  padding: 3rem 1.5rem calc(1.5rem + var(--bottom-safe));
 }
 
 .sobre h1 {
@@ -211,8 +233,8 @@ a.bottom-bar__title:hover {
   position: relative;
   z-index: 5;
   width: 100%;
-  min-height: calc(100dvh - var(--bottom-bar-offset));
-  padding-bottom: var(--bottom-bar-offset);
+  min-height: 100dvh;
+  padding-bottom: var(--bottom-safe);
   overflow: visible;
 }
 
@@ -274,7 +296,7 @@ a.bottom-bar__title:hover {
   max-width: 100%;
   max-height: 100%;
   overflow: auto;
-  background: #f4efe6;
+  background: #fff;
   color: #000;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -285,7 +307,7 @@ a.bottom-bar__title:hover {
 }
 
 .arquivo-modal::backdrop {
-  background: #f4efe6;
+  background: #fff;
 }
 
 .arquivo-modal__close {
@@ -316,10 +338,10 @@ a.bottom-bar__title:hover {
   align-items: center;
   justify-content: center;
   gap: 2rem;
-  min-height: calc(100dvh - var(--bottom-bar-offset));
+  min-height: 100dvh;
   max-width: 40rem;
   margin: 0 auto;
-  padding: 3rem 1.5rem calc(2rem + var(--bottom-bar-offset));
+  padding: 3rem 1.5rem calc(1.5rem + var(--bottom-safe));
   text-align: center;
 }
 
@@ -403,7 +425,8 @@ a.bottom-bar__title:hover {
     animation: none;
   }
 
-  .home-page .bottom-bar {
+  .home-page .bottom-bar,
+  .content-page .bottom-bar {
     transition: none;
   }
 

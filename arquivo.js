@@ -105,7 +105,7 @@
 
     const minHeight = lastBottom + padding + 48;
     container.style.minHeight =
-      "max(calc(100dvh - var(--bottom-bar-offset)), " + minHeight + "px)";
+      "max(100dvh, " + minHeight + "px)";
   }
 
   function placeButton(button, img, placed, layout) {
@@ -234,7 +234,7 @@
   function scatterImages(items) {
     const token = ++scatterToken;
     container.innerHTML = "";
-    container.style.minHeight = "calc(100dvh - var(--bottom-bar-offset))";
+    container.style.minHeight = "100dvh";
 
     const layout = getLayout(items.length);
     const placed = [];
