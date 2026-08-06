@@ -65,7 +65,6 @@
     }
 
     return {
-      isMobile,
       padding: isMobile ? 12 : isTablet ? 18 : 24,
       gap: isMobile ? 10 : isTablet ? 14 : 18,
       maxAttempts: count > 60 ? 60 : 100,
@@ -280,7 +279,7 @@
 
   async function init() {
     try {
-      const response = await fetch("images.json");
+      const response = await fetch("images.json?v=6", { cache: "no-store" });
       if (!response.ok) throw new Error("manifest");
       manifest = await response.json();
     } catch (error) {
