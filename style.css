@@ -77,6 +77,14 @@ body::-webkit-scrollbar {
   inset: 0;
 }
 
+.home-page {
+  overflow: hidden;
+}
+
+.home-page .home {
+  bottom: 0;
+}
+
 .bottom-bar {
   position: fixed;
   bottom: 0;
@@ -95,7 +103,34 @@ body::-webkit-scrollbar {
 }
 
 .home-page .bottom-bar {
-  background: transparent;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.42) 0%,
+    rgba(0, 0, 0, 0.18) 55%,
+    transparent 100%
+  );
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.35s ease;
+}
+
+.home-page .bottom-bar.is-visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.home-page .bottom-bar__link,
+.home-page .bottom-bar__title {
+  color: #fff;
+}
+
+.home-page a.bottom-bar__link:hover,
+.home-page a.bottom-bar__title:hover {
+  opacity: 0.7;
 }
 
 .content-page .bottom-bar {
@@ -196,7 +231,29 @@ a.bottom-bar__title:hover {
   border: none;
   background: none;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.arquivo-item.is-loading {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.arquivo-item.is-placed {
+  animation: arquivo-fade-in 0.35s ease forwards;
+}
+
+@keyframes arquivo-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .arquivo-item:hover {
@@ -271,6 +328,11 @@ a.bottom-bar__title:hover {
   max-width: 22rem;
   height: auto;
   object-fit: contain;
+  transition: opacity 0.2s ease;
+}
+
+.arquivo-modal__image.is-loading {
+  opacity: 0.35;
 }
 
 .arquivo-modal__title {
@@ -326,8 +388,22 @@ a.bottom-bar__title:hover {
   }
 }
 
+@media (min-width: 640px) and (max-width: 1023px) {
+  .arquivo-modal__content {
+    max-width: 46rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .arquivo-item {
+    transition: none;
+  }
+
+  .arquivo-item.is-placed {
+    animation: none;
+  }
+
+  .home-page .bottom-bar {
     transition: none;
   }
 

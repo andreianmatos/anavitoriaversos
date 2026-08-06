@@ -1,0 +1,12 @@
+{
+  "name": "anavitoriaversos",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "thumbs": "node scripts/generate-thumbs.mjs",
+    "thumbs:ps": "powershell -ExecutionPolicy Bypass -File scripts/generate-thumbs.ps1"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5"
+  }
+}
