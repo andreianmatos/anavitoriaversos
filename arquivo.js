@@ -92,6 +92,32 @@
     };
   }
 
+  function getHeaderZone(containerRect, gap) {
+    const header = document.querySelector(".page-header");
+    if (!header) {
+      return null;
+    }
+
+    const rect = header.getBoundingClientRect();
+    const extra = Math.max(gap, 24);
+
+    return {
+      left: 0,
+      top: 0,
+      right: rect.right - containerRect.left + extra,
+      bottom: rect.bottom - containerRect.top + extra,
+    };
+  }
+
+  function collides(rect, zones, gap) {
+    for (let i = 0; i < zones.length; i += 1) {
+      if (overlaps(rect, zones[i], gap)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function updateContainerHeight(placed, padding) {
     if (!placed.length) return;
 
@@ -119,6 +145,10 @@
     );
     button.style.width = width + "px";
 
+    const containerRect = container.getBoundingClientRect();
+    const headerZone = getHeaderZone(containerRect, layout.gap);
+    const blocked = headerZone ? [headerZone] : [];
+
     const maxLeft = Math.max(layout.padding, containerWidth - width - layout.padding);
     const placedBottom = placed.length
       ? Math.max.apply(
@@ -140,35 +170,39 @@
       button.style.left = left + "px";
       button.style.top = top + "px";
 
-      const containerRect = container.getBoundingClientRect();
-      rect = getRect(button, containerRect);
+      rect = getRect(button, container.getBoundingClientRect());
 
       if (rect.left < layout.padding || rect.right > containerWidth - layout.padding) {
         continue;
       }
 
-      let hasCollision = false;
-      for (let i = 0; i < placed.length; i += 1) {
-        if (overlaps(rect, placed[i], layout.gap)) {
-          hasCollision = true;
-          break;
-        }
+      if (collides(rect, blocked.concat(placed), layout.gap)) {
+        continue;
       }
 
-      if (!hasCollision) {
-        positioned = true;
-        break;
-      }
+      positioned = true;
+      break;
     }
 
     if (!positioned) {
       const fallbackTop = placed.length ? placedBottom + layout.gap : layout.padding;
-      button.style.left =
-        layout.padding + randomBetween(0, Math.max(0, maxLeft - layout.padding)) + "px";
-      button.style.top = fallbackTop + "px";
+      let fallbackLeft =
+        layout.padding + randomBetween(0, Math.max(0, maxLeft - layout.padding));
 
-      const containerRect = container.getBoundingClientRect();
-      rect = getRect(button, containerRect);
+      if (headerZone && fallbackTop < headerZone.bottom) {
+        fallbackLeft = Math.max(fallbackLeft, headerZone.right + layout.gap);
+        if (fallbackLeft + width > containerWidth - layout.padding) {
+          fallbackLeft = layout.padding;
+          button.style.top = headerZone.bottom + layout.gap + "px";
+        } else {
+          button.style.top = fallbackTop + "px";
+        }
+      } else {
+        button.style.top = fallbackTop + "px";
+      }
+
+      button.style.left = fallbackLeft + "px";
+      rect = getRect(button, container.getBoundingClientRect());
     }
 
     placed.push(rect);
@@ -290,14 +324,14 @@
     scatterImages(manifest);
   }
 
-  let resizeTimer;
+  let resizeTimer = 0;
   window.addEventListener("resize", function () {
-    if (modal.open || !manifest.length) return;
-
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function () {
-      scatterImages(manifest);
-    }, 300);
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(function () {
+      if (manifest.length) {
+        scatterImages(manifest);
+      }
+    }, 250);
   });
 
   init();

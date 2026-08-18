@@ -7,22 +7,79 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Sobre</title>
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=24">
 </head>
-<body>
+<body class="sobre-page">
+  <header class="page-header">
+    <a href="index.html" class="site-title">Ana Vitória Versos</a>
+    <h1 class="page-header__section">Sobre</h1>
+    <div class="lang-toggle" role="group" aria-label="Idioma">
+      <button type="button" class="lang-toggle__btn is-active" data-lang="pt" aria-pressed="true">PT</button>
+      <span aria-hidden="true">/</span>
+      <button type="button" class="lang-toggle__btn" data-lang="en" aria-pressed="false">ENG</button>
+    </div>
+  </header>
+
   <main class="page sobre">
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.</p>
-    <p>Cras elementum ultrices diam. Maecenas ligula massa, varius a, semper congue, euismod non, mi. Proin porttitor, orci nec nonummy molestie, enim est eleifend mi, non fermentum diam nisl sit amet erat.</p>
-    <p>Duis semper. Duis arcu massa, scelerisque vitae, consequat in, pretium a, enim. Pellentesque congue. Ut in risus volutpat libero pharetra tempor. Cras vestibulum bibendum augue.</p>
-    <p>Praesent egestas leo in pede. Praesent blandit odio eu enim. Pellentesque sed dui ut augue blandit sodales. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae.</p>
+    <section class="sobre-bio" lang="pt" data-lang-panel="pt">
+      <p>Ana Vitória Versos (Bragança, 2002) é uma artista multidisciplinar nascida e criada nas costas do monte. Vinda do Nordeste Transmontano, a jovem artista procura sentido na apropriação das paisagens rochosas e esverdeadas que dão abrigo a um labor natural, cíclico, silencioso e sem dono.</p>
+      <p>O seu corpo de trabalho é um corpo em busca de uma cabeça: armado com as linguagens da escultura, escrita, performance e fotografia, imagina-se um universo ficcionado, violento, cru e cor de rosa de descoberta do mundo envolvente através do autoconhecimento, aí são explorados os temas de género, identidade, pertença, natureza e a inevitável relação que existe entre esses elementos.</p>
+    </section>
+
+    <section class="sobre-bio" lang="en" data-lang-panel="en" hidden>
+      <p>Ana Vitória Versos is a multidisciplinary artist born and raised on the slopes of the mountain. Coming from the region of Trás-os-Montes, the young artist seeks meaning in appropriating the rocky and green landscapes that shelter a natural, cyclical, silent, and ownerless labor.</p>
+      <p>Her body of work is a body in search of a head: armed with the languages of sculpture, writing, performance, and photography, she imagines a fictional, violent, raw, and rosy universe of discovery of the world around her through self-knowledge, exploring themes of gender, identity, belonging, nature, and the inevitable relationship that exists between these elements.</p>
+    </section>
+
+    <section class="sobre-cv">
+      <h2>Formação</h2>
+      <ul>
+        <li>
+          <span class="sobre-year">2025</span>
+          <span>Formação Profissional de Técnicas de Produção de Vidro Soprado e Acabamentos — CENCAL</span>
+        </li>
+        <li>
+          <span class="sobre-year">2021–2025</span>
+          <span>Licenciatura em Artes Visuais pela Universidade do Minho</span>
+        </li>
+      </ul>
+    </section>
+
+    <section class="sobre-cv">
+      <h2>Exposições // Residências</h2>
+      <ul>
+        <li>
+          <span class="sobre-year">2025</span>
+          <span><em>Ingerir sem Digerir</em>, Sociedade Martins Sarmento, Guimarães</span>
+        </li>
+        <li>
+          <span class="sobre-year">2024</span>
+          <span><em>Práticas para novos Ecossistemas</em>, Centro Internacional de Artes José de Guimarães, Guimarães</span>
+        </li>
+        <li>
+          <span class="sobre-year">2024</span>
+          <span><em>Sopa de Pedra 16</em>, Térmita, Porto</span>
+        </li>
+        <li>
+          <span class="sobre-year">2024</span>
+          <span><em>Entre o Visível e o Oculto</em>, Instituto de Design de Guimarães em colaboração com Palavras Infinitas — Núcleo de Inclusão, Comunicação e Media, Guimarães</span>
+        </li>
+        <li>
+          <span class="sobre-year">2023</span>
+          <span><em>C.A.V. (Movimento Pedagógico)</em>, Cru, Famalicão</span>
+        </li>
+        <li>
+          <span class="sobre-year">2022</span>
+          <span><em>Entre Becos</em>, Galeria da Garagem Avenida, Guimarães</span>
+        </li>
+        <li>
+          <span class="sobre-year">2021</span>
+          <span><em>Não te arrastes para o meu Rio</em>, Museu da Escola de Arquitetura, Arte e Design da Universidade do Minho, Guimarães</span>
+        </li>
+      </ul>
+    </section>
   </main>
 
-  <nav class="bottom-bar" aria-label="Navegação">
-    <span class="bottom-bar__link is-active" aria-current="page">Sobre</span>
-    <a href="index.html" class="bottom-bar__title">Ana Vitoria Versos</a>
-    <a href="arquivo.html" class="bottom-bar__link">Arquivo</a>
-  </nav>
-
-  <script src="nav.js?v=6"></script>
+  <script src="nav.js?v=15"></script>
 </body>
 </html>
