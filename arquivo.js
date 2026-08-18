@@ -98,14 +98,14 @@
       return null;
     }
 
-    const rect = header.getBoundingClientRect();
-    const extra = Math.max(gap, 24);
+    const extra = Math.max(gap, 32);
+    const headerRect = header.getBoundingClientRect();
 
     return {
-      left: 0,
-      top: 0,
-      right: rect.right - containerRect.left + extra,
-      bottom: rect.bottom - containerRect.top + extra,
+      left: Math.min(0, headerRect.left - containerRect.left),
+      top: Math.min(0, headerRect.top - containerRect.top),
+      right: headerRect.right - containerRect.left + extra,
+      bottom: headerRect.bottom - containerRect.top + extra,
     };
   }
 

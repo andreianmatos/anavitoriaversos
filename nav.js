@@ -34,6 +34,7 @@
         attachDot();
         const hover = isHoverable(event.target);
         const scale = hover ? 1.45 : 1;
+        dot.classList.toggle("is-hover", hover);
         dot.style.transform =
           "translate3d(" +
           event.clientX +
@@ -52,23 +53,80 @@
     });
   }
 
+  const COPY = {
+    pt: {
+      sobre: "Sobre",
+      arquivo: "Arquivo",
+      formacao: "Formação",
+      exposicoes: "Exposições // Residências",
+      close: "fechar",
+      lang: "Idioma",
+    },
+    en: {
+      sobre: "About",
+      arquivo: "Archive",
+      formacao: "Education",
+      exposicoes: "Exhibitions // Residencies",
+      close: "close",
+      lang: "Language",
+    },
+  };
+  const langKey = "avv-lang";
   const langToggle = document.querySelector(".lang-toggle");
-  if (langToggle) {
-    const buttons = langToggle.querySelectorAll("[data-lang]");
-    const panels = document.querySelectorAll("[data-lang-panel]");
 
-    function setLang(lang) {
-      buttons.forEach(function (button) {
+  function readLang() {
+    try {
+      localStorage.removeItem(langKey);
+    } catch (error) {}
+    try {
+      const stored = sessionStorage.getItem(langKey);
+      if (stored === "en" || stored === "pt") return stored;
+    } catch (error) {}
+    return "pt";
+  }
+
+  function setLang(lang) {
+    const copy = COPY[lang] || COPY.pt;
+
+    document.documentElement.lang = lang;
+
+    try {
+      sessionStorage.setItem(langKey, lang);
+    } catch (error) {}
+
+    if (langToggle) {
+      langToggle.setAttribute("aria-label", copy.lang);
+      langToggle.querySelectorAll("[data-lang]").forEach(function (button) {
         const active = button.getAttribute("data-lang") === lang;
         button.classList.toggle("is-active", active);
         button.setAttribute("aria-pressed", active ? "true" : "false");
       });
-      panels.forEach(function (panel) {
-        panel.hidden = panel.getAttribute("data-lang-panel") !== lang;
-      });
-      document.documentElement.lang = lang;
     }
 
+    document.querySelectorAll("[data-i18n]").forEach(function (node) {
+      const key = node.getAttribute("data-i18n");
+      if (copy[key]) node.textContent = copy[key];
+    });
+
+    document.querySelectorAll("[data-i18n-aria]").forEach(function (node) {
+      const key = node.getAttribute("data-i18n-aria");
+      if (copy[key]) node.setAttribute("aria-label", copy[key]);
+    });
+
+    document.querySelectorAll("[data-lang-panel]").forEach(function (panel) {
+      panel.hidden = panel.getAttribute("data-lang-panel") !== lang;
+    });
+
+    if (document.body.classList.contains("sobre-page")) {
+      document.title = copy.sobre;
+    } else if (document.body.classList.contains("arquivo-page")) {
+      document.title = copy.arquivo;
+    }
+  }
+
+  setLang(readLang());
+
+  if (langToggle) {
     langToggle.addEventListener("click", function (event) {
       const button = event.target.closest("[data-lang]");
       if (!button) return;
@@ -98,33 +156,33 @@
     }
   }
 
-  function setHomeEntered(entered) {
-    document.body.classList.toggle("is-home-entered", entered);
+  function setNavVisible(visible) {
+    document.body.classList.toggle("is-nav-visible", visible);
   }
 
   if (title) {
     title.addEventListener("click", function (event) {
       if (!homePage) return;
       event.preventDefault();
-      setHomeEntered(false);
+      setNavVisible(false);
     });
   }
 
   if (!homePage) return;
 
   if (prefersReducedMotion.matches) {
-    setHomeEntered(true);
+    setNavVisible(true);
     return;
   }
 
   let lockUntil = 0;
 
-  function requestEnter(entered) {
+  function requestNav(visible) {
     const now = Date.now();
     if (now < lockUntil) return;
-    if (document.body.classList.contains("is-home-entered") === entered) return;
-    lockUntil = now + 700;
-    setHomeEntered(entered);
+    if (document.body.classList.contains("is-nav-visible") === visible) return;
+    lockUntil = now + 500;
+    setNavVisible(visible);
   }
 
   window.addEventListener(
@@ -132,9 +190,9 @@
     function (event) {
       event.preventDefault();
       if (event.deltaY > 4) {
-        requestEnter(true);
+        requestNav(true);
       } else if (event.deltaY < -4) {
-        requestEnter(false);
+        requestNav(false);
       }
     },
     { passive: false }
@@ -159,14 +217,14 @@
       const delta = touchStartY - touch.clientY;
       if (Math.abs(delta) < 18) return;
       event.preventDefault();
-      requestEnter(delta > 0);
+      requestNav(delta > 0);
     },
     { passive: false }
   );
 
   window.addEventListener("pageshow", function (event) {
     if (event.persisted) {
-      setHomeEntered(false);
+      setNavVisible(false);
     }
   });
 })();

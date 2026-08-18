@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;1,9..40,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;1,8..60,400&display=swap");
 
 * {
   margin: 0;
@@ -59,6 +59,11 @@ body::-webkit-scrollbar {
 
 .cursor-dot.is-visible {
   opacity: 1;
+}
+
+.cursor-dot.is-hover {
+  background: #fff;
+  mix-blend-mode: difference;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -133,7 +138,7 @@ body::-webkit-scrollbar {
     opacity 0.45s ease;
 }
 
-.home-page.is-home-entered .site-title {
+.home-page.is-nav-visible .site-title {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
   pointer-events: auto;
@@ -164,7 +169,7 @@ body::-webkit-scrollbar {
     opacity 0.45s ease;
 }
 
-.home-page.is-home-entered .bottom-bar {
+.home-page.is-nav-visible .bottom-bar {
   transform: translateY(0);
   opacity: 1;
   pointer-events: auto;
@@ -182,9 +187,7 @@ body::-webkit-scrollbar {
 }
 
 .page-header {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   z-index: 11;
   display: flex;
   flex-direction: column;
@@ -195,6 +198,12 @@ body::-webkit-scrollbar {
   padding: max(1.15rem, env(safe-area-inset-top, 0px)) 1.25rem 1rem;
   mix-blend-mode: difference;
   text-align: left;
+}
+
+.arquivo-page .page-header {
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .page-header .site-title {
@@ -218,12 +227,11 @@ body::-webkit-scrollbar {
 .lang-toggle {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-top: 0.45rem;
+  gap: 0.45rem;
   color: #fff;
   font-size: 0.95rem;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -244,6 +252,10 @@ body::-webkit-scrollbar {
   font-style: italic;
 }
 
+.lang-toggle__btn:hover {
+  opacity: 1;
+}
+
 a.bottom-bar__link:hover,
 a.site-title:hover {
   opacity: 0.55;
@@ -258,36 +270,91 @@ a.site-title:hover {
 }
 
 .sobre-page {
+  padding: 0 0 5.5rem;
+}
+
+.sobre-hero {
   display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: start;
-  column-gap: 2rem;
-  padding-bottom: 3rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  grid-template-rows: auto 1fr;
+  column-gap: 1.5rem;
+  row-gap: 1.25rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0.85rem;
 }
 
 .sobre-page .page-header {
+  grid-column: 1;
+  grid-row: 1;
   position: relative;
   top: auto;
-  left: auto;
+  float: none;
   max-width: none;
+  padding: 0;
+  align-self: start;
+}
+
+.sobre-photo {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  margin: 0;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+}
+
+.sobre-photo__placeholder,
+.sobre-photo img {
+  display: block;
+  width: min(100%, calc((100dvh - 1.7rem) * 4 / 3));
+  max-height: calc(100dvh - 1.7rem);
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.sobre-photo__placeholder {
+  background: #e4d9cc;
+  color: #000;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+}
+
+.sobre-bio-col {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+  max-width: 28rem;
 }
 
 .sobre-page .page {
-  max-width: 32rem;
+  max-width: 42rem;
   margin: 0;
-  padding: max(1.15rem, env(safe-area-inset-top, 0px)) 1.5rem 0 0;
+  padding: 4.5rem 0.85rem 0;
 }
 
-.sobre p {
-  font-size: 1.125rem;
-  line-height: 1.85;
-  margin-bottom: 1.5rem;
-  text-align: justify;
-  hyphens: auto;
+.sobre-bio p {
+  font-family: "Source Serif 4", "Times New Roman", Times, serif;
+  font-size: clamp(1.05rem, 1.15vw, 1.22rem);
+  font-weight: 400;
+  line-height: 1.35;
+  margin-bottom: 1rem;
+  text-align: left;
 }
 
 .sobre-bio {
-  margin-bottom: 2.75rem;
+  margin-bottom: 0;
 }
 
 .sobre-bio p:last-child {
@@ -295,7 +362,7 @@ a.site-title:hover {
 }
 
 .sobre-cv {
-  margin-bottom: 2.5rem;
+  margin-bottom: 2.85rem;
 }
 
 .sobre-cv:last-child {
@@ -303,11 +370,12 @@ a.site-title:hover {
 }
 
 .sobre-cv h2 {
-  font-size: 0.8rem;
+  font-family: "DM Sans", system-ui, sans-serif;
+  font-size: 0.78rem;
   font-weight: 500;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  margin-bottom: 1rem;
+  margin: 0 0 1.2rem;
 }
 
 .sobre-cv ul {
@@ -316,11 +384,13 @@ a.site-title:hover {
 
 .sobre-cv li {
   display: grid;
-  grid-template-columns: 5.5rem 1fr;
-  gap: 0.75rem;
-  font-size: 1.05rem;
-  line-height: 1.55;
-  margin-bottom: 0.9rem;
+  grid-template-columns: 6.25rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  font-family: "Source Serif 4", "Times New Roman", Times, serif;
+  font-size: clamp(1.12rem, 1.35vw, 1.35rem);
+  line-height: 1.45;
+  margin-bottom: 1.2rem;
 }
 
 .sobre-cv li:last-child {
@@ -328,11 +398,23 @@ a.site-title:hover {
 }
 
 .sobre-year {
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
+}
+
+.sobre-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .sobre-cv em {
   font-style: italic;
+}
+
+.sobre-place {
+  font-size: 0.92em;
+  line-height: 1.4;
 }
 
 .arquivo-page {
@@ -531,18 +613,58 @@ a.site-title:hover {
   }
 
   .sobre-page {
-    display: block;
-    padding-bottom: 2.5rem;
+    padding: 0 0 4.25rem;
+  }
+
+  .sobre-hero {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    row-gap: 1.35rem;
+    padding: max(0.85rem, env(safe-area-inset-top, 0px)) 0.85rem 1.5rem;
+  }
+
+  .sobre-page .page-header {
+    position: static;
+    padding: 0;
+  }
+
+  .sobre-photo {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .sobre-photo__placeholder,
+  .sobre-photo img {
+    width: 100%;
+    max-height: none;
+    min-height: 0;
+    aspect-ratio: 4 / 3;
+  }
+
+  .sobre-bio-col {
+    max-width: none;
   }
 
   .sobre-page .page {
-    padding: 0.35rem 1.15rem 0;
+    padding: 2.5rem 0.85rem 0;
   }
 
   .sobre-cv li {
-    grid-template-columns: 4.75rem 1fr;
-    gap: 0.5rem;
+    grid-template-columns: 4.9rem minmax(0, 1fr);
+    gap: 0.7rem;
     font-size: 1rem;
+  }
+
+  .arquivo-page {
+    padding: 0;
+  }
+
+  .arquivo-page .page-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: max(1rem, env(safe-area-inset-top, 0px)) 1rem 0.75rem;
   }
 
   .arquivo {
