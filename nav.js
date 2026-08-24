@@ -72,7 +72,10 @@
     },
   };
   const langKey = "avv-lang";
-  const langToggle = document.querySelector(".lang-toggle");
+
+  function langToggles() {
+    return document.querySelectorAll(".lang-toggle");
+  }
 
   function readLang() {
     try {
@@ -94,14 +97,14 @@
       sessionStorage.setItem(langKey, lang);
     } catch (error) {}
 
-    if (langToggle) {
-      langToggle.setAttribute("aria-label", copy.lang);
-      langToggle.querySelectorAll("[data-lang]").forEach(function (button) {
+    langToggles().forEach(function (toggle) {
+      toggle.setAttribute("aria-label", copy.lang);
+      toggle.querySelectorAll("[data-lang]").forEach(function (button) {
         const active = button.getAttribute("data-lang") === lang;
         button.classList.toggle("is-active", active);
         button.setAttribute("aria-pressed", active ? "true" : "false");
       });
-    }
+    });
 
     document.querySelectorAll("[data-i18n]").forEach(function (node) {
       const key = node.getAttribute("data-i18n");
@@ -126,13 +129,11 @@
 
   setLang(readLang());
 
-  if (langToggle) {
-    langToggle.addEventListener("click", function (event) {
-      const button = event.target.closest("[data-lang]");
-      if (!button) return;
-      setLang(button.getAttribute("data-lang"));
-    });
-  }
+  document.addEventListener("click", function (event) {
+    const button = event.target.closest("[data-lang]");
+    if (!button) return;
+    setLang(button.getAttribute("data-lang"));
+  });
 
   const homePage = document.body.classList.contains("home-page");
   const title = document.querySelector(".site-title");

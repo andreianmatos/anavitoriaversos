@@ -7,113 +7,120 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Sobre</title>
-  <link rel="stylesheet" href="style.css?v=36">
+  <link rel="stylesheet" href="style.css?v=52">
 </head>
 <body class="sobre-page">
   <section class="sobre-hero">
     <header class="page-header">
       <a href="index.html" class="site-title">Ana Vitória Versos</a>
+      <div class="lang-toggle" role="group" aria-label="Idioma">
+        <button type="button" class="lang-toggle__btn" data-lang="pt" aria-pressed="true">PT</button>
+        <span aria-hidden="true">/</span>
+        <button type="button" class="lang-toggle__btn" data-lang="en" aria-pressed="false">ENG</button>
+      </div>
       <h1 class="page-header__section" data-i18n="sobre">Sobre</h1>
     </header>
 
-    <figure class="sobre-photo">
-      <div class="sobre-photo__placeholder" aria-hidden="true">foto</div>
-    </figure>
+    <div class="sobre-left">
+      <div class="sobre-bio-col">
+        <section class="sobre-bio" lang="pt" data-lang-panel="pt">
+          <p>Ana Vitória Versos (Bragança, 2002) é uma artista multidisciplinar nascida e criada nas costas do monte. Vinda do Nordeste Transmontano, a jovem artista procura sentido na apropriação das paisagens rochosas e esverdeadas que dão abrigo a um labor natural, cíclico, silencioso e sem dono.</p>
+          <p>O seu corpo de trabalho é um corpo em busca de uma cabeça: armado com as linguagens da escultura, escrita, performance e fotografia, imagina-se um universo ficcionado, violento, cru e cor de rosa de descoberta do mundo envolvente através do autoconhecimento, aí são explorados os temas de género, identidade, pertença, natureza e a inevitável relação que existe entre esses elementos.</p>
+        </section>
 
-    <div class="sobre-bio-col">
-      <section class="sobre-bio" lang="pt" data-lang-panel="pt">
-        <p>Ana Vitória Versos (Bragança, 2002) é uma artista multidisciplinar nascida e criada nas costas do monte. Vinda do Nordeste Transmontano, a jovem artista procura sentido na apropriação das paisagens rochosas e esverdeadas que dão abrigo a um labor natural, cíclico, silencioso e sem dono.</p>
-        <p>O seu corpo de trabalho é um corpo em busca de uma cabeça: armado com as linguagens da escultura, escrita, performance e fotografia, imagina-se um universo ficcionado, violento, cru e cor de rosa de descoberta do mundo envolvente através do autoconhecimento, aí são explorados os temas de género, identidade, pertença, natureza e a inevitável relação que existe entre esses elementos.</p>
+        <section class="sobre-bio" lang="en" data-lang-panel="en" hidden>
+          <p>Ana Vitória Versos (Bragança, 2002) is a multidisciplinary artist born and raised on the slopes of the mountain. Coming from the region of Trás-os-Montes, the young artist seeks meaning in appropriating the rocky and green landscapes that shelter a natural, cyclical, silent, and ownerless labor.</p>
+          <p>Her body of work is a body in search of a head: armed with the languages of sculpture, writing, performance, and photography, she imagines a fictional, violent, raw, and rosy universe of discovery of the world around her through self-knowledge, exploring themes of gender, identity, belonging, nature, and the inevitable relationship that exists between these elements.</p>
+        </section>
+      </div>
+
+      <section class="sobre-cv sobre-formacao">
+        <h2 data-i18n="formacao">Formação</h2>
+        <ul lang="pt" data-lang-panel="pt">
+          <li>
+            <span class="sobre-year">2025</span>
+            <span class="sobre-entry">Formação Profissional de Técnicas de Produção de Vidro Soprado e Acabamentos — CENCAL</span>
+          </li>
+          <li>
+            <span class="sobre-year">2021–2025</span>
+            <span class="sobre-entry">Licenciatura em Artes Visuais pela Universidade do Minho</span>
+          </li>
+        </ul>
+        <ul lang="en" data-lang-panel="en" hidden>
+          <li>
+            <span class="sobre-year">2025</span>
+            <span class="sobre-entry">Professional Training in Blown Glass Production Techniques and Finishing — CENCAL</span>
+          </li>
+          <li>
+            <span class="sobre-year">2021–2025</span>
+            <span class="sobre-entry">BA in Visual Arts, University of Minho</span>
+          </li>
+        </ul>
       </section>
+    </div>
 
-      <section class="sobre-bio" lang="en" data-lang-panel="en" hidden>
-        <p>Ana Vitória Versos is a multidisciplinary artist born and raised on the slopes of the mountain. Coming from the region of Trás-os-Montes, the young artist seeks meaning in appropriating the rocky and green landscapes that shelter a natural, cyclical, silent, and ownerless labor.</p>
-        <p>Her body of work is a body in search of a head: armed with the languages of sculpture, writing, performance, and photography, she imagines a fictional, violent, raw, and rosy universe of discovery of the world around her through self-knowledge, exploring themes of gender, identity, belonging, nature, and the inevitable relationship that exists between these elements.</p>
+    <div class="sobre-right">
+      <figure class="sobre-photo">
+        <img src="imagens/sobre/retrato.png" alt="Ana Vitória Versos">
+      </figure>
+
+      <section class="sobre-cv sobre-exposicoes">
+        <h2 data-i18n="exposicoes">Exposições // Residências</h2>
+        <ul>
+          <li>
+            <span class="sobre-year">2025</span>
+            <span class="sobre-entry">
+              <em>Ingerir sem Digerir</em>
+              <span class="sobre-place">Sociedade Martins Sarmento, Guimarães</span>
+            </span>
+          </li>
+          <li>
+            <span class="sobre-year">2024</span>
+            <span class="sobre-entry">
+              <em>Práticas para novos Ecossistemas</em>
+              <span class="sobre-place">Centro Internacional de Artes José de Guimarães, Guimarães</span>
+            </span>
+          </li>
+          <li>
+            <span class="sobre-year">2024</span>
+            <span class="sobre-entry">
+              <em>Sopa de Pedra 16</em>
+              <span class="sobre-place">Térmita, Porto</span>
+            </span>
+          </li>
+          <li>
+            <span class="sobre-year">2024</span>
+            <span class="sobre-entry">
+              <em>Entre o Visível e o Oculto</em>
+              <span class="sobre-place">Instituto de Design de Guimarães em colaboração com Palavras Infinitas — Núcleo de Inclusão, Comunicação e Media, Guimarães</span>
+            </span>
+          </li>
+          <li>
+            <span class="sobre-year">2023</span>
+            <span class="sobre-entry">
+              <em>C.A.V. (Movimento Pedagógico)</em>
+              <span class="sobre-place">Cru, Famalicão</span>
+            </span>
+          </li>
+          <li>
+            <span class="sobre-year">2022</span>
+            <span class="sobre-entry">
+              <em>Entre Becos</em>
+              <span class="sobre-place">Galeria da Garagem Avenida, Guimarães</span>
+            </span>
+          </li>
+          <li>
+            <span class="sobre-year">2021</span>
+            <span class="sobre-entry">
+              <em>Não te arrastes para o meu Rio</em>
+              <span class="sobre-place">Museu da Escola de Arquitetura, Arte e Design da Universidade do Minho, Guimarães</span>
+            </span>
+          </li>
+        </ul>
       </section>
     </div>
   </section>
 
-  <main class="page sobre">
-    <section class="sobre-cv">
-      <h2 data-i18n="formacao">Formação</h2>
-      <ul lang="pt" data-lang-panel="pt">
-        <li>
-          <span class="sobre-year">2025</span>
-          <span class="sobre-entry">Formação Profissional de Técnicas de Produção de Vidro Soprado e Acabamentos — CENCAL</span>
-        </li>
-        <li>
-          <span class="sobre-year">2021–2025</span>
-          <span class="sobre-entry">Licenciatura em Artes Visuais pela Universidade do Minho</span>
-        </li>
-      </ul>
-      <ul lang="en" data-lang-panel="en" hidden>
-        <li>
-          <span class="sobre-year">2025</span>
-          <span class="sobre-entry">Professional Training in Blown Glass Production Techniques and Finishing — CENCAL</span>
-        </li>
-        <li>
-          <span class="sobre-year">2021–2025</span>
-          <span class="sobre-entry">BA in Visual Arts, University of Minho</span>
-        </li>
-      </ul>
-    </section>
-
-    <section class="sobre-cv">
-      <h2 data-i18n="exposicoes">Exposições // Residências</h2>
-      <ul>
-        <li>
-          <span class="sobre-year">2025</span>
-          <span class="sobre-entry">
-            <em>Ingerir sem Digerir</em>
-            <span class="sobre-place">Sociedade Martins Sarmento, Guimarães</span>
-          </span>
-        </li>
-        <li>
-          <span class="sobre-year">2024</span>
-          <span class="sobre-entry">
-            <em>Práticas para novos Ecossistemas</em>
-            <span class="sobre-place">Centro Internacional de Artes José de Guimarães, Guimarães</span>
-          </span>
-        </li>
-        <li>
-          <span class="sobre-year">2024</span>
-          <span class="sobre-entry">
-            <em>Sopa de Pedra 16</em>
-            <span class="sobre-place">Térmita, Porto</span>
-          </span>
-        </li>
-        <li>
-          <span class="sobre-year">2024</span>
-          <span class="sobre-entry">
-            <em>Entre o Visível e o Oculto</em>
-            <span class="sobre-place">Instituto de Design de Guimarães em colaboração com Palavras Infinitas — Núcleo de Inclusão, Comunicação e Media, Guimarães</span>
-          </span>
-        </li>
-        <li>
-          <span class="sobre-year">2023</span>
-          <span class="sobre-entry">
-            <em>C.A.V. (Movimento Pedagógico)</em>
-            <span class="sobre-place">Cru, Famalicão</span>
-          </span>
-        </li>
-        <li>
-          <span class="sobre-year">2022</span>
-          <span class="sobre-entry">
-            <em>Entre Becos</em>
-            <span class="sobre-place">Galeria da Garagem Avenida, Guimarães</span>
-          </span>
-        </li>
-        <li>
-          <span class="sobre-year">2021</span>
-          <span class="sobre-entry">
-            <em>Não te arrastes para o meu Rio</em>
-            <span class="sobre-place">Museu da Escola de Arquitetura, Arte e Design da Universidade do Minho, Guimarães</span>
-          </span>
-        </li>
-      </ul>
-    </section>
-  </main>
-
-  <script src="nav.js?v=21"></script>
+  <script src="nav.js?v=24"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@
   <title>Ana Vitória Versos</title>
   <link rel="preconnect" href="https://pub-1387e260ef0c43998f9883a36fee1030.r2.dev" crossorigin>
   <link rel="preload" as="video" href="https://pub-1387e260ef0c43998f9883a36fee1030.r2.dev/videosample_compress.mp4" type="video/mp4">
-  <link rel="stylesheet" href="style.css?v=36">
+  <link rel="stylesheet" href="style.css?v=52">
 </head>
 <body class="home-page">
   <main class="home">
@@ -19,6 +19,7 @@
         muted
         loop
         playsinline
+        webkit-playsinline
         preload="auto"
         disablepictureinpicture
       >
@@ -27,18 +28,20 @@
     </div>
   </main>
 
-  <a href="index.html" class="site-title">Ana Vitória Versos</a>
-
-  <nav class="bottom-bar" aria-label="Navegação">
-    <a href="sobre.html" class="bottom-bar__link" data-i18n="sobre">Sobre</a>
+  <div class="home-brand">
+    <a href="index.html" class="site-title">Ana Vitória Versos</a>
     <div class="lang-toggle" role="group" aria-label="Idioma">
       <button type="button" class="lang-toggle__btn" data-lang="pt" aria-pressed="true">PT</button>
       <span aria-hidden="true">/</span>
       <button type="button" class="lang-toggle__btn" data-lang="en" aria-pressed="false">ENG</button>
     </div>
+  </div>
+
+  <nav class="bottom-bar" aria-label="Navegação">
+    <a href="sobre.html" class="bottom-bar__link" data-i18n="sobre">Sobre</a>
     <a href="arquivo.html" class="bottom-bar__link" data-i18n="arquivo">Arquivo</a>
   </nav>
 
-  <script src="nav.js?v=21"></script>
+  <script src="nav.js?v=24"></script>
 </body>
 </html>

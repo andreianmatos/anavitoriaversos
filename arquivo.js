@@ -1,6 +1,6 @@
 (function () {
-  const FULL_DIR = "imagens/";
-  const THUMB_DIR = "imagens/thumbs/";
+  const FULL_DIR = "imagens/arquivo/";
+  const THUMB_DIR = "imagens/arquivo/thumbs/";
 
   const container = document.getElementById("arquivo");
   const modal = document.getElementById("arquivo-modal");
@@ -45,7 +45,7 @@
   }
 
   function getLayout(count) {
-    const width = window.innerWidth;
+    const width = (window.visualViewport && window.visualViewport.width) || window.innerWidth;
     const isMobile = width < 640;
     const isTablet = width >= 640 && width < 1024;
     const density = Math.min(1, 42 / Math.max(count, 1));
@@ -313,7 +313,7 @@
 
   async function init() {
     try {
-      const response = await fetch("images.json?v=6", { cache: "no-store" });
+      const response = await fetch("images.json?v=7", { cache: "no-store" });
       if (!response.ok) throw new Error("manifest");
       manifest = await response.json();
     } catch (error) {
@@ -325,14 +325,20 @@
   }
 
   let resizeTimer = 0;
-  window.addEventListener("resize", function () {
+  function rescheduleScatter() {
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(function () {
       if (manifest.length) {
         scatterImages(manifest);
       }
     }, 250);
-  });
+  }
+
+  window.addEventListener("resize", rescheduleScatter);
+  window.addEventListener("orientationchange", rescheduleScatter);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", rescheduleScatter);
+  }
 
   init();
 })();
