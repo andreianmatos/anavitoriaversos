@@ -1,6 +1,13 @@
 (function () {
-  const FULL_DIR = "imagens/arquivo/";
-  const THUMB_DIR = "imagens/arquivo/thumbs/";
+  const imageDir = (document.body.getAttribute("data-image-dir") || "imagens/arquivo/").replace(
+    /\/?$/,
+    "/"
+  );
+  const thumbDir = (document.body.getAttribute("data-thumb-dir") || "imagens/arquivo/thumbs/").replace(
+    /\/?$/,
+    "/"
+  );
+  const manifestUrl = document.body.getAttribute("data-manifest") || "images.json?v=10";
 
   const container = document.getElementById("arquivo");
   const modal = document.getElementById("arquivo-modal");
@@ -27,25 +34,61 @@
     return min + Math.random() * (max - min);
   }
 
+  function encodePath(rel) {
+    return String(rel)
+      .split("/")
+      .map(function (part) {
+        return encodeURIComponent(part);
+      })
+      .join("/");
+  }
+
+  function dirname(file) {
+    const index = file.lastIndexOf("/");
+    return index === -1 ? "" : file.slice(0, index + 1);
+  }
+
+  function basename(file) {
+    const index = file.lastIndexOf("/");
+    return index === -1 ? file : file.slice(index + 1);
+  }
+
   function titleFromFile(file) {
-    return file.replace(/\.[^.]+$/, "");
+    return basename(file).replace(/\.[^.]+$/, "");
   }
 
   function thumbCandidates(file) {
-    const ext = file.slice(file.lastIndexOf(".")).toLowerCase();
-    const base = file.slice(0, file.length - ext.length);
+    const dir = dirname(file);
+    const name = basename(file);
+    const ext = name.slice(name.lastIndexOf(".")).toLowerCase();
+    const base = name.slice(0, name.length - ext.length);
+    const folderThumbs = imageDir + encodePath(dir + "thumbs/");
+    const rootThumbs = thumbDir;
+
     if (ext === ".gif") {
-      return [THUMB_DIR + encodeURIComponent(base + ".gif")];
+      return [
+        folderThumbs + encodeURIComponent(base + ".gif"),
+        rootThumbs + encodePath(dir + base + ".gif"),
+        rootThumbs + encodeURIComponent(base + ".gif"),
+      ];
     }
-    const generic = THUMB_DIR + encodeURIComponent(base + ".jpg");
-    if (ext === ".jpg" || ext === ".jpeg") {
-      return [generic];
+
+    const jpgName = encodeURIComponent(base + ".jpg");
+    const fileJpg = encodeURIComponent(name + ".jpg");
+    const candidates = [];
+    if (ext !== ".jpg" && ext !== ".jpeg") {
+      candidates.push(folderThumbs + fileJpg);
+      candidates.push(rootThumbs + encodePath(dir + name + ".jpg"));
+      candidates.push(rootThumbs + fileJpg);
     }
-    return [THUMB_DIR + encodeURIComponent(file + ".jpg"), generic];
+    candidates.push(folderThumbs + jpgName);
+    candidates.push(rootThumbs + encodePath(dir + base + ".jpg"));
+    candidates.push(rootThumbs + jpgName);
+    return candidates;
   }
 
   function fullPath(file) {
-    return FULL_DIR + encodeURIComponent(file);
+    return imageDir + encodePath(file);
   }
 
   function getLayout(count) {
@@ -268,7 +311,7 @@
       const img = document.createElement("img");
       img.alt = "";
       img.decoding = "async";
-      img.loading = index < 8 ? "eager" : "lazy";
+      img.loading = "eager";
 
       const sources = thumbCandidates(entry.file).concat(fullPath(entry.file));
       let sourceIndex = 0;
@@ -289,6 +332,10 @@
       });
 
       button.addEventListener("click", function () {
+        if (entry.href) {
+          window.location.href = entry.href;
+          return;
+        }
         openModal(entry);
       });
 
@@ -299,7 +346,7 @@
 
   async function init() {
     try {
-      const response = await fetch("images.json?v=8", { cache: "no-store" });
+      const response = await fetch(manifestUrl, { cache: "no-store" });
       if (!response.ok) throw new Error("manifest");
       manifest = await response.json();
     } catch (error) {

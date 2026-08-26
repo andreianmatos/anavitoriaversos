@@ -148,11 +148,17 @@
       panel.hidden = panel.getAttribute("data-lang-panel") !== lang;
     });
 
-    if (document.body.classList.contains("sobre-page")) {
+    const customTitle = document.body.getAttribute("data-title");
+    if (customTitle) {
+      document.title = customTitle;
+    } else if (document.body.classList.contains("sobre-page")) {
       document.title = copy.sobre;
     } else if (document.body.classList.contains("arquivo-page")) {
       document.title = copy.arquivo;
     }
+
+    window.requestAnimationFrame(fitUmbigoWork);
+    document.dispatchEvent(new CustomEvent("avv-lang", { detail: lang }));
   }
 
   setLang(readLang());
@@ -250,11 +256,35 @@
     }
   }
 
-  if (homeTitle) {
-    homeTitle.addEventListener("click", function (event) {
-      event.preventDefault();
-      setNavVisible(false);
+  function fitWidthLine(line, container) {
+    const width = container.clientWidth;
+    if (width < 40) return;
+    line.style.display = "inline-block";
+    line.style.width = "max-content";
+    line.style.whiteSpace = "nowrap";
+    line.style.fontSize = "40px";
+    const measured = line.offsetWidth;
+    line.style.display = "block";
+    line.style.width = "100%";
+    if (!measured) return;
+    line.style.fontSize = Math.max(10, 40 * (width / measured)) + "px";
+  }
+
+  function fitUmbigoWork() {
+    document.querySelectorAll(".umbigo-work").forEach(function (block) {
+      if (block.closest("[hidden]")) return;
+      const subtitle = block.querySelector(".umbigo-work__subtitle");
+      if (subtitle) fitWidthLine(subtitle, block);
     });
+  }
+
+  fitUmbigoWork();
+  window.addEventListener("resize", fitUmbigoWork);
+  window.addEventListener("orientationchange", function () {
+    window.setTimeout(fitUmbigoWork, 400);
+  });
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(fitUmbigoWork);
   }
 
   if (!homePage) return;

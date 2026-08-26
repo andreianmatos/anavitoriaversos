@@ -12,7 +12,7 @@
     "title": "in utero 3D"
   },
   {
-    "file": "natureza mae.jpg",
+    "file": "natureza mae 2.jpg",
     "title": "natureza mae"
   },
   {
@@ -28,11 +28,13 @@
     "title": "primeira queda"
   },
   {
-    "file": "umbigo gif.gif",
-    "title": "umbigo gif"
+    "file": "umbigo/umbigo gif.gif",
+    "title": "umbigo gif",
+    "href": "umbigo.html"
   },
   {
-    "file": "umbigo.jpg",
-    "title": "umbigo"
+    "file": "umbigo/umbigo.jpg",
+    "title": "umbigo",
+    "href": "umbigo.html"
   }
 ]

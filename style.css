@@ -143,6 +143,21 @@ button {
   pointer-events: auto;
 }
 
+.home-lang {
+  position: fixed;
+  top: max(1.15rem, env(safe-area-inset-top, 0px));
+  left: 50%;
+  z-index: 12;
+  transform: translateX(-50%);
+  mix-blend-mode: difference;
+  pointer-events: none;
+}
+
+.home-lang .lang-toggle {
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+}
+
 .home-brand {
   position: fixed;
   inset: 0;
@@ -151,16 +166,7 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  mix-blend-mode: difference;
   pointer-events: none;
-}
-
-.home-brand .lang-toggle {
-  position: absolute;
-  top: max(1.15rem, env(safe-area-inset-top, 0px));
-  left: 50%;
-  transform: translateX(-50%);
-  pointer-events: auto;
 }
 
 .home-title {
@@ -171,11 +177,13 @@ button {
   flex-direction: column;
   align-items: stretch;
   margin: 0;
+  color: #000;
   text-align: center;
   line-height: 0.78;
   font-weight: 700;
   letter-spacing: 0;
-  pointer-events: auto;
+  mix-blend-mode: normal;
+  pointer-events: none;
 }
 
 .home-title__line {
@@ -186,8 +194,8 @@ button {
   letter-spacing: 0;
 }
 
-.home-page .home-brand {
-  transform: translateY(12vh);
+.home-page .home-brand,
+.home-page .home-lang {
   opacity: 0;
   pointer-events: none;
   transition:
@@ -195,18 +203,24 @@ button {
     opacity 0.45s ease;
 }
 
-.home-page .home-brand .lang-toggle,
-.home-page .home-brand .home-title {
+.home-page .home-brand {
+  transform: translateY(12vh);
+}
+
+.home-page .home-lang .lang-toggle {
   pointer-events: none;
+}
+
+.home-page.is-nav-visible .home-brand,
+.home-page.is-nav-visible .home-lang {
+  opacity: 1;
 }
 
 .home-page.is-nav-visible .home-brand {
   transform: translateY(0);
-  opacity: 1;
 }
 
-.home-page.is-nav-visible .home-brand .lang-toggle,
-.home-page.is-nav-visible .home-brand .home-title {
+.home-page.is-nav-visible .home-lang .lang-toggle {
   pointer-events: auto;
 }
 
@@ -316,11 +330,7 @@ button {
   text-transform: uppercase;
   text-align: right;
   line-height: 1.15;
-}
-
-.home-brand .lang-toggle {
-  font-size: 1.4rem;
-  letter-spacing: 0.08em;
+  text-decoration: none;
 }
 
 .arquivo-modal__nav .lang-toggle {
@@ -361,7 +371,7 @@ button {
 
 a.bottom-bar__link:hover,
 a.site-title:hover,
-a.home-title:hover {
+a.page-header__section:hover {
   opacity: 0.55;
 }
 
@@ -516,6 +526,7 @@ a.home-title:hover {
   font-weight: 400;
   letter-spacing: 0.04em;
   opacity: 0.55;
+  text-align: right;
 }
 
 .arquivo-page .site-copy {
@@ -529,6 +540,220 @@ a.home-title:hover {
   text-align: right;
   mix-blend-mode: difference;
   pointer-events: none;
+}
+
+.umbigo-page .site-copy {
+  position: static;
+  right: auto;
+  bottom: auto;
+  left: auto;
+  z-index: auto;
+  margin: 0;
+  padding: 1.15rem var(--chrome-x) calc(1.35rem + var(--bottom-safe));
+  color: inherit;
+  text-align: right;
+  mix-blend-mode: normal;
+}
+
+.umbigo {
+  width: 100%;
+}
+
+.umbigo-hero {
+  margin: 0;
+  width: 100%;
+}
+
+.umbigo-hero img,
+.umbigo-caixas img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.umbigo-copy {
+  width: 100%;
+  max-width: none;
+  padding: 2.75rem var(--chrome-x) 3.25rem;
+}
+
+.umbigo-copy section {
+  display: flow-root;
+}
+
+.umbigo-copy section[hidden] {
+  display: none;
+}
+
+.umbigo-work {
+  margin: 0 0 2.75rem;
+}
+
+.umbigo-work__title {
+  margin: 0;
+  font-size: clamp(2.8rem, 10vw, 7.5rem);
+  font-weight: 700;
+  font-style: italic;
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+}
+
+.umbigo-copy .umbigo-work__subtitle {
+  margin: 0.55rem 0 0;
+  width: 100%;
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.umbigo-spread {
+  display: flex;
+  flex-direction: column;
+  gap: 2.75rem;
+}
+
+.umbigo-copy p {
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.55;
+  margin: 0 0 0.85rem;
+  text-align: left;
+}
+
+.umbigo-poem {
+  width: 100%;
+  padding-left: clamp(0.35rem, 8vw, 6rem);
+}
+
+.umbigo-navel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  padding: clamp(2rem, 5.5vw, 3.4rem);
+  color: #ff8fb8;
+}
+
+.umbigo-navel::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border: 1.5px solid #ff8fb8;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.umbigo-copy .umbigo-navel p.umbigo-kicker {
+  margin: 0 0 0.9rem;
+  color: inherit;
+}
+
+.umbigo-navel .umbigo-verse__gloss {
+  max-width: 22rem;
+  margin: -0.15rem 0 1rem;
+  color: inherit;
+  font-size: 0.82rem;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.umbigo-verse {
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+}
+
+.umbigo-verse p {
+  margin: 0;
+  color: inherit;
+  font-size: clamp(0.95rem, 0.55vw + 0.82rem, 1.12rem);
+  line-height: 1.72;
+  letter-spacing: 0.01em;
+}
+
+.umbigo-verse p:last-child {
+  margin-top: 1.25rem;
+  font-size: 1.02rem;
+  line-height: 1.35;
+}
+
+.umbigo-essay {
+  width: auto;
+  min-width: 0;
+  padding-top: 0.1rem;
+}
+
+.umbigo-essay p {
+  font-size: clamp(1.02rem, 0.85vw + 0.78rem, 1.2rem);
+  line-height: 1.68;
+  margin-bottom: 1.05rem;
+}
+
+.umbigo-copy p.umbigo-kicker {
+  margin: 0 0 1.15rem;
+  font-size: clamp(1.15rem, 1.2vw + 0.85rem, 1.45rem);
+  line-height: 1.25;
+}
+
+.umbigo-essay p.umbigo-kicker {
+  margin-bottom: 1.35rem;
+  color: #000;
+}
+
+.umbigo-essay p.umbigo-kicker strong {
+  color: inherit;
+}
+
+.umbigo-essay strong,
+.umbigo-emph {
+  color: #ff8fb8;
+}
+
+.umbigo-essay p:last-child {
+  margin-bottom: 0;
+}
+
+.umbigo-flow {
+  position: relative;
+}
+
+.umbigo-flow__line {
+  display: block;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.umbigo-copy strong {
+  font-weight: 700;
+}
+
+.umbigo-copy em {
+  font-style: italic;
+}
+
+.umbigo-caixas {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0 0 calc(0.5rem + var(--bottom-safe));
 }
 
 .sobre-cv-panel {
@@ -1006,6 +1231,30 @@ a.home-title:hover {
     right: auto;
   }
 
+  .umbigo-poem {
+    padding-left: 0;
+  }
+
+  .umbigo-navel {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    padding: 0;
+    align-items: flex-start;
+  }
+
+  .umbigo-navel::before {
+    display: none;
+  }
+
+  .umbigo-verse {
+    width: 100%;
+  }
+
+  .umbigo-verse p {
+    white-space: normal;
+  }
+
   .arquivo-page > .page-header,
   .sobre-page > .page-header,
   .arquivo-modal__nav {
@@ -1066,7 +1315,7 @@ a.home-title:hover {
     z-index: auto;
     margin: 1.15rem 0 0;
     color: inherit;
-    text-align: left;
+    text-align: right;
     mix-blend-mode: normal;
     pointer-events: none;
   }
@@ -1083,7 +1332,7 @@ a.home-title:hover {
 
   .site-title,
   .bottom-bar__link,
-  .home-brand .lang-toggle,
+  .home-lang .lang-toggle,
   .page-header__section,
   .page-header .lang-toggle,
   .arquivo-modal__close {
@@ -1153,6 +1402,7 @@ a.home-title:hover {
   .bottom-bar__link,
   .site-title,
   .home-page .home-brand,
+  .home-page .home-lang,
   .home-page .bottom-bar {
     transition: none;
   }
