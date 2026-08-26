@@ -318,7 +318,11 @@ button {
   line-height: 1.15;
 }
 
-.home-brand .lang-toggle,
+.home-brand .lang-toggle {
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+}
+
 .arquivo-modal__nav .lang-toggle {
   font-size: 1.15rem;
 }
@@ -478,6 +482,14 @@ a.home-title:hover {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin: 0 0 0.7rem;
+}
+
+.sobre-cv-heading {
+  display: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .sobre-contactos ul {
@@ -712,6 +724,7 @@ a.home-title:hover {
 }
 
 .arquivo-page {
+  position: relative;
   overflow-x: hidden;
 }
 
@@ -911,6 +924,158 @@ a.home-title:hover {
   }
 }
 
+@media (max-width: 1023px) {
+  .home-page {
+    height: var(--app-height, 100svh);
+    min-height: var(--app-height, 100svh);
+    overflow: hidden;
+  }
+
+  .home-page .home,
+  .home-page .home-brand {
+    top: 0;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    height: var(--app-height, 100svh);
+  }
+
+  .home-page .video-bg,
+  .home-page .home .video-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100lvh;
+    min-height: var(--app-height, 100svh);
+  }
+
+  .home-page .home-brand {
+    padding: 3.25rem 0 4.5rem;
+    box-sizing: border-box;
+  }
+
+  .home-title {
+    width: min(86vw, 92rem);
+    max-width: calc(100vw - 1.75rem);
+  }
+
+  .sobre-page,
+  .sobre-hero {
+    min-height: 0;
+  }
+
+  .sobre-photo img {
+    max-height: min(40svh, 72vw);
+  }
+
+  .arquivo {
+    min-height: 100svh;
+  }
+
+  .sobre-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .sobre-cv-toggle {
+    display: none;
+  }
+
+  .sobre-cv-heading {
+    display: none;
+  }
+
+  .sobre-cv-panel,
+  .sobre-cv-panel[hidden] {
+    display: flex;
+  }
+
+  .sobre-page.is-cv-open .sobre-bio-col {
+    display: block;
+    visibility: visible;
+  }
+
+  .arquivo-page > .page-header,
+  .sobre-page > .page-header {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+  }
+
+  .arquivo-page > .page-header,
+  .sobre-page > .page-header,
+  .arquivo-modal__nav {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+
+  .arquivo-page > .page-header .site-title,
+  .sobre-page > .page-header .site-title,
+  .arquivo-modal__nav .site-title {
+    order: 1;
+  }
+
+  .arquivo-page > .page-header .page-header__section,
+  .sobre-page > .page-header .page-header__section,
+  .arquivo-modal__nav .page-header__section,
+  .arquivo-modal__close {
+    order: 2;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .arquivo-page > .page-header .lang-toggle,
+  .sobre-page > .page-header .lang-toggle,
+  .arquivo-modal__nav .lang-toggle {
+    order: 3;
+    align-items: baseline;
+    gap: 0.28rem;
+    line-height: 1.15;
+  }
+
+  .arquivo-page > .page-header .lang-toggle__btn,
+  .sobre-page > .page-header .lang-toggle__btn,
+  .arquivo-modal__nav .lang-toggle__btn {
+    min-height: 0;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    line-height: inherit;
+  }
+
+  .arquivo-modal__content {
+    padding-top: 7.25rem;
+  }
+
+  .sobre-hero {
+    padding-top: 0.35rem;
+  }
+
+  .arquivo-page .site-copy,
+  .sobre-page .site-copy {
+    position: static;
+    right: auto;
+    bottom: auto;
+    left: auto;
+    z-index: auto;
+    margin: 1.15rem 0 0;
+    color: inherit;
+    text-align: left;
+    mix-blend-mode: normal;
+    pointer-events: none;
+  }
+
+  .arquivo-page .site-copy {
+    padding: 0 var(--chrome-x) calc(1.35rem + var(--bottom-safe));
+  }
+}
+
 @media (max-width: 639px) {
   :root {
     --chrome-x: 0.85rem;
@@ -918,6 +1083,7 @@ a.home-title:hover {
 
   .site-title,
   .bottom-bar__link,
+  .home-brand .lang-toggle,
   .page-header__section,
   .page-header .lang-toggle,
   .arquivo-modal__close {
@@ -937,16 +1103,8 @@ a.home-title:hover {
     padding: 0;
   }
 
-  .arquivo-page .page-header,
-  .sobre-page .page-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-  }
-
   .sobre-hero {
-    padding-top: calc(max(1rem, env(safe-area-inset-top, 0px)) + 2.35rem);
+    padding-top: 0.35rem;
   }
 
   .arquivo {
@@ -964,6 +1122,14 @@ a.home-title:hover {
     min-height: 2.5rem;
     min-width: 2.25rem;
     padding: 0.35rem 0.15rem;
+  }
+
+  .arquivo-page > .page-header .lang-toggle__btn,
+  .sobre-page > .page-header .lang-toggle__btn,
+  .arquivo-modal__nav .lang-toggle__btn {
+    min-height: 0;
+    min-width: 0;
+    padding: 0;
   }
 
   .arquivo-modal__close,

@@ -122,9 +122,11 @@
 
   function getTitleClearance() {
     const header = document.querySelector(".arquivo-page > .page-header");
-    const extra = 40;
     if (!header) return 96;
-    return header.offsetHeight + extra;
+    if (window.getComputedStyle(header).position !== "fixed") {
+      return 16;
+    }
+    return header.offsetHeight + 40;
   }
 
   function placeButton(button, img, placed, layout) {

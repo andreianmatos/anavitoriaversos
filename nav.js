@@ -1,6 +1,32 @@
 (function () {
   const prefersHover = window.matchMedia("(hover: hover) and (pointer: fine)");
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const compactFrame = window.matchMedia("(max-width: 1023px)");
+
+  function setMobileFrame() {
+    if (!compactFrame.matches) {
+      document.documentElement.style.removeProperty("--app-height");
+      return;
+    }
+    const height =
+      (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    document.documentElement.style.setProperty(
+      "--app-height",
+      Math.round(height) + "px"
+    );
+  }
+
+  setMobileFrame();
+  if (compactFrame.addEventListener) {
+    compactFrame.addEventListener("change", setMobileFrame);
+  }
+  window.addEventListener("orientationchange", function () {
+    window.setTimeout(setMobileFrame, 350);
+  });
+  window.addEventListener("resize", function () {
+    if (compactFrame.matches) return;
+    setMobileFrame();
+  });
 
   if (prefersHover.matches) {
     document.documentElement.classList.add("has-cursor-dot");
@@ -172,7 +198,8 @@
     const width = homeTitle.clientWidth;
     if (width < 40) return;
 
-    homeTitle.querySelectorAll(".home-title__line").forEach(function (line) {
+    const lines = homeTitle.querySelectorAll(".home-title__line");
+    lines.forEach(function (line) {
       line.style.display = "inline-block";
       line.style.width = "max-content";
       line.style.fontSize = "50px";
@@ -182,6 +209,20 @@
       if (!measured) return;
       line.style.fontSize = Math.max(8, 50 * (width / measured)) + "px";
     });
+
+    if (!compactFrame.matches) return;
+    const frame =
+      (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const cap = frame * 0.5;
+    const height = homeTitle.scrollHeight;
+    if (height > cap && height > 0) {
+      const scale = cap / height;
+      lines.forEach(function (line) {
+        const size = parseFloat(line.style.fontSize);
+        if (!size) return;
+        line.style.fontSize = size * scale + "px";
+      });
+    }
   }
 
   if (homeVideo) {
@@ -220,6 +261,9 @@
 
   fitHomeTitle();
   window.addEventListener("resize", fitHomeTitle);
+  window.addEventListener("orientationchange", function () {
+    window.setTimeout(fitHomeTitle, 400);
+  });
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(fitHomeTitle);
   }
