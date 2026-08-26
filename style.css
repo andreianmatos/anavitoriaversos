@@ -516,7 +516,6 @@ a.home-title:hover {
   color: #fff;
   text-align: right;
   mix-blend-mode: difference;
-  opacity: 1;
   pointer-events: none;
 }
 
