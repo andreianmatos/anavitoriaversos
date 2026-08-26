@@ -31,13 +31,17 @@
     return file.replace(/\.[^.]+$/, "");
   }
 
-  function thumbPath(file) {
+  function thumbCandidates(file) {
     const ext = file.slice(file.lastIndexOf(".")).toLowerCase();
     const base = file.slice(0, file.length - ext.length);
     if (ext === ".gif") {
-      return THUMB_DIR + encodeURIComponent(base + ".gif");
+      return [THUMB_DIR + encodeURIComponent(base + ".gif")];
     }
-    return THUMB_DIR + encodeURIComponent(base + ".jpg");
+    const generic = THUMB_DIR + encodeURIComponent(base + ".jpg");
+    if (ext === ".jpg" || ext === ".jpeg") {
+      return [generic];
+    }
+    return [THUMB_DIR + encodeURIComponent(file + ".jpg"), generic];
   }
 
   function fullPath(file) {
@@ -92,23 +96,6 @@
     };
   }
 
-  function getHeaderZone(containerRect, gap) {
-    const header = document.querySelector(".page-header");
-    if (!header) {
-      return null;
-    }
-
-    const extra = Math.max(gap, 32);
-    const headerRect = header.getBoundingClientRect();
-
-    return {
-      left: Math.min(0, headerRect.left - containerRect.left),
-      top: Math.min(0, headerRect.top - containerRect.top),
-      right: headerRect.right - containerRect.left + extra,
-      bottom: headerRect.bottom - containerRect.top + extra,
-    };
-  }
-
   function collides(rect, zones, gap) {
     for (let i = 0; i < zones.length; i += 1) {
       if (overlaps(rect, zones[i], gap)) {
@@ -133,6 +120,13 @@
       "max(100dvh, " + minHeight + "px)";
   }
 
+  function getTitleClearance() {
+    const header = document.querySelector(".arquivo-page > .page-header");
+    const extra = 40;
+    if (!header) return 96;
+    return header.offsetHeight + extra;
+  }
+
   function placeButton(button, img, placed, layout) {
     if (!img.naturalWidth) {
       button.remove();
@@ -145,10 +139,7 @@
     );
     button.style.width = width + "px";
 
-    const containerRect = container.getBoundingClientRect();
-    const headerZone = getHeaderZone(containerRect, layout.gap);
-    const blocked = headerZone ? [headerZone] : [];
-
+    const minTop = Math.max(layout.padding, getTitleClearance());
     const maxLeft = Math.max(layout.padding, containerWidth - width - layout.padding);
     const placedBottom = placed.length
       ? Math.max.apply(
@@ -157,15 +148,15 @@
             return p.bottom;
           })
         )
-      : layout.padding;
-    const maxTop = Math.max(layout.padding, placedBottom + layout.gap + 80);
+      : minTop;
+    const maxTop = Math.max(minTop, placedBottom + layout.gap + 80);
 
     let positioned = false;
     let rect;
 
     for (let attempt = 0; attempt < layout.maxAttempts; attempt += 1) {
       const left = randomBetween(layout.padding, maxLeft);
-      const top = randomBetween(layout.padding, maxTop);
+      const top = randomBetween(minTop, maxTop);
 
       button.style.left = left + "px";
       button.style.top = top + "px";
@@ -176,7 +167,11 @@
         continue;
       }
 
-      if (collides(rect, blocked.concat(placed), layout.gap)) {
+      if (rect.top < minTop) {
+        continue;
+      }
+
+      if (collides(rect, placed, layout.gap)) {
         continue;
       }
 
@@ -185,22 +180,10 @@
     }
 
     if (!positioned) {
-      const fallbackTop = placed.length ? placedBottom + layout.gap : layout.padding;
-      let fallbackLeft =
+      const fallbackTop = placed.length ? placedBottom + layout.gap : minTop;
+      const fallbackLeft =
         layout.padding + randomBetween(0, Math.max(0, maxLeft - layout.padding));
-
-      if (headerZone && fallbackTop < headerZone.bottom) {
-        fallbackLeft = Math.max(fallbackLeft, headerZone.right + layout.gap);
-        if (fallbackLeft + width > containerWidth - layout.padding) {
-          fallbackLeft = layout.padding;
-          button.style.top = headerZone.bottom + layout.gap + "px";
-        } else {
-          button.style.top = fallbackTop + "px";
-        }
-      } else {
-        button.style.top = fallbackTop + "px";
-      }
-
+      button.style.top = Math.max(minTop, fallbackTop) + "px";
       button.style.left = fallbackLeft + "px";
       rect = getRect(button, container.getBoundingClientRect());
     }
@@ -285,16 +268,17 @@
       img.decoding = "async";
       img.loading = index < 8 ? "eager" : "lazy";
 
-      let triedFallback = false;
-      img.src = thumbPath(entry.file);
+      const sources = thumbCandidates(entry.file).concat(fullPath(entry.file));
+      let sourceIndex = 0;
+      img.src = sources[0];
 
       img.addEventListener("error", function onThumbError() {
-        if (triedFallback) {
+        sourceIndex += 1;
+        if (sourceIndex >= sources.length) {
           button.remove();
           return;
         }
-        triedFallback = true;
-        img.src = fullPath(entry.file);
+        img.src = sources[sourceIndex];
       });
 
       img.addEventListener("load", function onThumbLoad() {
@@ -313,7 +297,7 @@
 
   async function init() {
     try {
-      const response = await fetch("images.json?v=7", { cache: "no-store" });
+      const response = await fetch("images.json?v=8", { cache: "no-store" });
       if (!response.ok) throw new Error("manifest");
       manifest = await response.json();
     } catch (error) {
@@ -324,8 +308,32 @@
     scatterImages(manifest);
   }
 
+  function layoutWidth() {
+    return Math.round(window.innerWidth);
+  }
+
+  function isPhone() {
+    return (
+      window.matchMedia("(max-width: 767px)").matches ||
+      window.matchMedia("(hover: none) and (pointer: coarse)").matches
+    );
+  }
+
+  let lastLayoutWidth = layoutWidth();
   let resizeTimer = 0;
+
   function rescheduleScatter() {
+    const width = layoutWidth();
+    // Phone URL bars fire resize / visualViewport on scroll. Keep the layout
+    // until a real width change (rotate) or a full page refresh.
+    if (isPhone() && Math.abs(width - lastLayoutWidth) < 80) {
+      return;
+    }
+    if (!isPhone() && width === lastLayoutWidth) {
+      return;
+    }
+    lastLayoutWidth = width;
+
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(function () {
       if (manifest.length) {
@@ -335,8 +343,11 @@
   }
 
   window.addEventListener("resize", rescheduleScatter);
-  window.addEventListener("orientationchange", rescheduleScatter);
-  if (window.visualViewport) {
+  window.addEventListener("orientationchange", function () {
+    lastLayoutWidth = 0;
+    rescheduleScatter();
+  });
+  if (window.visualViewport && !isPhone()) {
     window.visualViewport.addEventListener("resize", rescheduleScatter);
   }
 

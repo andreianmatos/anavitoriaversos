@@ -59,6 +59,7 @@
       arquivo: "Arquivo",
       formacao: "Formação",
       exposicoes: "Exposições // Residências",
+      contactos: "Contactos",
       close: "fechar",
       lang: "Idioma",
     },
@@ -67,6 +68,7 @@
       arquivo: "Archive",
       formacao: "Education",
       exposicoes: "Exhibitions // Residencies",
+      contactos: "Contacts",
       close: "close",
       lang: "Language",
     },
@@ -129,6 +131,32 @@
 
   setLang(readLang());
 
+  (function initSobreCv() {
+    const toggles = document.querySelectorAll("[data-cv-toggle]");
+    if (!toggles.length) return;
+
+    function setCvOpen(open) {
+      document.body.classList.toggle("is-cv-open", open);
+      toggles.forEach(function (button) {
+        button.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      const panel = document.querySelector(".sobre-cv-panel");
+      if (panel) panel.hidden = !open;
+    }
+
+    toggles.forEach(function (button) {
+      button.addEventListener("click", function () {
+        setCvOpen(!document.body.classList.contains("is-cv-open"));
+      });
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && document.body.classList.contains("is-cv-open")) {
+        setCvOpen(false);
+      }
+    });
+  })();
+
   document.addEventListener("click", function (event) {
     const button = event.target.closest("[data-lang]");
     if (!button) return;
@@ -136,8 +164,25 @@
   });
 
   const homePage = document.body.classList.contains("home-page");
-  const title = document.querySelector(".site-title");
+  const homeTitle = document.querySelector(".home-title");
   const homeVideo = document.querySelector(".video-bg video");
+
+  function fitHomeTitle() {
+    if (!homeTitle) return;
+    const width = homeTitle.clientWidth;
+    if (width < 40) return;
+
+    homeTitle.querySelectorAll(".home-title__line").forEach(function (line) {
+      line.style.display = "inline-block";
+      line.style.width = "max-content";
+      line.style.fontSize = "50px";
+      const measured = line.offsetWidth;
+      line.style.display = "block";
+      line.style.width = "100%";
+      if (!measured) return;
+      line.style.fontSize = Math.max(8, 50 * (width / measured)) + "px";
+    });
+  }
 
   if (homeVideo) {
     if (prefersReducedMotion.matches) {
@@ -159,17 +204,25 @@
 
   function setNavVisible(visible) {
     document.body.classList.toggle("is-nav-visible", visible);
+    if (visible) {
+      window.requestAnimationFrame(fitHomeTitle);
+    }
   }
 
-  if (title) {
-    title.addEventListener("click", function (event) {
-      if (!homePage) return;
+  if (homeTitle) {
+    homeTitle.addEventListener("click", function (event) {
       event.preventDefault();
       setNavVisible(false);
     });
   }
 
   if (!homePage) return;
+
+  fitHomeTitle();
+  window.addEventListener("resize", fitHomeTitle);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(fitHomeTitle);
+  }
 
   if (prefersReducedMotion.matches) {
     setNavVisible(true);
