@@ -157,7 +157,6 @@
       document.title = copy.arquivo;
     }
 
-    window.requestAnimationFrame(fitUmbigoWork);
     document.dispatchEvent(new CustomEvent("avv-lang", { detail: lang }));
   }
 
@@ -256,35 +255,41 @@
     }
   }
 
-  function fitWidthLine(line, container) {
-    const width = container.clientWidth;
-    if (width < 40) return;
-    line.style.display = "inline-block";
-    line.style.width = "max-content";
-    line.style.whiteSpace = "nowrap";
-    line.style.fontSize = "40px";
-    const measured = line.offsetWidth;
-    line.style.display = "block";
-    line.style.width = "100%";
-    if (!measured) return;
-    line.style.fontSize = Math.max(10, 40 * (width / measured)) + "px";
+  function fitUmbigoSubtitle() {
+    const el = document.querySelector(".umbigo-work__subtitle:not([hidden])");
+    if (!el) return;
+    const parent = el.parentElement;
+    if (!parent) return;
+    const parentStyle = window.getComputedStyle(parent);
+    const max =
+      parent.clientWidth -
+      parseFloat(parentStyle.paddingLeft) -
+      parseFloat(parentStyle.paddingRight);
+    if (max < 40) return;
+    el.style.whiteSpace = "nowrap";
+    el.style.display = "inline-block";
+    el.style.width = "auto";
+    el.style.fontSize = "40px";
+    const width = el.getBoundingClientRect().width;
+    if (!width) return;
+    el.style.fontSize = Math.max(14, (40 * max) / width) + "px";
+    el.style.display = "block";
+    el.style.width = "100%";
   }
 
-  function fitUmbigoWork() {
-    document.querySelectorAll(".umbigo-work").forEach(function (block) {
-      if (block.closest("[hidden]")) return;
-      const subtitle = block.querySelector(".umbigo-work__subtitle");
-      if (subtitle) fitWidthLine(subtitle, block);
+  if (document.body.classList.contains("umbigo-page")) {
+    const runFit = function () {
+      window.requestAnimationFrame(fitUmbigoSubtitle);
+    };
+    runFit();
+    window.addEventListener("resize", runFit);
+    window.addEventListener("orientationchange", function () {
+      window.setTimeout(runFit, 400);
     });
-  }
-
-  fitUmbigoWork();
-  window.addEventListener("resize", fitUmbigoWork);
-  window.addEventListener("orientationchange", function () {
-    window.setTimeout(fitUmbigoWork, 400);
-  });
-  if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(fitUmbigoWork);
+    document.addEventListener("avv-lang", runFit);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(runFit);
+    }
   }
 
   if (!homePage) return;
