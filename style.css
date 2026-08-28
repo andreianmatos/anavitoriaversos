@@ -582,6 +582,11 @@ a.page-header__section:hover {
 
 .umbigo-page {
   --umbigo-block-gap: 3.5rem;
+  --umbigo-poem: clamp(0.68rem, 0.82vw, 1.32rem);
+  --umbigo-essay: clamp(0.72rem, 0.8vw, 1.25rem);
+  --umbigo-kicker: clamp(0.92rem, 1.02vw, 1.5rem);
+  --umbigo-caption: clamp(0.58rem, 0.64vw, 0.95rem);
+  --umbigo-photo: clamp(19rem, 22vw, 36rem);
 }
 
 .umbigo-intro {
@@ -690,7 +695,7 @@ a.page-header__section:hover {
 }
 
 .umbigo-copy p {
-  font-size: 0.78rem;
+  font-size: clamp(0.76rem, 0.86vw, 1.3rem);
   font-weight: 400;
   line-height: 1.55;
   margin: 0 0 0.85rem;
@@ -713,7 +718,7 @@ a.page-header__section:hover {
   overflow: visible;
   padding: 0;
   color: var(--accent);
-  font-size: clamp(0.68rem, 0.38vw + 0.6rem, 0.74rem);
+  font-size: var(--umbigo-poem);
 }
 
 .umbigo-navel::before {
@@ -865,7 +870,7 @@ a.page-header__section:hover {
 
 .umbigo-essay p {
   width: 100%;
-  font-size: 0.72rem;
+  font-size: var(--umbigo-essay);
   line-height: 1.55;
   margin-bottom: 0.85rem;
   text-align: justify;
@@ -879,7 +884,7 @@ a.page-header__section:hover {
 
 .umbigo-essay p.umbigo-kicker {
   margin-bottom: 1.15rem;
-  font-size: 0.92rem;
+  font-size: var(--umbigo-kicker);
   line-height: 1.2;
   color: #000;
   text-align: left;
@@ -933,7 +938,7 @@ a.page-header__section:hover {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 1rem;
+  gap: clamp(1rem, 1.8vw, 2.25rem);
   width: 100%;
   padding: var(--umbigo-block-gap) var(--chrome-x) 0;
 }
@@ -945,7 +950,7 @@ a.page-header__section:hover {
   align-items: flex-start;
   min-width: 0;
   width: auto;
-  max-width: 19rem;
+  max-width: var(--umbigo-photo);
   margin: 0;
 }
 
@@ -957,7 +962,7 @@ a.page-header__section:hover {
 
 .umbigo-caixas figcaption {
   margin: 0.5rem 0 0;
-  font-size: 0.58rem;
+  font-size: var(--umbigo-caption);
   font-weight: 400;
   line-height: 1.35;
   letter-spacing: 0.04em;
