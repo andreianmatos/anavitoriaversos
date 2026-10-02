@@ -228,7 +228,7 @@
 
   const homePage = document.body.classList.contains("home-page");
   const homeTitle = document.querySelector(".home-title");
-  const homeVideo = document.querySelector(".video-bg video");
+  const bgVideo = document.querySelector(".video-bg video");
 
   function fitHomeTitle() {
     if (!homeTitle) return;
@@ -262,20 +262,21 @@
     }
   }
 
-  if (homeVideo) {
+  if (bgVideo) {
     if (prefersReducedMotion.matches) {
-      homeVideo.pause();
-      homeVideo.removeAttribute("src");
-      homeVideo.load();
+      bgVideo.pause();
+      bgVideo.removeAttribute("src");
+      bgVideo.load();
     } else {
-      homeVideo.muted = true;
-      homeVideo.defaultMuted = true;
-      homeVideo.playsInline = true;
+      bgVideo.muted = true;
+      bgVideo.defaultMuted = true;
+      bgVideo.playsInline = true;
+      bgVideo.loop = true;
       const tryPlay = function () {
-        homeVideo.play().catch(function () {});
+        bgVideo.play().catch(function () {});
       };
       tryPlay();
-      homeVideo.addEventListener("canplay", tryPlay);
+      bgVideo.addEventListener("canplay", tryPlay);
       document.addEventListener("touchstart", tryPlay, { once: true, passive: true });
     }
   }

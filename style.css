@@ -1765,6 +1765,11 @@ a.page-header__section:hover {
 .site-page {
   overflow-x: hidden;
   overscroll-behavior-y: none;
+  background: transparent;
+}
+
+.site-page .site-video-bg {
+  z-index: 0;
 }
 
 .site-page.is-sobre-open,
@@ -1777,7 +1782,7 @@ a.page-header__section:hover {
   position: fixed;
   inset: 0;
   z-index: 44;
-  background: var(--skin);
+  background: transparent;
   pointer-events: auto;
 }
 
@@ -1873,7 +1878,7 @@ a.page-header__section:hover {
   z-index: 4;
   padding: var(--site-top-clearance) var(--chrome-x) var(--site-bottom-clearance);
   box-sizing: border-box;
-  background: var(--skin);
+  background: transparent;
 }
 
 @keyframes site-archive-fade-in {
