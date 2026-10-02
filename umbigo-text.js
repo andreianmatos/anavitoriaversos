@@ -347,6 +347,7 @@ window.addEventListener("orientationchange", function () {
   window.setTimeout(layoutVisible, 400);
 });
 document.addEventListener("avv-lang", schedule);
+document.addEventListener("umbigo-mounted", schedule);
 window.matchMedia("(max-width: 767px)").addEventListener("change", schedule);
 window.matchMedia("(pointer: coarse)").addEventListener("change", schedule);
 
