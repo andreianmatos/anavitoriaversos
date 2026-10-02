@@ -548,12 +548,17 @@ a.page-header__section:hover {
 }
 
 .sobre-contactos ul {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.28rem;
   list-style: none;
 }
 
 .sobre-contactos li {
   font-size: 0.62rem;
-  line-height: 1.5;
+  line-height: 1.45;
+  max-width: 100%;
 }
 
 .sobre-contactos a {
@@ -1125,17 +1130,16 @@ a.page-header__section:hover {
 
   .sobre-contactos ul {
     grid-column: 2;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.85rem 1.15rem;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.22rem;
     box-sizing: border-box;
     min-width: 0;
     width: 100%;
     max-width: none;
     margin: 0;
     padding-left: 0;
-    justify-self: stretch;
+    justify-self: start;
   }
 
   .sobre-contactos li {
@@ -1832,11 +1836,11 @@ a.page-header__section:hover {
 }
 
 .sobre-bar__hit:hover,
-.site-page.is-sobre-open .sobre-bar__hit {
+.sobre-bar__hit[aria-expanded="true"] {
   font-style: italic;
 }
 
-.site-page.is-sobre-open .sobre-bar__caret {
+.sobre-bar__hit[aria-expanded="true"] .sobre-bar__caret {
   transform: rotate(180deg);
 }
 
@@ -2205,8 +2209,13 @@ a.page-header__section:hover {
   transition: transform 0.2s ease;
 }
 
-.site-page.is-index-open .star-roll__caret {
+/* Bottom bar: closed = point up (open panel upward), open = point down */
+.star-roll__toggle[aria-expanded="true"] .star-roll__caret {
   transform: rotate(0deg);
+}
+
+.star-roll__toggle[aria-expanded="false"] .star-roll__caret {
+  transform: rotate(180deg);
 }
 
 .site-page.is-index-open .star-roll__mover {
@@ -2316,7 +2325,7 @@ a.page-header__section:hover {
 }
 
 .site-page.is-sobre-open .star-roll {
-  display: none;
+  z-index: 51;
 }
 
 .sobre-overlay {

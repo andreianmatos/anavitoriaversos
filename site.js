@@ -526,6 +526,9 @@
   }
 
   function setIndexOpen(open) {
+    if (open && overlay && !overlay.hidden) {
+      setSobreOpen(false);
+    }
     document.body.classList.toggle("is-index-open", open);
     if (indexToggle) indexToggle.setAttribute("aria-expanded", open ? "true" : "false");
     if (!open) {
@@ -776,10 +779,12 @@
 
   function setSobreOpen(open) {
     if (!overlay || !sobreToggle) return;
+    if (open) {
+      setIndexOpen(false);
+    }
     overlay.hidden = !open;
     document.body.classList.toggle("is-sobre-open", open);
     sobreToggle.setAttribute("aria-expanded", open ? "true" : "false");
-    if (open) setIndexOpen(false);
     if (!open) {
       document.body.classList.remove("is-cv-open");
     }
