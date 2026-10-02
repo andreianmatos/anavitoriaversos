@@ -270,11 +270,22 @@
     }
   }
 
+  function panelUiScale(width, height) {
+    const viewportScale = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--ui-scale")
+    );
+    const base =
+      Number.isFinite(viewportScale) && viewportScale > 0 ? viewportScale : 1;
+    const panelScale = Math.min(1.14, Math.max(0.72, Math.min(width / 1440, height / 820)));
+    return Math.min(base, panelScale);
+  }
+
   function estimateArchiveImageHeight(count, width, height) {
-    const gap = 5;
-    const titleH = 22;
-    const innerW = Math.max(0, width - 18);
-    const innerH = Math.max(0, height - 14);
+    const scale = panelUiScale(width, height);
+    const gap = Math.max(4, Math.round(5 * scale));
+    const titleH = Math.max(14, Math.round(22 * scale));
+    const innerW = Math.max(0, width - Math.round(18 * scale));
+    const innerH = Math.max(0, height - Math.round(14 * scale));
     let best = { imgH: 36, cellW: 48 };
 
     for (let cols = 1; cols <= Math.min(count, 16); cols += 1) {
@@ -294,14 +305,16 @@
   }
 
   function getArchivePanelLayout(count, width, height) {
+    const scale = panelUiScale(width, height);
     const size = estimateArchiveImageHeight(count, width, height);
     const density = Math.min(1, 38 / Math.max(count, 1));
-    const thumbScale = 0.62;
-    const padding = 8;
-    const gap = 5;
+    const thumbScale = 0.62 * scale;
+    const padding = Math.max(6, Math.round(8 * scale));
+    const gap = Math.max(4, Math.round(5 * scale));
     const cellW = size.cellW * thumbScale;
-    const imgMaxH = Math.max(18, Math.min(64, Math.floor(size.imgH * thumbScale)));
-    const minW = Math.max(22, cellW * (0.5 + 0.2 * density));
+    const imgCap = Math.max(36, Math.min(140, height * 0.16 * scale));
+    const imgMaxH = Math.max(18, Math.min(imgCap, Math.floor(size.imgH * thumbScale)));
+    const minW = Math.max(20, cellW * (0.5 + 0.2 * density));
     const maxW = Math.max(minW + 2, cellW * (0.78 + 0.1 * density));
 
     return {
@@ -887,14 +900,35 @@
   }
 
   let lastWidth = window.innerWidth;
-  window.addEventListener("resize", function () {
+  let lastHeight =
+    (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+
+  function onViewportLayoutChange() {
     const width = window.innerWidth;
-    if (Math.abs(width - lastWidth) < 80) return;
+    const height =
+      (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    if (Math.abs(width - lastWidth) < 28 && Math.abs(height - lastHeight) < 28) return;
     lastWidth = width;
+    lastHeight = height;
+    syncStarRollMotion();
     if (manifest.length && document.body.classList.contains("is-index-open")) {
       scheduleArchivePanelRender();
     }
-  });
+  }
+
+  window.addEventListener("resize", onViewportLayoutChange);
+  document.addEventListener("avv-ui-scale", onViewportLayoutChange);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", onViewportLayoutChange);
+  }
+
+  if (typeof ResizeObserver !== "undefined" && archivePanel) {
+    const panelResize = new ResizeObserver(function () {
+      if (!document.body.classList.contains("is-index-open")) return;
+      scheduleArchivePanelRender();
+    });
+    panelResize.observe(archivePanel);
+  }
 
   init();
 })();

@@ -91,8 +91,21 @@
     return imageDir + encodePath(file);
   }
 
+  function readUiScale() {
+    const scale = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--ui-scale")
+    );
+    return Number.isFinite(scale) && scale > 0 ? scale : 1;
+  }
+
   function getLayout(count) {
     const width = (window.visualViewport && window.visualViewport.width) || window.innerWidth;
+    const height =
+      (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const scale = Math.min(
+      1.14,
+      Math.max(0.72, Math.min(readUiScale(), width / 1440, height / 820))
+    );
     const isMobile = width < 640;
     const isTablet = width >= 640 && width < 1024;
     const density = Math.min(1, 42 / Math.max(count, 1));
@@ -112,11 +125,12 @@
     }
 
     return {
-      padding: isMobile ? 12 : isTablet ? 18 : 24,
-      gap: isMobile ? 10 : isTablet ? 14 : 18,
+      padding: Math.round((isMobile ? 12 : isTablet ? 18 : 24) * scale),
+      gap: Math.round((isMobile ? 10 : isTablet ? 14 : 18) * scale),
       maxAttempts: count > 60 ? 60 : 100,
       minRatio,
       maxRatio,
+      scale: scale,
     };
   }
 
@@ -163,13 +177,24 @@
       "max(100dvh, " + minHeight + "px)";
   }
 
-  function getTitleClearance() {
+  function readEdgeGutter() {
+    const value = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--site-edge-gutter")
+    );
+    return Number.isFinite(value) && value > 0 ? value : 12;
+  }
+
+  function getTitleClearance(layout) {
+    const pad = layout && layout.padding ? layout.padding : 12;
     const header = document.querySelector(".arquivo-page > .page-header");
-    if (!header) return 96;
+    if (!header) return pad;
     if (window.getComputedStyle(header).position !== "fixed") {
-      return 16;
+      return pad;
     }
-    return header.offsetHeight + 40;
+    const containerRect = container.getBoundingClientRect();
+    const headerRect = header.getBoundingClientRect();
+    const gutter = readEdgeGutter();
+    return Math.max(pad, Math.round(headerRect.bottom - containerRect.top + gutter));
   }
 
   function placeButton(button, img, placed, layout) {
@@ -184,7 +209,7 @@
     );
     button.style.width = width + "px";
 
-    const minTop = Math.max(layout.padding, getTitleClearance());
+    const minTop = getTitleClearance(layout);
     const maxLeft = Math.max(layout.padding, containerWidth - width - layout.padding);
     const placedBottom = placed.length
       ? Math.max.apply(
@@ -369,19 +394,30 @@
   }
 
   let lastLayoutWidth = layoutWidth();
+  let lastLayoutHeight = Math.round(
+    (window.visualViewport && window.visualViewport.height) || window.innerHeight
+  );
   let resizeTimer = 0;
 
   function rescheduleScatter() {
     const width = layoutWidth();
+    const height = Math.round(
+      (window.visualViewport && window.visualViewport.height) || window.innerHeight
+    );
     // Phone URL bars fire resize / visualViewport on scroll. Keep the layout
     // until a real width change (rotate) or a full page refresh.
     if (isPhone() && Math.abs(width - lastLayoutWidth) < 80) {
       return;
     }
-    if (!isPhone() && width === lastLayoutWidth) {
+    if (
+      !isPhone() &&
+      width === lastLayoutWidth &&
+      Math.abs(height - lastLayoutHeight) < 32
+    ) {
       return;
     }
     lastLayoutWidth = width;
+    lastLayoutHeight = height;
 
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(function () {
@@ -392,8 +428,10 @@
   }
 
   window.addEventListener("resize", rescheduleScatter);
+  document.addEventListener("avv-ui-scale", rescheduleScatter);
   window.addEventListener("orientationchange", function () {
     lastLayoutWidth = 0;
+    lastLayoutHeight = 0;
     rescheduleScatter();
   });
   if (window.visualViewport && !isPhone()) {
