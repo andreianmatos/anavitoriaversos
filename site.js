@@ -134,6 +134,17 @@
     return candidates;
   }
 
+  function archiveThumbSources(file) {
+    const seen = new Set();
+    const list = [];
+    thumbCandidates(file).forEach(function (url) {
+      if (seen.has(url)) return;
+      seen.add(url);
+      list.push(url);
+    });
+    return list;
+  }
+
   function isUmbigoEntry(entry) {
     const file = String(entry.file || "");
     const href = entry.href ? String(entry.href).trim() : "";
@@ -285,16 +296,19 @@
   function getArchivePanelLayout(count, width, height) {
     const size = estimateArchiveImageHeight(count, width, height);
     const density = Math.min(1, 38 / Math.max(count, 1));
+    const thumbScale = 0.62;
     const padding = 8;
     const gap = 5;
-    const minW = Math.max(26, size.cellW * (0.55 + 0.22 * density));
-    const maxW = Math.max(minW + 4, size.cellW * (0.82 + 0.12 * density));
+    const cellW = size.cellW * thumbScale;
+    const imgMaxH = Math.max(18, Math.min(64, Math.floor(size.imgH * thumbScale)));
+    const minW = Math.max(22, cellW * (0.5 + 0.2 * density));
+    const maxW = Math.max(minW + 2, cellW * (0.78 + 0.1 * density));
 
     return {
       padding: padding,
       gap: gap,
       maxAttempts: count > 55 ? 90 : 130,
-      imgMaxH: size.imgH,
+      imgMaxH: imgMaxH,
       minW: minW,
       maxW: maxW,
       panelWidth: width,
@@ -458,12 +472,18 @@
       img.alt = "";
       img.decoding = "async";
       img.loading = "eager";
+      if ("fetchPriority" in img) {
+        img.fetchPriority = "low";
+      }
 
       const label = document.createElement("span");
       label.className = "archive-panel-item__title";
       label.textContent = title;
 
-      const sources = thumbCandidates(entry.file).concat(fullPath(entry.file));
+      const sources = archiveThumbSources(entry.file);
+      if (!sources.length) {
+        sources.push(fullPath(entry.file));
+      }
       let sourceIndex = 0;
       img.src = sources[0];
 
@@ -762,10 +782,6 @@
     if (open) setIndexOpen(false);
     if (!open) {
       document.body.classList.remove("is-cv-open");
-      const panel = overlay.querySelector(".sobre-cv-panel");
-      if (panel) panel.hidden = true;
-      const cv = overlay.querySelector("[data-cv-toggle]");
-      if (cv) cv.setAttribute("aria-expanded", "false");
     }
   }
 

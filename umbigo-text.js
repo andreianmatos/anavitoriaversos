@@ -280,6 +280,24 @@ function overEssay() {
   );
 }
 
+function overSiteChrome() {
+  const nodes = document.querySelectorAll(
+    "body.umbigo-page > .page-header, .sobre-bar, .star-roll:not([hidden])"
+  );
+  for (let i = 0; i < nodes.length; i++) {
+    const rect = nodes[i].getBoundingClientRect();
+    if (
+      pointer.x >= rect.left &&
+      pointer.x <= rect.right &&
+      pointer.y >= rect.top &&
+      pointer.y <= rect.bottom
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function updateLens() {
   const dot = document.querySelector(".cursor-dot");
   const source = copySource();
@@ -302,7 +320,7 @@ function updateLens() {
 
 function tickNavel() {
   raf = 0;
-  setNavel(overEssay());
+  setNavel(overEssay() && !overSiteChrome());
   if (navelOn) updateLens();
 }
 
