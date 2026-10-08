@@ -13,35 +13,52 @@
   function setMobileFrame() {
     if (!compactFrame.matches) {
       document.documentElement.style.removeProperty("--app-height");
+      document.documentElement.style.removeProperty("--vv-offset-top");
+      document.documentElement.style.removeProperty("--vv-offset-bottom");
       return;
     }
-    const height =
-      (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const vv = window.visualViewport;
+    const height = (vv && vv.height) || window.innerHeight;
+    const offsetTop = (vv && vv.offsetTop) || 0;
+    const offsetBottom = Math.max(0, window.innerHeight - height - offsetTop);
     document.documentElement.style.setProperty(
       "--app-height",
       Math.round(height) + "px"
     );
+    document.documentElement.style.setProperty(
+      "--vv-offset-top",
+      Math.round(offsetTop) + "px"
+    );
+    document.documentElement.style.setProperty(
+      "--vv-offset-bottom",
+      Math.round(offsetBottom) + "px"
+    );
+  }
+
+  function bindMobileFrame() {
+    setMobileFrame();
+    updateUiScale(true);
   }
 
   setMobileFrame();
   if (compactFrame.addEventListener) {
-    compactFrame.addEventListener("change", function () {
-      setMobileFrame();
-      updateUiScale(true);
-    });
+    compactFrame.addEventListener("change", bindMobileFrame);
   }
   window.addEventListener("orientationchange", function () {
-    window.setTimeout(function () {
-      setMobileFrame();
-      updateUiScale(true);
-    }, 350);
+    window.setTimeout(bindMobileFrame, 350);
   });
   window.addEventListener("resize", function () {
-    if (compactFrame.matches) return;
+    if (compactFrame.matches) {
+      setMobileFrame();
+      return;
+    }
     setMobileFrame();
   });
   if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", function () {
+      if (compactFrame.matches) setMobileFrame();
+    });
+    window.visualViewport.addEventListener("scroll", function () {
       if (compactFrame.matches) setMobileFrame();
     });
   }

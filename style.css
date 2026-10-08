@@ -1596,6 +1596,47 @@ a.page-header__section:hover {
 }
 
 @media (max-width: 1023px) {
+  :root {
+    --site-edge-gutter: calc(0.5rem * var(--ui-scale));
+    --site-bar-offset: max(calc(0.4rem * var(--ui-scale)), env(safe-area-inset-top, 0px));
+    --sobre-panel-expanded-height: calc(
+      var(--app-height, 100svh) - var(--vv-offset-top, 0px) - var(--site-bar-offset) -
+        var(--site-sobre-panel-bottom) - var(--vv-offset-bottom, 0px)
+    );
+  }
+
+  html,
+  body.site-page {
+    height: var(--app-height, 100svh);
+    min-height: var(--app-height, 100svh);
+    overflow: hidden;
+  }
+
+  body.site-page {
+    width: 100%;
+  }
+
+  .sobre-roll {
+    top: calc(var(--vv-offset-top, 0px) + var(--site-bar-offset));
+  }
+
+  .site-hero {
+    top: calc(var(--vv-offset-top, 0px) + var(--site-archive-top));
+    bottom: calc(
+      var(--site-edge-bottom) + var(--site-bar-height) + var(--vv-offset-bottom, 0px)
+    );
+  }
+
+  .star-roll {
+    bottom: calc(var(--site-edge-bottom) + var(--vv-offset-bottom, 0px));
+  }
+
+  .site-page.is-index-open::before {
+    top: var(--vv-offset-top, 0px);
+    height: var(--app-height, 100svh);
+    bottom: auto;
+  }
+
   .home-page {
     height: var(--app-height, 100svh);
     min-height: var(--app-height, 100svh);
@@ -1646,7 +1687,8 @@ a.page-header__section:hover {
 
   :root {
     --archive-panel-expanded-height: calc(
-      var(--app-height, 100svh) - var(--site-archive-top) - var(--site-edge-bottom)
+      var(--app-height, 100svh) - var(--vv-offset-top, 0px) - var(--site-archive-top) -
+        var(--site-edge-bottom) - var(--vv-offset-bottom, 0px)
     );
     --archive-flow-gap: clamp(0.75rem, 2.6vw, 1.15rem);
     --archive-flow-inset: clamp(0.75rem, 3vw, 1.15rem);
@@ -1659,8 +1701,8 @@ a.page-header__section:hover {
   }
 
   .site-page.is-index-open .star-roll {
-    top: var(--site-archive-top);
-    bottom: var(--site-edge-bottom);
+    top: calc(var(--vv-offset-top, 0px) + var(--site-archive-top));
+    bottom: calc(var(--site-edge-bottom) + var(--vv-offset-bottom, 0px));
     height: auto;
   }
 
