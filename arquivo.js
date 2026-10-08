@@ -220,8 +220,10 @@
     container.style.minHeight = "100dvh";
     const layoutSeed = freshArchiveSeed();
     const columnCount = archivePageColumnCount();
+    const narrow =
+      ((window.visualViewport && window.visualViewport.width) || window.innerWidth) < 1024;
     container.className = "arquivo arquivo--cols-" + columnCount;
-    const cols = createArchiveColumns(container, columnCount, layoutSeed, false);
+    const cols = createArchiveColumns(container, columnCount, layoutSeed, narrow);
 
     const files = seededShuffle(items, layoutSeed);
 
@@ -231,7 +233,7 @@
       button.type = "button";
       button.className = "arquivo-item is-loading";
       button.setAttribute("aria-label", "Ver " + title);
-      applyArchiveColumnItem(button, index, layoutSeed, false);
+      applyArchiveColumnItem(button, index, layoutSeed, narrow);
 
       const img = document.createElement("img");
       img.alt = "";
@@ -268,7 +270,10 @@
         openModal(entry);
       });
 
-      button.appendChild(img);
+      const frame = document.createElement("span");
+      frame.className = "arquivo-item__frame";
+      frame.appendChild(img);
+      button.appendChild(frame);
       cols[index % columnCount].appendChild(button);
     });
   }
