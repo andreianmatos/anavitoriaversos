@@ -1,5 +1,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,700;1,400&display=swap");
 
+@font-face {
+  font-family: "C2026versos";
+  src: url("fonts/C2026versos-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -41,7 +49,14 @@
   --bar-archive-surface: var(--bar-bottom-bg);
   --bar-chrome-border: var(--bar-bottom-border);
   --cursor-dot-color: var(--ink);
+  --type-scale: 1.42;
   --ui-scale: 1;
+  --bar-font: calc(
+    clamp(0.82rem, 0.52vmin + 0.68rem, 1.28rem) * var(--ui-scale)
+  );
+  --bar-font-sm: calc(
+    clamp(0.68rem, 0.38vmin + 0.54rem, 1.05rem) * var(--ui-scale)
+  );
   --bottom-safe: env(safe-area-inset-bottom, 0px);
   --chrome-top: max(calc(1.15rem * var(--ui-scale)), env(safe-area-inset-top, 0px));
   --chrome-x: max(0.85rem, calc(1.25rem * var(--ui-scale)));
@@ -90,6 +105,7 @@
 }
 
 html {
+  font-size: calc(100% * var(--type-scale));
   background: var(--skin);
   scroll-padding-bottom: calc(1rem + var(--bottom-safe));
   scrollbar-width: none;
@@ -110,9 +126,9 @@ body {
   min-height: 100dvh;
   background: var(--skin);
   color: var(--text);
-  font-family: "Montserrat", system-ui, sans-serif;
-  font-size: 1.125rem;
-  line-height: 1.5;
+  font-family: "C2026versos", "Montserrat", system-ui, sans-serif;
+  font-size: 1.2rem;
+  line-height: 1.52;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scrollbar-width: none;
@@ -547,6 +563,8 @@ a.page-header__section:hover {
   min-height: 100dvh;
   padding: calc(var(--chrome-top) + 2.5rem) var(--chrome-x)
     calc(1.25rem + var(--bottom-safe));
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .sobre-stage {
@@ -678,10 +696,10 @@ a.page-header__section:hover {
 
 .umbigo-page {
   --umbigo-block-gap: 3.5rem;
-  --umbigo-poem: clamp(0.68rem, 0.82vw, 1.32rem);
-  --umbigo-essay: clamp(0.72rem, 0.8vw, 1.25rem);
-  --umbigo-kicker: clamp(0.92rem, 1.02vw, 1.5rem);
-  --umbigo-caption: clamp(0.58rem, 0.64vw, 0.95rem);
+  --umbigo-poem: clamp(0.85rem, 1.02vw, 1.58rem);
+  --umbigo-essay: clamp(0.9rem, 1vw, 1.48rem);
+  --umbigo-kicker: clamp(1.05rem, 1.15vw, 1.65rem);
+  --umbigo-caption: clamp(0.72rem, 0.78vw, 1.08rem);
   --umbigo-photo: clamp(19rem, 22vw, 36rem);
 }
 
@@ -1139,9 +1157,9 @@ a.page-header__section:hover {
     --sobre-overlap: clamp(0.9rem, 3.2vh, 2.5rem);
     --sobre-photo-gap: clamp(0.45rem, 1.1vw, 1rem);
     --sobre-photo-w: min(41vw, calc(50vw - var(--sobre-side)));
-    --sobre-body: clamp(0.62rem, 0.78vw, 1.4rem);
-    --sobre-meta: clamp(0.48rem, 0.62vw, 1.08rem);
-    --sobre-cv: clamp(0.5rem, 0.62vw, 1.05rem);
+    --sobre-body: clamp(0.78rem, 0.95vw, 1.55rem);
+    --sobre-meta: clamp(0.62rem, 0.76vw, 1.22rem);
+    --sobre-cv: clamp(0.64rem, 0.76vw, 1.18rem);
     --sobre-cv-gap: clamp(0.55rem, 1.2vh, 1rem);
   }
 
@@ -1969,12 +1987,12 @@ a.page-header__section:hover {
   }
 
   .sobre-roll__title {
-    font-size: calc(0.7rem * var(--ui-scale));
+    font-size: var(--bar-font);
     letter-spacing: 0.06em;
   }
 
   .sobre-roll__lang {
-    font-size: calc(0.62rem * var(--ui-scale));
+    font-size: var(--bar-font-sm);
     letter-spacing: 0.06em;
     gap: calc(0.22rem * var(--ui-scale));
     flex-shrink: 0;
@@ -2127,7 +2145,7 @@ a.page-header__section:hover {
   min-width: 0;
   overflow: hidden;
   color: var(--text-on-dark);
-  font-size: calc(0.78rem * var(--ui-scale));
+  font-size: var(--bar-font);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2149,7 +2167,7 @@ a.sobre-roll__title:hover {
   flex: 0 0 auto;
   align-items: center;
   color: var(--text-on-dark);
-  font-size: calc(0.62rem * var(--ui-scale));
+  font-size: var(--bar-font-sm);
   font-weight: 400;
   letter-spacing: 0.06em;
   line-height: 1;
@@ -2199,7 +2217,7 @@ a.sobre-roll__title:hover {
   background: transparent;
   color: var(--text-on-dark);
   font: inherit;
-  font-size: calc(0.78rem * var(--ui-scale));
+  font-size: var(--bar-font);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2536,7 +2554,7 @@ a.sobre-roll__title:hover {
 .work.work--image .work__text {
   margin: 0;
   max-width: 26em;
-  font-size: clamp(0.62rem, 0.78vw, 0.95rem);
+  font-size: clamp(0.78rem, 0.95vw, 1.15rem);
   font-weight: 400;
   line-height: 1.48;
   text-align: left;
@@ -2551,7 +2569,7 @@ a.sobre-roll__title:hover {
   background: none;
   color: inherit;
   font: inherit;
-  font-size: clamp(0.78rem, 1.1vw, 1.05rem);
+  font-size: clamp(0.92rem, 1.25vw, 1.22rem);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: lowercase;
@@ -2854,7 +2872,7 @@ a.sobre-roll__title:hover {
 .archive-panel-item__title {
   flex: 0 0 auto;
   width: 100%;
-  font-size: calc(0.52rem * var(--ui-scale));
+  font-size: var(--bar-font-sm);
   font-weight: 400;
   line-height: 1.2;
   letter-spacing: 0.02em;
@@ -2905,7 +2923,7 @@ a.sobre-roll__title:hover {
   background: transparent;
   color: var(--bar-bottom-fg);
   font: inherit;
-  font-size: calc(0.78rem * var(--ui-scale));
+  font-size: var(--bar-font);
   font-weight: 500;
   font-style: normal;
   line-height: 1;
@@ -3095,10 +3113,10 @@ a.sobre-roll__title:hover {
 }
 
 .sobre-overlay {
-  --sobre-body: clamp(0.6rem, 0.72vw, 0.92rem);
-  --sobre-lead: clamp(0.66rem, 0.82vw, 1rem);
-  --sobre-cv: clamp(0.52rem, 0.58vw, 0.8rem);
-  --sobre-meta: clamp(0.52rem, 0.62vw, 0.78rem);
+  --sobre-body: clamp(0.88rem, 1.05vw, 1.28rem);
+  --sobre-lead: clamp(0.98rem, 1.18vw, 1.42rem);
+  --sobre-cv: clamp(0.78rem, 0.88vw, 1.08rem);
+  --sobre-meta: clamp(0.76rem, 0.86vw, 1.02rem);
   flex: 1 1 auto;
   height: 100%;
   min-height: 0;
@@ -3111,10 +3129,9 @@ a.sobre-roll__title:hover {
   box-sizing: border-box;
   opacity: 0;
   pointer-events: none;
-  font-family: inherit;
   font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   word-spacing: 0.02em;
   transition: opacity calc(var(--sobre-panel-duration-close) * 0.85) ease-out;
 }

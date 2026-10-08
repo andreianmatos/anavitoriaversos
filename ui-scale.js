@@ -1,8 +1,8 @@
 (function () {
   var UI_DESIGN_W = 1440;
   var UI_DESIGN_H = 820;
-  var UI_SCALE_MIN = 0.72;
-  var UI_SCALE_MAX = 1.14;
+  var UI_SCALE_MIN = 0.78;
+  var UI_SCALE_MAX = 1.26;
 
   var layoutHeight = Math.round(
     (window.visualViewport && window.visualViewport.height) || window.innerHeight
