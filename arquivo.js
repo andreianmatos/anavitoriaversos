@@ -21,10 +21,22 @@
   let scatterToken = 0;
   let manifest = [];
 
-  function shuffle(list) {
+  function freshArchiveSeed() {
+    const mix =
+      (Date.now() >>> 0) ^
+      (Math.imul(Math.floor(Math.random() * 0xffffffff), 2246822519) >>> 0);
+    return (mix >>> 0) || 1;
+  }
+
+  function seededShuffle(list, seed) {
     const items = list.slice();
+    let state = seed >>> 0;
+    function rnd() {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      return state / 4294967296;
+    }
     for (let i = items.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(Math.random() * (i + 1));
+      const j = Math.floor(rnd() * (i + 1));
       [items[i], items[j]] = [items[j], items[i]];
     }
     return items;
@@ -206,12 +218,12 @@
     const token = ++scatterToken;
     container.innerHTML = "";
     container.style.minHeight = "100dvh";
-    const layoutSeed = ((items.length * 1597334677) >>> 0) || 1;
+    const layoutSeed = freshArchiveSeed();
     const columnCount = archivePageColumnCount();
     container.className = "arquivo arquivo--cols-" + columnCount;
     const cols = createArchiveColumns(container, columnCount, layoutSeed, false);
 
-    const files = shuffle(items);
+    const files = seededShuffle(items, layoutSeed);
 
     files.forEach(function (entry, index) {
       const title = entry.title || titleFromFile(entry.file);

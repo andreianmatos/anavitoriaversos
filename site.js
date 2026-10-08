@@ -69,6 +69,13 @@
     return ((Math.round(width) * 2654435761) >>> 0) || 1;
   }
 
+  function freshArchiveSeed() {
+    const mix =
+      (Date.now() >>> 0) ^
+      (Math.imul(Math.floor(Math.random() * 0xffffffff), 2246822519) >>> 0);
+    return (mix >>> 0) || 1;
+  }
+
   function seededShuffle(list, seed) {
     const items = list.slice();
     let state = seed >>> 0;
@@ -798,7 +805,7 @@
     archivePanel.style.minHeight = "";
     archivePanel.classList.remove("archive-panel--cols-2", "archive-panel--cols-3");
 
-    const panelSeed = seedFromWidth(panelWidth);
+    const panelSeed = freshArchiveSeed();
     const columnCount = archivePanelColumnCount(panelWidth);
     archivePanel.classList.add("archive-panel--cols-" + columnCount);
     const cols = createArchiveColumns(archivePanel, columnCount, panelSeed, true);
