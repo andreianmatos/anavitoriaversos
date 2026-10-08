@@ -2,20 +2,11 @@
   const prefersHover = window.matchMedia("(hover: hover) and (pointer: fine)");
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const compactFrame = window.matchMedia("(max-width: 1023px)");
-  const UI_DESIGN_W = 1440;
-  const UI_DESIGN_H = 820;
-  const UI_SCALE_MIN = 0.72;
-  const UI_SCALE_MAX = 1.14;
-
-  function updateUiScale() {
-    const width = window.innerWidth;
-    const height =
-      (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-    const scale = Math.min(
-      UI_SCALE_MAX,
-      Math.max(UI_SCALE_MIN, Math.min(width / UI_DESIGN_W, height / UI_DESIGN_H))
-    );
-    document.documentElement.style.setProperty("--ui-scale", String(scale));
+  function updateUiScale(refreshHeight) {
+    if (window.avvApplyUiScale) {
+      window.avvApplyUiScale(refreshHeight);
+      return;
+    }
     document.dispatchEvent(new CustomEvent("avv-ui-scale"));
   }
 
@@ -32,28 +23,25 @@
     );
   }
 
-  updateUiScale();
   setMobileFrame();
   if (compactFrame.addEventListener) {
     compactFrame.addEventListener("change", function () {
       setMobileFrame();
-      updateUiScale();
+      updateUiScale(true);
     });
   }
   window.addEventListener("orientationchange", function () {
     window.setTimeout(function () {
       setMobileFrame();
-      updateUiScale();
+      updateUiScale(true);
     }, 350);
   });
   window.addEventListener("resize", function () {
-    updateUiScale();
     if (compactFrame.matches) return;
     setMobileFrame();
   });
   if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", function () {
-      updateUiScale();
       if (compactFrame.matches) setMobileFrame();
     });
   }
@@ -64,6 +52,17 @@
     const dot = document.createElement("div");
     dot.className = "cursor-dot";
     dot.setAttribute("aria-hidden", "true");
+
+    const ball = document.createElement("span");
+    ball.className = "cursor-dot__ball";
+    ball.setAttribute("aria-hidden", "true");
+
+    const star = document.createElement("span");
+    star.className = "cursor-dot__star";
+    star.setAttribute("aria-hidden", "true");
+
+    dot.appendChild(ball);
+    dot.appendChild(star);
     document.body.appendChild(dot);
 
     function attachDot() {
@@ -89,16 +88,13 @@
       function (event) {
         attachDot();
         const hover = isHoverable(event.target);
-        const scale = hover ? 1.45 : 1;
         dot.classList.toggle("is-hover", hover);
         dot.style.transform =
           "translate3d(" +
           event.clientX +
           "px, " +
           event.clientY +
-          "px, 0) translate(-50%, -50%) scale(" +
-          scale +
-          ")";
+          "px, 0) translate(-50%, -50%)";
         dot.classList.add("is-visible");
       },
       { passive: true }
@@ -117,6 +113,8 @@
       exposicoes: "Exposições // Residências",
       contactos: "Contactos",
       indice: "Índice",
+      main: "Início",
+      mainHome: "Voltar ao início",
       close: "fechar",
       lang: "Idioma",
     },
@@ -127,6 +125,8 @@
       exposicoes: "Exhibitions // Residencies",
       contactos: "Contacts",
       indice: "Index",
+      main: "Home",
+      mainHome: "Back to home",
       close: "close",
       lang: "Language",
     },
@@ -139,28 +139,22 @@
 
   function readLang() {
     try {
+      sessionStorage.removeItem(langKey);
       localStorage.removeItem(langKey);
-    } catch (error) {}
-    try {
-      const stored = sessionStorage.getItem(langKey);
-      if (stored === "en" || stored === "pt") return stored;
     } catch (error) {}
     return "pt";
   }
 
   function setLang(lang) {
-    const copy = COPY[lang] || COPY.pt;
+    const resolved = lang === "en" ? "en" : "pt";
+    const copy = COPY[resolved] || COPY.pt;
 
-    document.documentElement.lang = lang;
-
-    try {
-      sessionStorage.setItem(langKey, lang);
-    } catch (error) {}
+    document.documentElement.lang = resolved;
 
     langToggles().forEach(function (toggle) {
       toggle.setAttribute("aria-label", copy.lang);
       toggle.querySelectorAll("[data-lang]").forEach(function (button) {
-        const active = button.getAttribute("data-lang") === lang;
+        const active = button.getAttribute("data-lang") === resolved;
         button.classList.toggle("is-active", active);
         button.setAttribute("aria-pressed", active ? "true" : "false");
       });
@@ -177,7 +171,7 @@
     });
 
     document.querySelectorAll("[data-lang-panel]").forEach(function (panel) {
-      panel.hidden = panel.getAttribute("data-lang-panel") !== lang;
+      panel.hidden = panel.getAttribute("data-lang-panel") !== resolved;
     });
 
     const customTitle = document.body.getAttribute("data-title");
@@ -189,7 +183,7 @@
       document.title = copy.arquivo;
     }
 
-    document.dispatchEvent(new CustomEvent("avv-lang", { detail: lang }));
+    document.dispatchEvent(new CustomEvent("avv-lang", { detail: resolved }));
   }
 
   setLang(readLang());

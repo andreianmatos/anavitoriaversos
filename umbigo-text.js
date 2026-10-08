@@ -282,7 +282,7 @@ function overEssay() {
 
 function overSiteChrome() {
   const nodes = document.querySelectorAll(
-    "body.umbigo-page > .page-header, .sobre-bar, .star-roll:not([hidden])"
+    "body.umbigo-page > .page-header, .sobre-roll, .star-roll:not([hidden])"
   );
   for (let i = 0; i < nodes.length; i++) {
     const rect = nodes[i].getBoundingClientRect();

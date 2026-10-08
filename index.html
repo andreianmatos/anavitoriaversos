@@ -7,51 +7,32 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Ana Vitória Versos</title>
-  <link rel="stylesheet" href="style.css?v=229">
+  <script src="ui-scale.js?v=1"></script>
+  <link rel="stylesheet" href="style.css?v=244">
 </head>
-<body class="site-page" data-manifest="images.json?v=11">
-  <div class="video-bg site-video-bg" aria-hidden="true">
-    <video muted playsinline loop autoplay preload="auto">
-      <source src="video/videosample.mp4" type="video/mp4">
-    </video>
-  </div>
-
-  <header class="sobre-bar">
-    <div class="lang-toggle" role="group" aria-label="Idioma">
-      <button type="button" class="lang-toggle__btn" data-lang="pt" aria-pressed="true">PT</button>
-      <span aria-hidden="true">/</span>
-      <button type="button" class="lang-toggle__btn" data-lang="en" aria-pressed="false">ENG</button>
-    </div>
-    <button type="button" class="sobre-bar__hit" data-sobre-toggle aria-expanded="false">
-      <span data-i18n="sobre">Sobre</span>
-      <span class="sobre-bar__caret" aria-hidden="true"></span>
-    </button>
-  </header>
-
-  <section class="site-hero" id="topo">
-    <button type="button" class="star-wheel" data-star aria-label="Roleta">
-      <img src="imagens/star.gif" alt="">
-    </button>
-  </section>
-
-  <main class="site-works" id="obras"></main>
-
-  <div class="star-roll" data-star-roll>
-    <div class="star-roll__index" data-star-index></div>
-    <div class="star-roll__dock">
-      <button type="button" class="star-roll__toggle" data-index-toggle aria-expanded="false">
-        <span data-i18n="arquivo">Arquivo</span>
-        <span class="star-roll__caret" aria-hidden="true"></span>
-      </button>
-      <button type="button" class="star-roll__mover" data-star-again aria-label="Roleta">
-        <span class="star-roll__spin">
-          <img src="imagens/star.gif" alt="">
-        </span>
+<body class="site-page" data-manifest="images.json?v=12">
+  <div class="sobre-roll">
+    <div class="sobre-roll__dock">
+      <div class="sobre-roll__start">
+        <a
+          href="#topo"
+          class="sobre-roll__title"
+          data-site-home
+          data-i18n-aria="mainHome"
+        >Ana Vitória Versos</a>
+        <div class="lang-toggle sobre-roll__lang" role="group" aria-label="Idioma">
+          <button type="button" class="lang-toggle__btn" data-lang="pt" aria-pressed="true">PT</button>
+          <span aria-hidden="true">/</span>
+          <button type="button" class="lang-toggle__btn" data-lang="en" aria-pressed="false">ENG</button>
+        </div>
+      </div>
+      <button type="button" class="sobre-bar__hit" data-sobre-toggle aria-expanded="false">
+        <span data-i18n="sobre">Sobre</span>
+        <span class="sobre-bar__caret" aria-hidden="true"></span>
       </button>
     </div>
-  </div>
 
-  <div class="sobre-overlay" data-sobre-overlay hidden>
+    <div class="sobre-roll__panel sobre-overlay" data-sobre-overlay aria-hidden="true">
     <div class="sobre-overlay__panel">
       <div class="sobre-overlay__grid">
         <div class="sobre-overlay__copy">
@@ -159,10 +140,34 @@
         </ul>
       </section>
     </div>
+    </div>
   </div>
 
-  <script src="nav.js?v=41"></script>
+  <section class="site-hero" id="topo">
+    <button type="button" class="star-wheel" data-star aria-label="Roleta">
+      <img src="imagens/star.gif" alt="">
+    </button>
+  </section>
+
+  <main class="site-works" id="obras"></main>
+
+  <div class="star-roll" data-star-roll>
+    <div class="star-roll__index" data-star-index></div>
+    <div class="star-roll__dock">
+      <button type="button" class="star-roll__toggle" data-index-toggle aria-expanded="false">
+        <span data-i18n="arquivo">Arquivo</span>
+        <span class="star-roll__caret" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="star-roll__mover" data-star-again aria-label="Roleta">
+        <span class="star-roll__spin">
+          <img src="imagens/star.gif" alt="">
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <script src="nav.js?v=42"></script>
   <script type="module" src="umbigo-text.js?v=2"></script>
-  <script src="site.js?v=30"></script>
+  <script src="site.js?v=40"></script>
 </body>
 </html>

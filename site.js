@@ -6,6 +6,7 @@
   const star = document.querySelector("[data-star]");
   const starRoll = document.querySelector("[data-star-roll]");
   const starAgain = document.querySelector("[data-star-again]");
+  const siteHome = document.querySelector("[data-site-home]");
   const archivePanel = document.querySelector("[data-star-index]");
   const indexToggle = document.querySelector("[data-index-toggle]");
   const overlay = document.querySelector("[data-sobre-overlay]");
@@ -34,24 +35,24 @@
   let scatterToken = 0;
   let archiveOpenGen = 0;
   let archivePanelRenderTimer = 0;
+  let archiveLayoutWidth = 0;
+  let archivePlacedCount = 0;
 
   function scheduleArchivePanelRender() {
     window.clearTimeout(archivePanelRenderTimer);
     archivePanelRenderTimer = window.setTimeout(function () {
       if (!document.body.classList.contains("is-index-open")) return;
-      renderArchivePanel();
-    }, 80);
+      renderArchivePanel(false);
+    }, 120);
   }
 
   function beginArchivePanelRender() {
     archiveOpenGen += 1;
     const gen = archiveOpenGen;
     requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        if (gen !== archiveOpenGen) return;
-        if (!document.body.classList.contains("is-index-open")) return;
-        renderArchivePanel();
-      });
+      if (gen !== archiveOpenGen) return;
+      if (!document.body.classList.contains("is-index-open")) return;
+      renderArchivePanel(true);
     });
   }
 
@@ -62,6 +63,41 @@
       [items[i], items[j]] = [items[j], items[i]];
     }
     return items;
+  }
+
+  function seedFromWidth(width) {
+    return ((Math.round(width) * 2654435761) >>> 0) || 1;
+  }
+
+  function seededShuffle(list, seed) {
+    const items = list.slice();
+    let state = seed >>> 0;
+    function rnd() {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      return state / 4294967296;
+    }
+    for (let i = items.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(rnd() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    return items;
+  }
+
+  function isArchivePhone() {
+    return (
+      window.matchMedia("(max-width: 767px)").matches ||
+      window.matchMedia("(hover: none) and (pointer: coarse)").matches
+    );
+  }
+
+  function shouldRelayoutArchive(panelWidth) {
+    const width = Math.round(panelWidth);
+    if (!archiveLayoutWidth) return true;
+    const delta = Math.abs(width - archiveLayoutWidth);
+    if (isArchivePhone()) {
+      return delta >= 56;
+    }
+    return delta >= 28;
   }
 
   function randomBetween(min, max) {
@@ -104,6 +140,46 @@
     return imageDir + encodePath(file);
   }
 
+  function manifestEntryForFile(file) {
+    return manifest.find(function (entry) {
+      return entry.file === file;
+    });
+  }
+
+  /** Optional manifest fields: text, copy, caption, description (string or { pt, en }). */
+  function resolveWorkText(entry) {
+    if (!entry) return "";
+    const lang = document.documentElement.lang === "en" ? "en" : "pt";
+    if (entry.text && typeof entry.text === "object") {
+      return entry.text[lang] || entry.text.pt || entry.text.en || "";
+    }
+    if (typeof entry.text === "string") return entry.text;
+    if (entry.copy && typeof entry.copy === "object") {
+      return entry.copy[lang] || entry.copy.pt || entry.copy.en || "";
+    }
+    if (typeof entry.copy === "string") return entry.copy;
+    if (typeof entry.caption === "string") return entry.caption;
+    if (typeof entry.description === "string") return entry.description;
+    return "";
+  }
+
+  function applyWorkCopy(section, entry) {
+    const textEl = section.querySelector(".work__text");
+    const copyWrap = section.querySelector(".work__copy");
+    if (!textEl || !copyWrap) return;
+    const text = resolveWorkText(entry);
+    textEl.textContent = text;
+    copyWrap.hidden = !text;
+  }
+
+  function refreshWorkCopyTexts() {
+    works.querySelectorAll(".work.work--image").forEach(function (section) {
+      const file = section.getAttribute("data-work-file");
+      if (!file) return;
+      applyWorkCopy(section, manifestEntryForFile(file));
+    });
+  }
+
   function thumbCandidates(file) {
     const dir = dirname(file);
     const name = basename(file);
@@ -143,6 +219,18 @@
       list.push(url);
     });
     return list;
+  }
+
+  function prefetchArchivePanelThumbs() {
+    const limit = Math.min(16, manifest.length);
+    for (let i = 0; i < limit; i += 1) {
+      const entry = manifest[i];
+      const sources = archiveThumbSources(entry.file);
+      const src = sources.length ? sources[0] : fullPath(entry.file);
+      const probe = new Image();
+      probe.decoding = "async";
+      probe.src = src;
+    }
   }
 
   function isUmbigoEntry(entry) {
@@ -280,56 +368,147 @@
     return Math.min(base, panelScale);
   }
 
-  function estimateArchiveImageHeight(count, width, height) {
-    const scale = panelUiScale(width, height);
-    const gap = Math.max(4, Math.round(5 * scale));
-    const titleH = Math.max(14, Math.round(22 * scale));
-    const innerW = Math.max(0, width - Math.round(18 * scale));
-    const innerH = Math.max(0, height - Math.round(14 * scale));
-    let best = { imgH: 36, cellW: 48 };
-
-    for (let cols = 1; cols <= Math.min(count, 16); cols += 1) {
-      const rows = Math.ceil(count / cols);
-      const cellW = (innerW - gap * (cols - 1)) / cols;
-      const cellH = (innerH - gap * (rows - 1)) / rows;
-      const imgH = cellH - titleH;
-      if (cellW < 28 || imgH < 16) continue;
-      const score = imgH * Math.min(cellW, imgH);
-      const bestScore = best.imgH * Math.min(best.cellW, best.imgH);
-      if (score >= bestScore) {
-        best = { imgH: imgH, cellW: cellW };
-      }
-    }
-
-    return best;
-  }
-
   function getArchivePanelLayout(count, width, height) {
     const scale = panelUiScale(width, height);
-    const size = estimateArchiveImageHeight(count, width, height);
-    const density = Math.min(1, 38 / Math.max(count, 1));
-    const thumbScale = 0.62 * scale;
-    const padding = Math.max(6, Math.round(8 * scale));
-    const gap = Math.max(4, Math.round(5 * scale));
-    const cellW = size.cellW * thumbScale;
-    const imgCap = Math.max(36, Math.min(140, height * 0.16 * scale));
-    const imgMaxH = Math.max(18, Math.min(imgCap, Math.floor(size.imgH * thumbScale)));
-    const minW = Math.max(20, cellW * (0.5 + 0.2 * density));
-    const maxW = Math.max(minW + 2, cellW * (0.78 + 0.1 * density));
+    const padding = Math.max(10, Math.round(12 * scale));
+    const gap = Math.max(12, Math.round(14 * scale));
+    const innerW = Math.max(48, width - padding * 2);
+    const innerH = Math.max(48, height - padding * 2);
+    const fill = Math.min(1, 14 / Math.max(count, 1));
+    const narrow = innerW < 400;
+
+    let minRatio = (narrow ? 0.36 : 0.32) + 0.14 * fill;
+    let maxRatio = (narrow ? 0.52 : 0.48) + 0.1 * fill;
+    minRatio = Math.min(minRatio, 0.44);
+    maxRatio = Math.min(Math.max(maxRatio, minRatio + 0.1), 0.64);
+
+    const imgMaxH = Math.max(
+      72,
+      Math.min(innerH * 0.58, innerW * 0.68, 500 * scale)
+    );
 
     return {
       padding: padding,
       gap: gap,
-      maxAttempts: count > 55 ? 90 : 130,
+      innerW: innerW,
+      innerH: innerH,
+      itemCount: count,
+      minRatio: minRatio,
+      maxRatio: maxRatio,
       imgMaxH: imgMaxH,
-      minW: minW,
-      maxW: maxW,
+      maxAttempts: 28,
       panelWidth: width,
       panelHeight: height,
     };
   }
 
-  function archiveRectsOverlap(a, b, gap) {
+  function archivePanelSpreadRegion(layout, placeIndex, minTop) {
+    const count = Math.max(1, layout.itemCount || 1);
+    const aspect = layout.innerW / Math.max(layout.innerH, 1);
+    const cols = Math.max(2, Math.ceil(Math.sqrt(count * aspect)));
+    const rows = Math.ceil(count / cols);
+    const col = placeIndex % cols;
+    const row = Math.floor(placeIndex / cols);
+    const cellW = layout.innerW / cols;
+    const cellH = layout.innerH / rows;
+    const inset = layout.gap * 0.35;
+
+    return {
+      minLeft: layout.padding + col * cellW + inset,
+      maxLeft: layout.padding + (col + 1) * cellW - inset,
+      minTop: minTop + row * cellH + inset,
+      maxTop: minTop + (row + 1) * cellH - inset,
+    };
+  }
+
+  function archivePanelCellSize(layout, placeIndex, aspect) {
+    const minTop = layout.padding;
+    const region = archivePanelSpreadRegion(layout, placeIndex, minTop);
+    const cellW = Math.max(40, region.maxLeft - region.minLeft);
+    const cellH = Math.max(40, region.maxTop - region.minTop);
+    const capW = cellW * 0.94;
+    const capH = Math.min(layout.imgMaxH, cellH * 0.94);
+    let h = Math.min(capH, capW / aspect);
+    let w = Math.min(capW, h * aspect);
+    const floorW = layout.innerW * layout.minRatio;
+    if (w < floorW * 0.85) {
+      w = Math.min(capW, layout.innerW * layout.maxRatio);
+      h = Math.min(layout.imgMaxH, capH, w / aspect);
+      w = Math.min(w, h * aspect);
+    }
+    return archivePanelItemBox(w, h, aspect);
+  }
+
+  function archiveItemRng(seed, placeIndex) {
+    let state = (seed + Math.imul(placeIndex + 1, 2246822519)) >>> 0;
+    return function () {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+  }
+
+  function archivePanelColumnCount(panelWidth) {
+    return panelWidth < 520 ? 2 : 3;
+  }
+
+  function archiveColumnRng(index, seed) {
+    let state = (seed + Math.imul(index + 1, 2246822519)) >>> 0;
+    return function () {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+  }
+
+  function styleArchiveColumn(colEl, colIndex, seed, compact) {
+    let state = (seed + Math.imul(colIndex + 11, 1597334677)) >>> 0;
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    const r = state / 4294967296;
+    const bases = compact ? [0, 10, 5] : [0, 26, 12];
+    const padTop = (bases[colIndex] || 0) + Math.round(r * (compact ? 12 : 20));
+    const gapScale = 0.9 + colIndex * 0.05 + r * 0.14;
+    colEl.style.setProperty("--archive-col-offset", padTop + "px");
+    colEl.style.setProperty(
+      "--archive-col-gap-scale",
+      String(Math.round(gapScale * 100) / 100)
+    );
+  }
+
+  function createArchiveColumns(parent, columnCount, seed, compact) {
+    const cols = [];
+    const colClass = compact ? "archive-panel-col" : "arquivo-col";
+    for (let c = 0; c < columnCount; c += 1) {
+      const col = document.createElement("div");
+      col.className = colClass;
+      col.setAttribute("data-archive-col", String(c));
+      styleArchiveColumn(col, c, seed, compact);
+      parent.appendChild(col);
+      cols.push(col);
+    }
+    return cols;
+  }
+
+  function applyArchiveColumnItem(button, index, seed, compact) {
+    const rnd = archiveColumnRng(index, seed);
+    const r1 = rnd();
+    const r2 = rnd();
+    const r3 = rnd();
+    const r4 = rnd();
+    const maxH = compact ? 14 + Math.round(r1 * 18) : 26 + Math.round(r1 * 30);
+    const maxRem = compact ? 9 + Math.round(r2 * 6) : 18 + Math.round(r2 * 20);
+    const xShift = Math.round((r3 - 0.5) * (compact ? 16 : 26));
+    const gapExtra = Math.round(r4 * (compact ? 14 : 22));
+    const scale = (compact ? 0.84 : 0.82) + r1 * (compact ? 0.18 : 0.2);
+
+    button.style.setProperty(
+      "--archive-thumb-max",
+      "min(" + maxH + "vh, " + maxRem + "rem)"
+    );
+    button.style.setProperty("--archive-x-shift", xShift + "px");
+    button.style.setProperty("--archive-item-gap-extra", gapExtra + "px");
+    button.style.setProperty("--archive-thumb-scale", String(Math.round(scale * 1000) / 1000));
+  }
+
+  function archivePanelOverlaps(a, b, gap) {
     return !(
       a.right + gap < b.left ||
       a.left > b.right + gap ||
@@ -338,8 +517,8 @@
     );
   }
 
-  function archiveItemRect(button, containerRect) {
-    const rect = button.getBoundingClientRect();
+  function archivePanelRect(element, containerRect) {
+    const rect = element.getBoundingClientRect();
     return {
       left: rect.left - containerRect.left,
       top: rect.top - containerRect.top,
@@ -348,116 +527,282 @@
     };
   }
 
-  function archiveCollides(rect, zones, gap) {
+  function archivePanelCollides(rect, zones, gap) {
     for (let i = 0; i < zones.length; i += 1) {
-      if (archiveRectsOverlap(rect, zones[i], gap)) {
+      if (archivePanelOverlaps(rect, zones[i], gap)) {
         return true;
       }
     }
     return false;
   }
 
-  function placeArchivePanelItem(button, img, placed, layout) {
-    if (!img.naturalWidth) {
-      button.remove();
-      return;
+  function archivePlacedBottom(placed) {
+    let bottom = 0;
+    for (let i = 0; i < placed.length; i += 1) {
+      if (placed[i].bottom > bottom) {
+        bottom = placed[i].bottom;
+      }
     }
+    return bottom;
+  }
 
-    const aspect = img.naturalWidth / img.naturalHeight;
-    let itemW = Math.round(randomBetween(layout.minW, layout.maxW));
-    let imgH = Math.min(layout.imgMaxH, itemW / aspect);
-    itemW = Math.round(Math.min(itemW, imgH * aspect));
-    itemW = Math.min(itemW, layout.panelWidth - layout.padding * 2);
-    imgH = Math.min(layout.imgMaxH, itemW / aspect);
+  function findArchivePanelPosition(
+    button,
+    placed,
+    layout,
+    itemW,
+    itemH,
+    rnd,
+    placeIndex
+  ) {
+    const minTop = layout.padding;
+    const maxLeft = Math.max(layout.padding, layout.panelWidth - layout.padding - itemW);
+    const spreadH = layout.innerH * 1.02;
+    const region = archivePanelSpreadRegion(layout, placeIndex, minTop);
+    const rndBetween = function (min, max) {
+      if (max <= min) {
+        return min;
+      }
+      return min + rnd() * (max - min);
+    };
 
-    button.style.width = itemW + "px";
-    button.style.setProperty("--archive-img-max-h", Math.floor(imgH) + "px");
-    button.style.setProperty("--archive-cell-w", itemW + "px");
-
-    const panelWidth = archivePanel.clientWidth;
-    const panelHeight = archivePanel.clientHeight;
-    const containerRect = archivePanel.getBoundingClientRect();
-    const maxLeft = Math.max(
-      layout.padding,
-      panelWidth - button.offsetWidth - layout.padding
-    );
-    const maxTop = Math.max(
-      layout.padding,
-      panelHeight - button.offsetHeight - layout.padding
-    );
-
-    let positioned = false;
-    let rect;
-
-    for (let attempt = 0; attempt < layout.maxAttempts; attempt += 1) {
-      const left = randomBetween(layout.padding, maxLeft);
-      const top = randomBetween(layout.padding, maxTop);
-
+    function tryAt(left, top) {
+      if (left < layout.padding - 0.25 || left > maxLeft + 0.25) {
+        return null;
+      }
+      if (top < minTop - 0.25) {
+        return null;
+      }
+      const rect = {
+        left: left,
+        top: top,
+        right: left + itemW,
+        bottom: top + itemH,
+      };
+      if (rect.right > layout.panelWidth - layout.padding + 0.25) {
+        return null;
+      }
+      if (archivePanelCollides(rect, placed, layout.gap)) {
+        return null;
+      }
       button.style.left = Math.round(left) + "px";
       button.style.top = Math.round(top) + "px";
-
-      rect = archiveItemRect(button, containerRect);
-
-      if (rect.left < layout.padding || rect.top < layout.padding) continue;
-      if (rect.right > panelWidth - layout.padding) continue;
-      if (rect.bottom > panelHeight - layout.padding) continue;
-      if (archiveCollides(rect, placed, layout.gap)) continue;
-
-      positioned = true;
-      break;
+      return rect;
     }
 
-    if (!positioned) {
-      for (let attempt = 0; attempt < 48; attempt += 1) {
-        const left = randomBetween(layout.padding, maxLeft);
-        const top = randomBetween(layout.padding, maxTop);
-        button.style.left = Math.round(left) + "px";
-        button.style.top = Math.round(top) + "px";
-        rect = archiveItemRect(button, containerRect);
-        if (rect.bottom <= panelHeight - layout.padding && !archiveCollides(rect, placed, 2)) {
-          positioned = true;
-          break;
-        }
+    function bandLimits(bandMinLeft, bandMaxLeft, bandMinTop, bandMaxTop) {
+      const leftLo = Math.max(layout.padding, Math.min(bandMinLeft, maxLeft));
+      const leftHi = Math.max(leftLo, Math.min(bandMaxLeft, maxLeft));
+      const topLo = Math.max(minTop, bandMinTop);
+      const topHi = Math.max(topLo, Math.min(bandMaxTop - itemH, minTop + spreadH - itemH));
+      return { leftLo: leftLo, leftHi: leftHi, topLo: topLo, topHi: topHi };
+    }
+
+    const anchors = [];
+    const regionBand = bandLimits(region.minLeft, region.maxLeft, region.minTop, region.maxTop);
+    const cx = (regionBand.leftLo + regionBand.leftHi) / 2;
+    const cy = (regionBand.topLo + regionBand.topHi) / 2;
+    anchors.push({ left: cx, top: cy });
+    anchors.push({ left: regionBand.leftLo, top: regionBand.topLo });
+    anchors.push({ left: regionBand.leftHi, top: regionBand.topLo });
+    anchors.push({ left: regionBand.leftLo, top: regionBand.topHi });
+    anchors.push({ left: regionBand.leftHi, top: regionBand.topHi });
+
+    let rect;
+    for (let i = 0; i < anchors.length; i += 1) {
+      rect = tryAt(anchors[i].left, anchors[i].top);
+      if (rect) {
+        return rect;
       }
     }
 
-    if (!positioned) {
-      const angle = randomBetween(0, Math.PI * 2);
-      const radius = randomBetween(0, Math.min(panelWidth, panelHeight) * 0.38);
-      const cx = panelWidth / 2;
-      const cy = panelHeight / 2;
-      const left = cx + Math.cos(angle) * radius - button.offsetWidth / 2;
-      const top = cy + Math.sin(angle) * radius - button.offsetHeight / 2;
-      button.style.left = Math.round(Math.max(layout.padding, Math.min(left, maxLeft))) + "px";
-      button.style.top = Math.round(Math.max(layout.padding, Math.min(top, maxTop))) + "px";
-      rect = archiveItemRect(button, containerRect);
+    for (let attempt = 0; attempt < layout.maxAttempts; attempt += 1) {
+      const inRegion = attempt < layout.maxAttempts * 0.75;
+      const band = inRegion
+        ? regionBand
+        : bandLimits(
+            layout.padding,
+            layout.padding + layout.innerW,
+            minTop,
+            minTop + spreadH
+          );
+      rect = tryAt(rndBetween(band.leftLo, band.leftHi), rndBetween(band.topLo, band.topHi));
+      if (rect) {
+        return rect;
+      }
+    }
+
+    const stepY = itemH + layout.gap;
+    let top = minTop;
+    const bottomLimit = minTop + spreadH + layout.innerH * 0.55;
+    while (top <= bottomLimit) {
+      const xs = [
+        layout.padding,
+        maxLeft,
+        (layout.padding + maxLeft) / 2,
+        rndBetween(layout.padding, maxLeft),
+      ];
+      for (let x = 0; x < xs.length; x += 1) {
+        rect = tryAt(xs[x], top);
+        if (rect) {
+          return rect;
+        }
+      }
+      top += stepY;
+    }
+
+    return null;
+  }
+
+  function archivePanelItemBox(itemW, imgH, aspect) {
+    const h = Math.max(12, Math.round(Math.min(imgH, itemW / aspect)));
+    const w = Math.max(12, Math.round(Math.min(itemW, h * aspect)));
+    return { w: w, h: h };
+  }
+
+  function tryArchivePanelRect(button, placed, layout, itemW, itemH, left, top) {
+    const minTop = layout.padding;
+    const maxLeft = Math.max(layout.padding, layout.panelWidth - layout.padding - itemW);
+    if (left < layout.padding - 0.25 || left > maxLeft + 0.25 || top < minTop - 0.25) {
+      return null;
+    }
+    const rect = {
+      left: left,
+      top: top,
+      right: left + itemW,
+      bottom: top + itemH,
+    };
+    if (rect.right > layout.panelWidth - layout.padding + 0.25) {
+      return null;
+    }
+    if (archivePanelCollides(rect, placed, layout.gap)) {
+      return null;
+    }
+    button.style.left = Math.round(left) + "px";
+    button.style.top = Math.round(top) + "px";
+    return rect;
+  }
+
+  function placeInArchivePanelRegion(button, placed, layout, placeIndex, itemW, itemH) {
+    const minTop = layout.padding;
+    const maxLeft = Math.max(layout.padding, layout.panelWidth - layout.padding - itemW);
+    const region = archivePanelSpreadRegion(layout, placeIndex, minTop);
+    const cx = (region.minLeft + region.maxLeft) / 2 - itemW / 2;
+    const cy = (region.minTop + region.maxTop) / 2 - itemH / 2;
+    const nudges = [
+      [0, 0],
+      [10, 0],
+      [-10, 0],
+      [0, 12],
+      [0, -12],
+      [14, 10],
+      [-14, 10],
+      [14, -10],
+      [-14, -10],
+      [22, 0],
+      [-22, 0],
+      [0, 22],
+    ];
+
+    for (let i = 0; i < nudges.length; i += 1) {
+      const left = Math.min(maxLeft, Math.max(layout.padding, cx + nudges[i][0]));
+      const top = Math.max(minTop, cy + nudges[i][1]);
+      const rect = tryArchivePanelRect(button, placed, layout, itemW, itemH, left, top);
+      if (rect) {
+        return rect;
+      }
+    }
+
+    return null;
+  }
+
+  function placeArchivePanelItem(button, img, placed, layout, placeIndex, panelSeed) {
+    if (!img.naturalWidth) {
+      button.remove();
+      return 0;
+    }
+
+    const rnd = archiveItemRng(panelSeed, placeIndex);
+    const aspect = img.naturalWidth / img.naturalHeight;
+    let itemW = 0;
+    let imgH = 0;
+    let rect = null;
+
+    function applyPanelThumb(w, h) {
+      button.style.width = w + "px";
+      button.style.setProperty("--archive-img-max-h", Math.floor(h) + "px");
+      button.style.setProperty("--archive-cell-w", w + "px");
+    }
+
+    for (let shrink = 0; shrink < 3 && !rect; shrink += 1) {
+      const scaleDown = 1 - shrink * 0.07;
+      const box = archivePanelCellSize(layout, placeIndex, aspect);
+      itemW = Math.max(48, Math.round(box.w * scaleDown));
+      imgH = Math.max(36, Math.round(box.h * scaleDown));
+      applyPanelThumb(itemW, imgH);
+      rect = placeInArchivePanelRegion(button, placed, layout, placeIndex, itemW, imgH);
+      if (!rect) {
+        rect = findArchivePanelPosition(
+          button,
+          placed,
+          layout,
+          itemW,
+          imgH,
+          rnd,
+          placeIndex
+        );
+      }
+    }
+
+    if (!rect) {
+      const box = archivePanelCellSize(layout, placeIndex, aspect);
+      itemW = Math.max(48, Math.round(box.w * 0.82));
+      imgH = Math.max(36, Math.round(box.h * 0.82));
+      applyPanelThumb(itemW, imgH);
+      rect = placeInArchivePanelRegion(button, placed, layout, placeIndex, itemW, imgH);
+    }
+
+    if (!rect) {
+      button.remove();
+      return archivePlacedBottom(placed) + layout.padding;
     }
 
     placed.push(rect);
+
+    const delay = Math.min(placeIndex, 28) * 0.03;
+    button.style.setProperty("--archive-enter-delay", delay + "s");
     button.classList.remove("is-loading");
     button.classList.add("is-placed");
+
+    return archivePlacedBottom(placed) + layout.padding;
   }
 
-  function renderArchivePanel() {
+  function renderArchivePanel(force) {
     if (!manifest.length) return;
     const panelWidth = archivePanel.clientWidth;
     const panelHeight = archivePanel.clientHeight;
     if (panelWidth < 48 || panelHeight < 48) {
-      requestAnimationFrame(renderArchivePanel);
+      requestAnimationFrame(function () {
+        renderArchivePanel(force);
+      });
+      return;
+    }
+    if (!force && !shouldRelayoutArchive(panelWidth)) {
       return;
     }
 
+    archiveLayoutWidth = Math.round(panelWidth);
     const token = ++scatterToken;
     archivePanel.classList.add("is-arranging");
     archivePanel.innerHTML = "";
     archivePanel.style.minHeight = "";
-    archivePanel.style.removeProperty("grid-template-columns");
-    archivePanel.style.removeProperty("grid-template-rows");
-    archivePanel.style.removeProperty("gap");
+    archivePanel.classList.remove("archive-panel--cols-2", "archive-panel--cols-3");
 
-    const layout = getArchivePanelLayout(manifest.length, panelWidth, panelHeight);
-    const placed = [];
-    const files = shuffle(manifest.slice());
+    const panelSeed = seedFromWidth(panelWidth);
+    const columnCount = archivePanelColumnCount(panelWidth);
+    archivePanel.classList.add("archive-panel--cols-" + columnCount);
+    const cols = createArchiveColumns(archivePanel, columnCount, panelSeed, true);
+    const files = seededShuffle(manifest.slice(), panelSeed);
     let pending = files.length;
 
     function finishArchiveArrange() {
@@ -467,7 +812,7 @@
       archivePanel.classList.remove("is-arranging");
     }
 
-    files.forEach(function (entry) {
+    files.forEach(function (entry, orderIndex) {
       const title = entry.title || titleFromFile(entry.file);
       const group = findGroupForFile(entry.file);
 
@@ -477,6 +822,7 @@
       button.setAttribute("aria-label", title);
       button.setAttribute("data-archive-file", entry.file);
       if (group) button.setAttribute("data-work-id", group.id);
+      applyArchiveColumnItem(button, orderIndex, panelSeed, true);
 
       const frame = document.createElement("span");
       frame.className = "archive-panel-item__frame";
@@ -485,13 +831,9 @@
       img.alt = "";
       img.decoding = "async";
       img.loading = "eager";
-      if ("fetchPriority" in img) {
-        img.fetchPriority = "low";
+      if ("fetchPriority" in img && orderIndex < 8) {
+        img.fetchPriority = "high";
       }
-
-      const label = document.createElement("span");
-      label.className = "archive-panel-item__title";
-      label.textContent = title;
 
       const sources = archiveThumbSources(entry.file);
       if (!sources.length) {
@@ -512,7 +854,12 @@
 
       img.addEventListener("load", function () {
         if (token !== scatterToken) return;
-        placeArchivePanelItem(button, img, placed, layout);
+        button.classList.remove("is-loading");
+        button.classList.add("is-placed");
+        button.style.setProperty(
+          "--archive-enter-delay",
+          Math.min(orderIndex, 24) * 0.025 + "s"
+        );
         finishArchiveArrange();
       });
 
@@ -527,8 +874,7 @@
 
       frame.appendChild(img);
       button.appendChild(frame);
-      button.appendChild(label);
-      archivePanel.appendChild(button);
+      cols[orderIndex % columnCount].appendChild(button);
     });
 
     if (lastWorkId) {
@@ -539,7 +885,7 @@
   }
 
   function setIndexOpen(open) {
-    if (open && overlay && !overlay.hidden) {
+    if (open && document.body.classList.contains("is-sobre-open")) {
       setSobreOpen(false);
     }
     document.body.classList.toggle("is-index-open", open);
@@ -549,6 +895,7 @@
       scatterToken += 1;
       archivePanel.classList.add("is-arranging");
       archivePanel.innerHTML = "";
+      archivePanel.style.minHeight = "";
       return;
     }
     if (manifest.length) {
@@ -556,9 +903,15 @@
     }
   }
 
+  function updateWorkChrome() {
+    updateStarAgainLabel();
+    syncStarRollMotion();
+  }
+
   function setWorkSectionOpen(open) {
     document.body.classList.toggle("is-work-open", open);
     if (!open) setIndexOpen(false);
+    updateWorkChrome();
     if (open) {
       requestAnimationFrame(function () {
         syncStarRollMotion();
@@ -598,7 +951,7 @@
     requestAnimationFrame(function () {
       requestAnimationFrame(alignViewport);
     });
-    updateStarAgainLabel();
+    updateWorkChrome();
   }
 
   function isPastHero() {
@@ -606,6 +959,7 @@
   }
 
   function scrollToTop() {
+    setSobreOpen(false);
     setIndexOpen(false);
     document.body.classList.remove("is-star-flight");
     works.querySelectorAll(".work").forEach(function (node) {
@@ -614,7 +968,7 @@
     });
     setWorkSectionOpen(false);
     window.scrollTo(0, 0);
-    updateStarAgainLabel();
+    updateWorkChrome();
   }
 
   function flyStarBetween(fromEl, toEl, onDone) {
@@ -687,14 +1041,14 @@
     fly.addEventListener("transitionend", function (event) {
       if (event.propertyName === "transform") complete();
     });
-    window.setTimeout(complete, 950);
+    window.setTimeout(complete, 680);
   }
 
   function updateStarAgainLabel() {
     if (!starAgain) return;
     const en = document.documentElement.lang === "en";
     if (isPastHero()) {
-      starAgain.setAttribute("aria-label", en ? "Back to star" : "Voltar à estrela");
+      starAgain.setAttribute("aria-label", en ? "Spin again" : "Roleta outra vez");
     } else {
       starAgain.setAttribute("aria-label", en ? "Spin" : "Roleta");
     }
@@ -723,6 +1077,18 @@
 
     if (reducedMotion.matches) {
       scrollToWork(group.id);
+      return;
+    }
+
+    if (document.body.classList.contains("is-work-open")) {
+      spinning = true;
+      if (starRoll) starRoll.classList.add("is-draw");
+      restartStarRollAnimation();
+      scrollToWork(group.id);
+      window.setTimeout(function () {
+        if (starRoll) starRoll.classList.remove("is-draw");
+        spinning = false;
+      }, 1100);
       return;
     }
 
@@ -768,9 +1134,13 @@
       }
 
       const section = document.createElement("section");
-      section.className = "work";
+      section.className = "work work--image";
       section.id = group.id;
       section.setAttribute("aria-hidden", "true");
+      section.setAttribute("data-work-file", group.file || group.files[0].file);
+
+      const layout = document.createElement("div");
+      layout.className = "work__layout";
 
       const frame = document.createElement("div");
       frame.className = "work__frame";
@@ -784,7 +1154,17 @@
         frame.appendChild(img);
       });
 
-      section.appendChild(frame);
+      const copyWrap = document.createElement("div");
+      copyWrap.className = "work__copy";
+      copyWrap.hidden = true;
+      const textEl = document.createElement("p");
+      textEl.className = "work__text";
+      copyWrap.appendChild(textEl);
+
+      layout.appendChild(frame);
+      layout.appendChild(copyWrap);
+      section.appendChild(layout);
+      applyWorkCopy(section, group.files[0]);
 
       works.appendChild(section);
     }
@@ -795,8 +1175,8 @@
     if (open) {
       setIndexOpen(false);
     }
-    overlay.hidden = !open;
     document.body.classList.toggle("is-sobre-open", open);
+    overlay.setAttribute("aria-hidden", open ? "false" : "true");
     sobreToggle.setAttribute("aria-expanded", open ? "true" : "false");
     if (!open) {
       document.body.classList.remove("is-cv-open");
@@ -805,7 +1185,7 @@
 
   if (sobreToggle) {
     sobreToggle.addEventListener("click", function () {
-      setSobreOpen(overlay && overlay.hidden);
+      setSobreOpen(!document.body.classList.contains("is-sobre-open"));
     });
   }
 
@@ -834,20 +1214,19 @@
     });
   }
 
+  if (siteHome) {
+    siteHome.addEventListener("click", function (event) {
+      event.preventDefault();
+      scrollToTop();
+    });
+  }
+
   if (starAgain) {
     starAgain.addEventListener("click", function () {
-      if (document.body.classList.contains("is-index-open")) {
-        setIndexOpen(false);
-        return;
-      }
-      if (isPastHero()) {
-        scrollToTop();
-        return;
-      }
-      spinToWork();
+      scrollToTop();
     });
-    updateStarAgainLabel();
-    document.addEventListener("avv-lang", updateStarAgainLabel);
+    updateWorkChrome();
+    document.addEventListener("avv-lang", updateWorkChrome);
   }
 
   if (starRoll) starRoll.hidden = false;
@@ -856,14 +1235,22 @@
     const dock = document.querySelector(".star-roll__dock");
     const mover = starAgain;
     const toggle = indexToggle;
-    if (!dock || !mover || !document.body.classList.contains("is-work-open")) return;
+    if (!dock || !mover) return;
+    if (!document.body.classList.contains("is-work-open")) {
+      mover.style.left = "";
+      return;
+    }
 
     const dockWidth = dock.clientWidth;
     const moverWidth = mover.offsetWidth;
     if (moverWidth < 1) return;
 
     const toggleWidth = toggle ? toggle.offsetWidth : 0;
-    const travelPx = Math.max(0, dockWidth - moverWidth - toggleWidth - 6);
+    const insetPx = Math.max(
+      0,
+      Math.round(mover.getBoundingClientRect().left - dock.getBoundingClientRect().left)
+    );
+    const travelPx = Math.max(0, dockWidth - moverWidth - toggleWidth - insetPx - 6);
     const radiusPx = moverWidth / 2;
     const turnDeg = (travelPx / radiusPx) * (180 / Math.PI);
 
@@ -894,6 +1281,7 @@
     }
 
     groups = groupEntries(manifest);
+    prefetchArchivePanelThumbs();
     await renderWorks(groups);
     lockScrollTop();
     syncStarRollMotion();
@@ -907,12 +1295,18 @@
     const width = window.innerWidth;
     const height =
       (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-    if (Math.abs(width - lastWidth) < 28 && Math.abs(height - lastHeight) < 28) return;
+    const widthDelta = Math.abs(width - lastWidth);
+    const heightDelta = Math.abs(height - lastHeight);
+    const phone = isArchivePhone();
+    const relayoutArchiveWidth = phone ? widthDelta >= 56 : widthDelta >= 28;
+    if (widthDelta < 28 && heightDelta < 32) return;
     lastWidth = width;
     lastHeight = height;
     syncStarRollMotion();
-    if (manifest.length && document.body.classList.contains("is-index-open")) {
-      scheduleArchivePanelRender();
+    if (manifest.length && document.body.classList.contains("is-index-open") && relayoutArchiveWidth) {
+      if (shouldRelayoutArchive(archivePanel.clientWidth || width)) {
+        scheduleArchivePanelRender();
+      }
     }
   }
 
@@ -923,9 +1317,18 @@
   }
 
   if (typeof ResizeObserver !== "undefined" && archivePanel) {
-    const panelResize = new ResizeObserver(function () {
+    let observedPanelWidth = 0;
+    const panelResize = new ResizeObserver(function (entries) {
       if (!document.body.classList.contains("is-index-open")) return;
-      scheduleArchivePanelRender();
+      const width = Math.round(entries[0].contentRect.width);
+      if (!width) return;
+      if (observedPanelWidth && Math.abs(width - observedPanelWidth) < (isArchivePhone() ? 48 : 24)) {
+        return;
+      }
+      observedPanelWidth = width;
+      if (shouldRelayoutArchive(width)) {
+        scheduleArchivePanelRender();
+      }
     });
     panelResize.observe(archivePanel);
   }

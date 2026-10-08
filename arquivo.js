@@ -30,10 +30,6 @@
     return items;
   }
 
-  function randomBetween(min, max) {
-    return min + Math.random() * (max - min);
-  }
-
   function encodePath(rel) {
     return String(rel)
       .split("/")
@@ -91,177 +87,66 @@
     return imageDir + encodePath(file);
   }
 
-  function readUiScale() {
-    const scale = parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue("--ui-scale")
-    );
-    return Number.isFinite(scale) && scale > 0 ? scale : 1;
-  }
-
-  function getLayout(count) {
+  function archivePageColumnCount() {
     const width = (window.visualViewport && window.visualViewport.width) || window.innerWidth;
-    const height =
-      (window.visualViewport && window.visualViewport.height) || window.innerHeight;
-    const scale = Math.min(
-      1.14,
-      Math.max(0.72, Math.min(readUiScale(), width / 1440, height / 820))
-    );
-    const isMobile = width < 640;
-    const isTablet = width >= 640 && width < 1024;
-    const density = Math.min(1, 42 / Math.max(count, 1));
+    return width < 560 ? 2 : 3;
+  }
 
-    let minRatio;
-    let maxRatio;
-
-    if (isMobile) {
-      minRatio = 0.14 + 0.2 * density;
-      maxRatio = 0.22 + 0.28 * density;
-    } else if (isTablet) {
-      minRatio = 0.1 + 0.12 * density;
-      maxRatio = 0.16 + 0.2 * density;
-    } else {
-      minRatio = 0.08 + 0.1 * density;
-      maxRatio = 0.14 + 0.18 * density;
-    }
-
-    return {
-      padding: Math.round((isMobile ? 12 : isTablet ? 18 : 24) * scale),
-      gap: Math.round((isMobile ? 10 : isTablet ? 14 : 18) * scale),
-      maxAttempts: count > 60 ? 60 : 100,
-      minRatio,
-      maxRatio,
-      scale: scale,
+  function archiveColumnRng(index, seed) {
+    let state = (seed + Math.imul(index + 1, 2246822519)) >>> 0;
+    return function () {
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      return state / 4294967296;
     };
   }
 
-  function overlaps(a, b, gap) {
-    return !(
-      a.right + gap < b.left ||
-      a.left > b.right + gap ||
-      a.bottom + gap < b.top ||
-      a.top > b.bottom + gap
+  function styleArchiveColumn(colEl, colIndex, seed, compact) {
+    let state = (seed + Math.imul(colIndex + 11, 1597334677)) >>> 0;
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    const r = state / 4294967296;
+    const bases = compact ? [0, 10, 5] : [0, 26, 12];
+    const padTop = (bases[colIndex] || 0) + Math.round(r * (compact ? 12 : 20));
+    const gapScale = 0.9 + colIndex * 0.05 + r * 0.14;
+    colEl.style.setProperty("--archive-col-offset", padTop + "px");
+    colEl.style.setProperty(
+      "--archive-col-gap-scale",
+      String(Math.round(gapScale * 100) / 100)
     );
   }
 
-  function getRect(element, containerRect) {
-    const rect = element.getBoundingClientRect();
-    return {
-      left: rect.left - containerRect.left,
-      top: rect.top - containerRect.top,
-      right: rect.right - containerRect.left,
-      bottom: rect.bottom - containerRect.top,
-    };
-  }
-
-  function collides(rect, zones, gap) {
-    for (let i = 0; i < zones.length; i += 1) {
-      if (overlaps(rect, zones[i], gap)) {
-        return true;
-      }
+  function createArchiveColumns(parent, columnCount, seed, compact) {
+    const cols = [];
+    const colClass = compact ? "archive-panel-col" : "arquivo-col";
+    for (let c = 0; c < columnCount; c += 1) {
+      const col = document.createElement("div");
+      col.className = colClass;
+      col.setAttribute("data-archive-col", String(c));
+      styleArchiveColumn(col, c, seed, compact);
+      parent.appendChild(col);
+      cols.push(col);
     }
-    return false;
+    return cols;
   }
 
-  function updateContainerHeight(placed, padding) {
-    if (!placed.length) return;
+  function applyArchiveColumnItem(button, index, seed, compact) {
+    const rnd = archiveColumnRng(index, seed);
+    const r1 = rnd();
+    const r2 = rnd();
+    const r3 = rnd();
+    const r4 = rnd();
+    const maxH = compact ? 14 + Math.round(r1 * 18) : 26 + Math.round(r1 * 30);
+    const maxRem = compact ? 9 + Math.round(r2 * 6) : 18 + Math.round(r2 * 20);
+    const xShift = Math.round((r3 - 0.5) * (compact ? 16 : 26));
+    const gapExtra = Math.round(r4 * (compact ? 14 : 22));
+    const scale = (compact ? 0.84 : 0.82) + r1 * (compact ? 0.18 : 0.2);
 
-    let lastBottom = 0;
-    for (let i = 0; i < placed.length; i += 1) {
-      if (placed[i].bottom > lastBottom) {
-        lastBottom = placed[i].bottom;
-      }
-    }
-
-    const minHeight = lastBottom + padding + 48;
-    container.style.minHeight =
-      "max(100dvh, " + minHeight + "px)";
-  }
-
-  function readEdgeGutter() {
-    const value = parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue("--site-edge-gutter")
+    button.style.setProperty(
+      "--archive-thumb-max",
+      "min(" + maxH + "vh, " + maxRem + "rem)"
     );
-    return Number.isFinite(value) && value > 0 ? value : 12;
-  }
-
-  function getTitleClearance(layout) {
-    const pad = layout && layout.padding ? layout.padding : 12;
-    const header = document.querySelector(".arquivo-page > .page-header");
-    if (!header) return pad;
-    if (window.getComputedStyle(header).position !== "fixed") {
-      return pad;
-    }
-    const containerRect = container.getBoundingClientRect();
-    const headerRect = header.getBoundingClientRect();
-    const gutter = readEdgeGutter();
-    return Math.max(pad, Math.round(headerRect.bottom - containerRect.top + gutter));
-  }
-
-  function placeButton(button, img, placed, layout) {
-    if (!img.naturalWidth) {
-      button.remove();
-      return;
-    }
-
-    const containerWidth = container.clientWidth;
-    const width = Math.round(
-      randomBetween(layout.minRatio, layout.maxRatio) * containerWidth
-    );
-    button.style.width = width + "px";
-
-    const minTop = getTitleClearance(layout);
-    const maxLeft = Math.max(layout.padding, containerWidth - width - layout.padding);
-    const placedBottom = placed.length
-      ? Math.max.apply(
-          null,
-          placed.map(function (p) {
-            return p.bottom;
-          })
-        )
-      : minTop;
-    const maxTop = Math.max(minTop, placedBottom + layout.gap + 80);
-
-    let positioned = false;
-    let rect;
-
-    for (let attempt = 0; attempt < layout.maxAttempts; attempt += 1) {
-      const left = randomBetween(layout.padding, maxLeft);
-      const top = randomBetween(minTop, maxTop);
-
-      button.style.left = left + "px";
-      button.style.top = top + "px";
-
-      rect = getRect(button, container.getBoundingClientRect());
-
-      if (rect.left < layout.padding || rect.right > containerWidth - layout.padding) {
-        continue;
-      }
-
-      if (rect.top < minTop) {
-        continue;
-      }
-
-      if (collides(rect, placed, layout.gap)) {
-        continue;
-      }
-
-      positioned = true;
-      break;
-    }
-
-    if (!positioned) {
-      const fallbackTop = placed.length ? placedBottom + layout.gap : minTop;
-      const fallbackLeft =
-        layout.padding + randomBetween(0, Math.max(0, maxLeft - layout.padding));
-      button.style.top = Math.max(minTop, fallbackTop) + "px";
-      button.style.left = fallbackLeft + "px";
-      rect = getRect(button, container.getBoundingClientRect());
-    }
-
-    placed.push(rect);
-    button.classList.remove("is-loading");
-    button.classList.add("is-placed");
-    updateContainerHeight(placed, layout.padding);
+    button.style.setProperty("--archive-x-shift", xShift + "px");
+    button.style.setProperty("--archive-item-gap-extra", gapExtra + "px");
+    button.style.setProperty("--archive-thumb-scale", String(Math.round(scale * 1000) / 1000));
   }
 
   function setModalText(entry) {
@@ -317,13 +202,15 @@
     modalImage.classList.remove("is-loading");
   });
 
-  function scatterImages(items) {
+  function renderArchiveGrid(items) {
     const token = ++scatterToken;
     container.innerHTML = "";
     container.style.minHeight = "100dvh";
+    const layoutSeed = ((items.length * 1597334677) >>> 0) || 1;
+    const columnCount = archivePageColumnCount();
+    container.className = "arquivo arquivo--cols-" + columnCount;
+    const cols = createArchiveColumns(container, columnCount, layoutSeed, false);
 
-    const layout = getLayout(items.length);
-    const placed = [];
     const files = shuffle(items);
 
     files.forEach(function (entry, index) {
@@ -332,11 +219,15 @@
       button.type = "button";
       button.className = "arquivo-item is-loading";
       button.setAttribute("aria-label", "Ver " + title);
+      applyArchiveColumnItem(button, index, layoutSeed, false);
 
       const img = document.createElement("img");
       img.alt = "";
       img.decoding = "async";
       img.loading = "eager";
+      if ("fetchPriority" in img && index < 12) {
+        img.fetchPriority = "high";
+      }
 
       const sources = thumbCandidates(entry.file).concat(fullPath(entry.file));
       let sourceIndex = 0;
@@ -353,7 +244,8 @@
 
       img.addEventListener("load", function onThumbLoad() {
         if (token !== scatterToken) return;
-        placeButton(button, img, placed, layout);
+        button.classList.remove("is-loading");
+        button.classList.add("is-placed");
       });
 
       button.addEventListener("click", function () {
@@ -365,7 +257,7 @@
       });
 
       button.appendChild(img);
-      container.appendChild(button);
+      cols[index % columnCount].appendChild(button);
     });
   }
 
@@ -379,7 +271,7 @@
       return;
     }
 
-    scatterImages(manifest);
+    renderArchiveGrid(manifest);
   }
 
   function layoutWidth() {
@@ -399,13 +291,11 @@
   );
   let resizeTimer = 0;
 
-  function rescheduleScatter() {
+  function onArchiveLayoutChange() {
     const width = layoutWidth();
     const height = Math.round(
       (window.visualViewport && window.visualViewport.height) || window.innerHeight
     );
-    // Phone URL bars fire resize / visualViewport on scroll. Keep the layout
-    // until a real width change (rotate) or a full page refresh.
     if (isPhone() && Math.abs(width - lastLayoutWidth) < 80) {
       return;
     }
@@ -422,20 +312,20 @@
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(function () {
       if (manifest.length) {
-        scatterImages(manifest);
+        renderArchiveGrid(manifest);
       }
-    }, 250);
+    }, 280);
   }
 
-  window.addEventListener("resize", rescheduleScatter);
-  document.addEventListener("avv-ui-scale", rescheduleScatter);
+  window.addEventListener("resize", onArchiveLayoutChange);
+  document.addEventListener("avv-ui-scale", onArchiveLayoutChange);
   window.addEventListener("orientationchange", function () {
     lastLayoutWidth = 0;
     lastLayoutHeight = 0;
-    rescheduleScatter();
+    onArchiveLayoutChange();
   });
   if (window.visualViewport && !isPhone()) {
-    window.visualViewport.addEventListener("resize", rescheduleScatter);
+    window.visualViewport.addEventListener("resize", onArchiveLayoutChange);
   }
 
   init();
