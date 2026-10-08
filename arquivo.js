@@ -103,7 +103,12 @@
   function setModalText(entry) {
     modalTitle.textContent = entry.title || titleFromFile(entry.file);
 
-    const paragraphs = Array.isArray(entry.text) ? entry.text : [];
+    let paragraphs = [];
+    if (Array.isArray(entry.text)) {
+      paragraphs = entry.text;
+    } else if (typeof entry.text === "string" && entry.text.trim()) {
+      paragraphs = [entry.text];
+    }
     modalText.querySelectorAll("p").forEach(function (node) {
       node.remove();
     });

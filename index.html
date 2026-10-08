@@ -7,10 +7,12 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Ana Vitória Versos</title>
+  <link rel="preload" href="images.json?v=14" as="fetch" crossorigin>
+  <link rel="preload" href="imagens/rodada_feia.png?v=4" as="image">
   <script src="ui-scale.js?v=1"></script>
-  <link rel="stylesheet" href="style.css?v=307">
+  <link rel="stylesheet" href="style.css?v=326">
 </head>
-<body class="site-page" data-manifest="images.json?v=12">
+<body class="site-page" data-manifest="images.json?v=14">
   <div class="sobre-roll">
     <div class="sobre-roll__dock">
       <div class="sobre-roll__start">
@@ -34,18 +36,21 @@
 
     <div class="sobre-roll__panel sobre-overlay" data-sobre-overlay aria-hidden="true">
     <div class="sobre-overlay__panel">
-      <div class="sobre-overlay__grid">
-        <div class="sobre-overlay__copy">
-          <section class="sobre-bio" lang="pt" data-lang-panel="pt">
+      <div class="sobre-overlay__scroll">
+        <div class="sobre-overlay__stage">
+          <div class="sobre-overlay__flow">
+          <div class="sobre-overlay__bio-wrap">
+          <section class="sobre-overlay__bio sobre-bio" lang="pt" data-lang-panel="pt">
             <p>Ana Vitória Versos (Bragança, 2002) é uma artista multidisciplinar nascida e criada nas costas do monte. Vinda do Nordeste Transmontano, a jovem artista procura sentido na apropriação das paisagens rochosas e esverdeadas que dão abrigo a um labor natural, cíclico, silencioso e sem dono.</p>
             <p>O seu corpo de trabalho é um corpo em busca de uma cabeça: armado com as linguagens da escultura, escrita, performance e fotografia, imagina-se um universo ficcionado, violento, cru e cor de rosa de descoberta do mundo envolvente através do autoconhecimento, aí são explorados os temas de género, identidade, pertença, natureza e a inevitável relação que existe entre esses elementos.</p>
           </section>
-          <section class="sobre-bio" lang="en" data-lang-panel="en" hidden>
+          <section class="sobre-overlay__bio sobre-bio" lang="en" data-lang-panel="en" hidden>
             <p>Ana Vitória Versos (Bragança, 2002) is a multidisciplinary artist born and raised on the slopes of the mountain. Coming from the region of Trás-os-Montes, the young artist seeks meaning in appropriating the rocky and green landscapes that shelter a natural, cyclical, silent, and ownerless labor.</p>
             <p>Her body of work is a body in search of a head: armed with the languages of sculpture, writing, performance, and photography, she imagines a fictional, violent, raw, and rosy universe of discovery of the world around her through self-knowledge, exploring themes of gender, identity, belonging, nature, and the inevitable relationship that exists between these elements.</p>
           </section>
+          </div>
 
-          <div class="sobre-cv-panel">
+          <div class="sobre-overlay__cv sobre-cv-panel">
             <section class="sobre-cv sobre-formacao">
               <h2 data-i18n="formacao">Formação</h2>
               <ul lang="pt" data-lang-panel="pt">
@@ -125,20 +130,22 @@
               </ul>
             </section>
           </div>
+          </div>
+
+          <aside class="sobre-overlay__side">
+            <figure class="sobre-overlay__photo sobre-photo">
+              <img src="imagens/vit%C3%B3ria.png" alt="" width="640" height="800" decoding="async" loading="lazy">
+            </figure>
+            <div class="sobre-overlay__ping sobre-contactos" data-i18n-aria="contactos" aria-label="Contactos">
+              <ul class="sobre-overlay__links">
+                <li><a href="mailto:anavitoriaversos@gmail.com">anavitoriaversos@gmail.com</a></li>
+                <li><a href="https://instagram.com/talheresajeito" target="_blank" rel="noopener noreferrer">@talheresajeito</a></li>
+                <li><a href="https://anavitoriaversos.com" target="_blank" rel="noopener noreferrer">anavitoriaversos.com</a></li>
+              </ul>
+            </div>
+          </aside>
         </div>
-
-        <figure class="sobre-photo">
-          <img src="imagens/sobre/retrato.jpg" alt="Ana Vitória Versos">
-        </figure>
       </div>
-
-      <section class="sobre-contactos" data-i18n-aria="contactos" aria-label="Contactos">
-        <ul>
-          <li><a href="mailto:anavitoriaversos@gmail.com">anavitoriaversos@gmail.com</a></li>
-          <li><a href="https://instagram.com/talheresajeito" target="_blank" rel="noopener noreferrer">talheresajeito</a></li>
-          <li><a href="https://anavitoriaversos.com">anavitoriaversos.com</a></li>
-        </ul>
-      </section>
     </div>
     </div>
   </div>
@@ -180,6 +187,6 @@
   <script src="nav.js?v=45"></script>
   <script src="archive-scatter.js?v=15"></script>
   <script type="module" src="umbigo-text.js?v=18"></script>
-  <script src="site.js?v=52"></script>
+  <script src="site.js?v=55"></script>
 </body>
 </html>

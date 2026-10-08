@@ -185,6 +185,9 @@
   function resolveWorkText(entry) {
     if (!entry) return "";
     const lang = document.documentElement.lang === "en" ? "en" : "pt";
+    if (Array.isArray(entry.text)) {
+      return entry.text.join("\n\n");
+    }
     if (entry.text && typeof entry.text === "object") {
       return entry.text[lang] || entry.text.pt || entry.text.en || "";
     }
@@ -266,6 +269,16 @@
       probe.decoding = "async";
       probe.src = src;
     }
+  }
+
+  function scheduleIdle(task) {
+    if (typeof window.requestIdleCallback === "function") {
+      window.requestIdleCallback(function () {
+        task();
+      }, { timeout: 2400 });
+      return;
+    }
+    window.setTimeout(task, 400);
   }
 
   function isUmbigoEntry(entry) {
@@ -375,22 +388,33 @@
   }
 
   let umbigoMainTemplate = null;
+  let umbigoLoadPromise = null;
 
-  async function loadUmbigoMain() {
-    if (umbigoMainTemplate) return umbigoMainTemplate.cloneNode(true);
-    try {
-      const response = await fetch("umbigo.html", { cache: "no-store" });
-      if (!response.ok) throw new Error("umbigo");
-      const html = await response.text();
-      const doc = new DOMParser().parseFromString(html, "text/html");
-      const main = doc.querySelector("main.umbigo");
-      if (!main) throw new Error("umbigo");
-      umbigoMainTemplate = main;
-      return main.cloneNode(true);
-    } catch (error) {
-      console.error("Nao foi possivel carregar umbigo.html", error);
-      return null;
+  function loadUmbigoMain() {
+    if (umbigoMainTemplate) {
+      return Promise.resolve(umbigoMainTemplate.cloneNode(true));
     }
+    if (!umbigoLoadPromise) {
+      umbigoLoadPromise = (async function () {
+        try {
+          const response = await fetch("umbigo.html");
+          if (!response.ok) throw new Error("umbigo");
+          const html = await response.text();
+          const doc = new DOMParser().parseFromString(html, "text/html");
+          const main = doc.querySelector("main.umbigo");
+          if (!main) throw new Error("umbigo");
+          umbigoMainTemplate = main;
+          return umbigoMainTemplate;
+        } catch (error) {
+          console.error("Nao foi possivel carregar umbigo.html", error);
+          umbigoLoadPromise = null;
+          return null;
+        }
+      })();
+    }
+    return umbigoLoadPromise.then(function (main) {
+      return main ? main.cloneNode(true) : null;
+    });
   }
 
   function panelUiScale(width, height) {
@@ -1210,8 +1234,20 @@
     }, 1400);
   }
 
+  async function mountUmbigoWork(section, group) {
+    const main = await loadUmbigoMain();
+    if (!main || !section.isConnected) return;
+    section.appendChild(main);
+    group.files.forEach(function (entry) {
+      const anchor = findWorkAnchor(section, entry.file);
+      if (anchor) anchor.setAttribute("data-archive-file", entry.file);
+    });
+    document.dispatchEvent(new CustomEvent("umbigo-mounted"));
+  }
+
   async function renderWorks(items) {
     works.innerHTML = "";
+    let umbigoMount = null;
     for (let i = 0; i < items.length; i += 1) {
       const group = items[i];
 
@@ -1220,16 +1256,8 @@
         section.className = "work work--umbigo umbigo-page";
         section.id = group.id;
         section.setAttribute("aria-hidden", "true");
-
-        const main = await loadUmbigoMain();
-        if (main) section.appendChild(main);
-        group.files.forEach(function (entry) {
-          const anchor = findWorkAnchor(section, entry.file);
-          if (anchor) anchor.setAttribute("data-archive-file", entry.file);
-        });
-
         works.appendChild(section);
-        document.dispatchEvent(new CustomEvent("umbigo-mounted"));
+        umbigoMount = mountUmbigoWork(section, group);
         continue;
       }
 
@@ -1267,6 +1295,11 @@
       applyWorkCopy(section, group.files[0]);
 
       works.appendChild(section);
+    }
+    if (umbigoMount) {
+      umbigoMount.catch(function (error) {
+        console.error("Nao foi possivel montar umbigo", error);
+      });
     }
   }
 
@@ -1371,8 +1404,9 @@
   }
 
   async function init() {
+    loadUmbigoMain().catch(function () {});
     try {
-      const response = await fetch(manifestUrl, { cache: "no-store" });
+      const response = await fetch(manifestUrl);
       if (!response.ok) throw new Error("manifest");
       manifest = await response.json();
     } catch (error) {
@@ -1381,8 +1415,8 @@
     }
 
     groups = groupEntries(manifest);
-    prefetchArchivePanelThumbs();
     await renderWorks(groups);
+    scheduleIdle(prefetchArchivePanelThumbs);
     lockScrollTop();
     syncStarRollMotion();
   }
