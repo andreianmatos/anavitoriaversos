@@ -11,13 +11,6 @@ import {
 
 const originals = new WeakMap();
 const MIN_SEG = 28;
-const ZOOM = 1.9;
-const canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-let pointer = { x: -9999, y: -9999 };
-let navelOn = false;
-let raf = 0;
 
 function visibleSection() {
   return document.querySelector(".umbigo-copy section:not([hidden])");
@@ -230,112 +223,6 @@ function layoutVisible() {
     console.warn("Pretext layout skipped", error);
     section.querySelectorAll(".umbigo-verse, .umbigo-essay p").forEach(restore);
   }
-  fillLens();
-}
-
-function setNavel(on) {
-  if (on === navelOn) return;
-  navelOn = on;
-  const dot = document.querySelector(".cursor-dot");
-  if (dot) dot.classList.toggle("is-navel", on);
-  document.body.classList.toggle("is-umbigo-navel", on);
-}
-
-function copySource() {
-  return document.querySelector(".umbigo-copy");
-}
-
-function fillLens() {
-  const dot = document.querySelector(".cursor-dot");
-  if (!dot) return;
-  let scene = dot.querySelector(".cursor-dot__scene");
-  if (!scene) {
-    scene = document.createElement("div");
-    scene.className = "cursor-dot__scene";
-    scene.setAttribute("aria-hidden", "true");
-    dot.appendChild(scene);
-  }
-  const source = copySource();
-  scene.innerHTML = "";
-  if (!source) return;
-  const clone = source.cloneNode(true);
-  clone.querySelectorAll("script").forEach(function (node) {
-    node.remove();
-  });
-  scene.style.width = source.offsetWidth + "px";
-  scene.appendChild(clone);
-}
-
-function overEssay() {
-  const essay = document.querySelector(
-    ".umbigo-copy section:not([hidden]) .umbigo-essay"
-  );
-  if (!essay) return false;
-  const rect = essay.getBoundingClientRect();
-  return (
-    pointer.x >= rect.left &&
-    pointer.x <= rect.right &&
-    pointer.y >= rect.top &&
-    pointer.y <= rect.bottom
-  );
-}
-
-function overSiteChrome() {
-  const nodes = document.querySelectorAll(
-    "body.umbigo-page > .page-header, .sobre-roll, .star-roll:not([hidden])"
-  );
-  for (let i = 0; i < nodes.length; i++) {
-    const rect = nodes[i].getBoundingClientRect();
-    if (
-      pointer.x >= rect.left &&
-      pointer.x <= rect.right &&
-      pointer.y >= rect.top &&
-      pointer.y <= rect.bottom
-    ) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function updateLens() {
-  const dot = document.querySelector(".cursor-dot");
-  const source = copySource();
-  if (!dot || !source) return;
-  const scene = dot.querySelector(".cursor-dot__scene");
-  if (!scene) return;
-  const rect = source.getBoundingClientRect();
-  const r = dot.offsetWidth / 2;
-  const lx = pointer.x - rect.left;
-  const ly = pointer.y - rect.top;
-  scene.style.transform =
-    "translate(" +
-    (r - lx * ZOOM) +
-    "px, " +
-    (r - ly * ZOOM) +
-    "px) scale(" +
-    ZOOM +
-    ")";
-}
-
-function tickNavel() {
-  raf = 0;
-  setNavel(overEssay() && !overSiteChrome());
-  if (navelOn) updateLens();
-}
-
-function onPointerMove(event) {
-  pointer.x = event.clientX;
-  pointer.y = event.clientY;
-  if (raf) return;
-  raf = window.requestAnimationFrame(tickNavel);
-}
-
-function onPointerLeave() {
-  pointer.x = -9999;
-  pointer.y = -9999;
-  if (raf) window.cancelAnimationFrame(raf);
-  raf = window.requestAnimationFrame(tickNavel);
 }
 
 let timer = 0;
@@ -368,8 +255,3 @@ document.addEventListener("avv-lang", schedule);
 document.addEventListener("umbigo-mounted", schedule);
 window.matchMedia("(max-width: 767px)").addEventListener("change", schedule);
 window.matchMedia("(pointer: coarse)").addEventListener("change", schedule);
-
-if (canHover.matches && !reduceMotion.matches) {
-  window.addEventListener("pointermove", onPointerMove, { passive: true });
-  document.addEventListener("mouseleave", onPointerLeave);
-}
