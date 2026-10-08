@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0">
   <title>Ana Vitória Versos</title>
   <script src="ui-scale.js?v=1"></script>
-  <link rel="stylesheet" href="style.css?v=258">
+  <link rel="stylesheet" href="style.css?v=294">
 </head>
 <body class="site-page" data-manifest="images.json?v=12">
   <div class="sobre-roll">
@@ -145,7 +145,9 @@
 
   <section class="site-hero" id="topo">
     <button type="button" class="star-wheel" data-star aria-label="Roleta">
-      <img src="imagens/star.gif" alt="">
+      <span class="wheel-figure">
+        <img class="wheel-figure__img" src="imagens/rodada_feia.png" alt="">
+      </span>
     </button>
   </section>
 
@@ -160,14 +162,24 @@
       </button>
       <button type="button" class="star-roll__mover" data-star-again aria-label="Roleta">
         <span class="star-roll__spin">
-          <img src="imagens/star.gif" alt="">
+          <span class="wheel-figure wheel-figure--dock">
+            <svg class="wheel-figure__lines" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <line x1="12" y1="12" x2="12" y2="2" />
+              <line x1="12" y1="12" x2="21.51" y2="8.91" />
+              <line x1="12" y1="12" x2="17.88" y2="20.09" />
+              <line x1="12" y1="12" x2="6.12" y2="20.09" />
+              <line x1="12" y1="12" x2="2.49" y2="8.91" />
+            </svg>
+            <img class="wheel-figure__img" src="imagens/rodada_feia.png" alt="">
+          </span>
         </span>
       </button>
     </div>
   </div>
 
-  <script src="nav.js?v=43"></script>
+  <script src="nav.js?v=45"></script>
+  <script src="archive-scatter.js?v=15"></script>
   <script type="module" src="umbigo-text.js?v=2"></script>
-  <script src="site.js?v=41"></script>
+  <script src="site.js?v=52"></script>
 </body>
 </html>

@@ -49,11 +49,39 @@
   function beginArchivePanelRender() {
     archiveOpenGen += 1;
     const gen = archiveOpenGen;
-    requestAnimationFrame(function () {
+
+    function runRender() {
       if (gen !== archiveOpenGen) return;
       if (!document.body.classList.contains("is-index-open")) return;
       renderArchivePanel(true);
-    });
+    }
+
+    if (!starRoll || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      requestAnimationFrame(runRender);
+      return;
+    }
+
+    let rendered = false;
+    let fallbackTimer = 0;
+    function runOnce() {
+      if (rendered) return;
+      rendered = true;
+      starRoll.removeEventListener("transitionend", onHeightEnd);
+      window.clearTimeout(fallbackTimer);
+      runRender();
+    }
+
+    function onHeightEnd(event) {
+      if (event.target !== starRoll || event.propertyName !== "height") return;
+      runOnce();
+    }
+
+    starRoll.addEventListener("transitionend", onHeightEnd);
+    const durationVar = getComputedStyle(document.documentElement)
+      .getPropertyValue("--archive-panel-duration")
+      .trim();
+    const durationSec = parseFloat(durationVar) || 0.7;
+    fallbackTimer = window.setTimeout(runOnce, durationSec * 1000 + 80);
   }
 
   function shuffle(list) {
@@ -804,19 +832,43 @@
     archivePanel.innerHTML = "";
     archivePanel.style.minHeight = "";
     archivePanel.classList.remove("archive-panel--cols-2", "archive-panel--cols-3");
+    archivePanel.classList.add("archive-panel--scatter");
 
+    const scrollSurface = document.createElement("div");
+    scrollSurface.className = "archive-panel-scroll is-preparing";
+    archivePanel.appendChild(scrollSurface);
+    const placeFragment = document.createDocumentFragment();
+    const scatterWidth = scrollSurface.clientWidth || panelWidth;
+
+    const scatter = window.avvArchiveScatter;
     const panelSeed = freshArchiveSeed();
-    const columnCount = archivePanelColumnCount(panelWidth);
-    archivePanel.classList.add("archive-panel--cols-" + columnCount);
-    const cols = createArchiveColumns(archivePanel, columnCount, panelSeed, true);
     const files = seededShuffle(manifest.slice(), panelSeed);
+    const layout = scatter.getLayout(files.length, scatterWidth, panelHeight, { panel: true });
+    const placed = [];
+    let contentBottom = layout.padding;
     let pending = files.length;
+
+    function revealArchiveScatter() {
+      scrollSurface.appendChild(placeFragment);
+      scrollSurface.querySelectorAll(".archive-panel-item").forEach(function (node) {
+        node.classList.remove("is-loading");
+        node.classList.add("is-placed");
+      });
+      scrollSurface.classList.remove("is-preparing");
+      archivePanel.classList.remove("is-arranging");
+    }
 
     function finishArchiveArrange() {
       if (token !== scatterToken) return;
       pending -= 1;
       if (pending > 0) return;
-      archivePanel.classList.remove("is-arranging");
+      const scrollH = Math.ceil(contentBottom + layout.padding);
+      scrollSurface.style.minHeight = Math.max(scrollH, panelHeight) + "px";
+      archivePanel.style.minHeight = "";
+      window.requestAnimationFrame(function () {
+        if (token !== scatterToken) return;
+        revealArchiveScatter();
+      });
     }
 
     files.forEach(function (entry, orderIndex) {
@@ -829,15 +881,15 @@
       button.setAttribute("aria-label", title);
       button.setAttribute("data-archive-file", entry.file);
       if (group) button.setAttribute("data-work-id", group.id);
-      applyArchiveColumnItem(button, orderIndex, panelSeed, true);
 
       const frame = document.createElement("span");
       frame.className = "archive-panel-item__frame";
 
       const img = document.createElement("img");
       img.alt = "";
-      img.decoding = "async";
+      img.decoding = "sync";
       img.loading = "eager";
+      img.style.visibility = "hidden";
       if ("fetchPriority" in img && orderIndex < 8) {
         img.fetchPriority = "high";
       }
@@ -859,16 +911,31 @@
         img.src = sources[sourceIndex];
       });
 
-      img.addEventListener("load", function () {
-        if (token !== scatterToken) return;
-        button.classList.remove("is-loading");
-        button.classList.add("is-placed");
-        button.style.setProperty(
-          "--archive-enter-delay",
-          Math.min(orderIndex, 24) * 0.025 + "s"
+      function mountPlacedItem() {
+        if (token !== scatterToken || button.parentNode) return;
+        const bottom = scatter.placeItem(
+          button,
+          img,
+          placed,
+          layout,
+          orderIndex,
+          panelSeed,
+          true
         );
+        img.style.visibility = "";
+        if (bottom === null) {
+          finishArchiveArrange();
+          return;
+        }
+        placeFragment.appendChild(button);
+        contentBottom = Math.max(contentBottom, bottom);
         finishArchiveArrange();
-      });
+      }
+
+      img.addEventListener("load", mountPlacedItem);
+      if (img.complete && img.naturalWidth) {
+        mountPlacedItem();
+      }
 
       button.addEventListener("click", function () {
         archivePanel.querySelectorAll(".arquivo-item.is-picked").forEach(function (node) {
@@ -881,7 +948,6 @@
 
       frame.appendChild(img);
       button.appendChild(frame);
-      cols[orderIndex % columnCount].appendChild(button);
     });
 
     if (lastWorkId) {
@@ -903,8 +969,14 @@
       archivePanel.classList.add("is-arranging");
       archivePanel.innerHTML = "";
       archivePanel.style.minHeight = "";
+      archivePanel.classList.remove("archive-panel--scatter");
+      archiveLayoutWidth = 0;
       return;
     }
+    archivePanel.innerHTML = "";
+    archivePanel.style.minHeight = "";
+    archivePanel.classList.remove("archive-panel--cols-2", "archive-panel--cols-3");
+    archivePanel.classList.add("archive-panel--scatter", "is-arranging");
     if (manifest.length) {
       beginArchivePanelRender();
     }
@@ -979,7 +1051,9 @@
   }
 
   function flyStarBetween(fromEl, toEl, onDone) {
-    const sourceImg = fromEl && fromEl.querySelector("img");
+    const sourceImg =
+      fromEl &&
+      (fromEl.querySelector(".wheel-figure__img") || fromEl.querySelector("img"));
     if (!fromEl || !toEl || !sourceImg) {
       if (onDone) onDone();
       return;
@@ -995,10 +1069,23 @@
     const fly = document.createElement("div");
     fly.className = "star-flight";
     fly.setAttribute("aria-hidden", "true");
+
+    const bonecoLayer = document.createElement("div");
+    bonecoLayer.className = "star-flight__boneco";
     const img = document.createElement("img");
     img.src = sourceImg.currentSrc || sourceImg.src;
     img.alt = "";
-    fly.appendChild(img);
+    bonecoLayer.appendChild(img);
+
+    const strokesLayer = document.createElement("div");
+    strokesLayer.className = "star-flight__strokes";
+    const linesTemplate = toEl.querySelector(".wheel-figure__lines");
+    if (linesTemplate) {
+      strokesLayer.appendChild(linesTemplate.cloneNode(true));
+    }
+
+    fly.appendChild(bonecoLayer);
+    fly.appendChild(strokesLayer);
     document.body.appendChild(fly);
 
     fromEl.classList.add("is-star-handoff");
@@ -1022,6 +1109,8 @@
       if (onDone) onDone();
     }
 
+    let morphTimer = 0;
+
     function run() {
       fly.classList.add("is-active");
       fly.style.transform =
@@ -1032,6 +1121,9 @@
         "px) translate(-50%, -50%) scale(" +
         scale +
         ")";
+      morphTimer = window.setTimeout(function () {
+        fly.classList.add("is-morph");
+      }, 340);
     }
 
     requestAnimationFrame(function () {
@@ -1042,13 +1134,14 @@
     function complete() {
       if (done) return;
       done = true;
+      window.clearTimeout(morphTimer);
       finish();
     }
 
     fly.addEventListener("transitionend", function (event) {
       if (event.propertyName === "transform") complete();
     });
-    window.setTimeout(complete, 680);
+    window.setTimeout(complete, 780);
   }
 
   function updateStarAgainLabel() {
@@ -1327,6 +1420,7 @@
     let observedPanelWidth = 0;
     const panelResize = new ResizeObserver(function (entries) {
       if (!document.body.classList.contains("is-index-open")) return;
+      if (archivePanel.classList.contains("is-arranging")) return;
       const width = Math.round(entries[0].contentRect.width);
       if (!width) return;
       if (observedPanelWidth && Math.abs(width - observedPanelWidth) < (isArchivePhone() ? 48 : 24)) {

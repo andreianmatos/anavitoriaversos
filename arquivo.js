@@ -20,6 +20,7 @@
 
   let scatterToken = 0;
   let manifest = [];
+  let layoutSeed = 0;
 
   function freshArchiveSeed() {
     const mix =
@@ -99,68 +100,6 @@
     return imageDir + encodePath(file);
   }
 
-  function archivePageColumnCount() {
-    const width = (window.visualViewport && window.visualViewport.width) || window.innerWidth;
-    return width < 560 ? 2 : 3;
-  }
-
-  function archiveColumnRng(index, seed) {
-    let state = (seed + Math.imul(index + 1, 2246822519)) >>> 0;
-    return function () {
-      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-      return state / 4294967296;
-    };
-  }
-
-  function styleArchiveColumn(colEl, colIndex, seed, compact) {
-    let state = (seed + Math.imul(colIndex + 11, 1597334677)) >>> 0;
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    const r = state / 4294967296;
-    const bases = compact ? [0, 10, 5] : [0, 26, 12];
-    const padTop = (bases[colIndex] || 0) + Math.round(r * (compact ? 12 : 20));
-    const gapScale = 0.9 + colIndex * 0.05 + r * 0.14;
-    colEl.style.setProperty("--archive-col-offset", padTop + "px");
-    colEl.style.setProperty(
-      "--archive-col-gap-scale",
-      String(Math.round(gapScale * 100) / 100)
-    );
-  }
-
-  function createArchiveColumns(parent, columnCount, seed, compact) {
-    const cols = [];
-    const colClass = compact ? "archive-panel-col" : "arquivo-col";
-    for (let c = 0; c < columnCount; c += 1) {
-      const col = document.createElement("div");
-      col.className = colClass;
-      col.setAttribute("data-archive-col", String(c));
-      styleArchiveColumn(col, c, seed, compact);
-      parent.appendChild(col);
-      cols.push(col);
-    }
-    return cols;
-  }
-
-  function applyArchiveColumnItem(button, index, seed, compact) {
-    const rnd = archiveColumnRng(index, seed);
-    const r1 = rnd();
-    const r2 = rnd();
-    const r3 = rnd();
-    const r4 = rnd();
-    const maxH = compact ? 14 + Math.round(r1 * 18) : 26 + Math.round(r1 * 30);
-    const maxRem = compact ? 9 + Math.round(r2 * 6) : 18 + Math.round(r2 * 20);
-    const xShift = Math.round((r3 - 0.5) * (compact ? 16 : 26));
-    const gapExtra = Math.round(r4 * (compact ? 14 : 22));
-    const scale = (compact ? 0.84 : 0.82) + r1 * (compact ? 0.18 : 0.2);
-
-    button.style.setProperty(
-      "--archive-thumb-max",
-      "min(" + maxH + "vh, " + maxRem + "rem)"
-    );
-    button.style.setProperty("--archive-x-shift", xShift + "px");
-    button.style.setProperty("--archive-item-gap-extra", gapExtra + "px");
-    button.style.setProperty("--archive-thumb-scale", String(Math.round(scale * 1000) / 1000));
-  }
-
   function setModalText(entry) {
     modalTitle.textContent = entry.title || titleFromFile(entry.file);
 
@@ -214,18 +153,60 @@
     modalImage.classList.remove("is-loading");
   });
 
-  function renderArchiveGrid(items) {
-    const token = ++scatterToken;
-    container.innerHTML = "";
-    container.style.minHeight = "100dvh";
-    const layoutSeed = freshArchiveSeed();
-    const columnCount = archivePageColumnCount();
-    const narrow =
-      ((window.visualViewport && window.visualViewport.width) || window.innerWidth) < 1024;
-    container.className = "arquivo arquivo--cols-" + columnCount;
-    const cols = createArchiveColumns(container, columnCount, layoutSeed, narrow);
+  function renderArchiveGrid(items, reuseSeed) {
+    const scatter = window.avvArchiveScatter;
+    if (!scatter) return;
 
+    const panelWidth = Math.round(
+      container.clientWidth || document.documentElement.clientWidth || 0
+    );
+    if (panelWidth < 48) {
+      window.requestAnimationFrame(function () {
+        renderArchiveGrid(items, reuseSeed);
+      });
+      return;
+    }
+
+    const token = ++scatterToken;
+    const scrollY = window.scrollY;
+    container.innerHTML = "";
+    container.style.minHeight = "";
+    container.className = "arquivo arquivo--scatter";
+
+    const surface = document.createElement("div");
+    surface.className = "arquivo-scatter-surface";
+    container.appendChild(surface);
+
+    if (!reuseSeed || !layoutSeed) {
+      layoutSeed = freshArchiveSeed();
+    }
+
+    const scatterWidth = Math.round(surface.clientWidth || panelWidth);
+    const vv = window.visualViewport;
+    const viewH = (vv && vv.height) || window.innerHeight;
+    const topInset = container.getBoundingClientRect().top;
+    const firstScreen = Math.max(viewH - Math.max(0, topInset), viewH * 0.88);
+    const panelHeight = Math.max(
+      firstScreen * 1.05,
+      viewH * (items.length > 10 ? 1.5 : 1.28)
+    );
     const files = seededShuffle(items, layoutSeed);
+    const layout = scatter.getLayout(files.length, scatterWidth, panelHeight, { page: true });
+    const placed = [];
+    let contentBottom = layout.padding;
+    let pending = files.length;
+
+    function finishLayout() {
+      if (token !== scatterToken) return;
+      pending -= 1;
+      if (pending > 0) return;
+      const scrollH = Math.ceil(contentBottom + layout.padding);
+      surface.style.minHeight = scrollH + "px";
+      container.style.minHeight = "";
+      window.requestAnimationFrame(function () {
+        window.scrollTo(0, scrollY);
+      });
+    }
 
     files.forEach(function (entry, index) {
       const title = entry.title || titleFromFile(entry.file);
@@ -233,7 +214,9 @@
       button.type = "button";
       button.className = "arquivo-item is-loading";
       button.setAttribute("aria-label", "Ver " + title);
-      applyArchiveColumnItem(button, index, layoutSeed, narrow);
+
+      const frame = document.createElement("span");
+      frame.className = "arquivo-item__frame";
 
       const img = document.createElement("img");
       img.alt = "";
@@ -251,16 +234,28 @@
         sourceIndex += 1;
         if (sourceIndex >= sources.length) {
           button.remove();
+          finishLayout();
           return;
         }
         img.src = sources[sourceIndex];
       });
 
-      img.addEventListener("load", function onThumbLoad() {
-        if (token !== scatterToken) return;
-        button.classList.remove("is-loading");
-        button.classList.add("is-placed");
-      });
+      function mountPlacedItem() {
+        if (token !== scatterToken || button.isConnected) return;
+        const bottom = scatter.placeItem(button, img, placed, layout, index, layoutSeed);
+        if (bottom === null) {
+          finishLayout();
+          return;
+        }
+        surface.appendChild(button);
+        contentBottom = Math.max(contentBottom, bottom);
+        finishLayout();
+      }
+
+      img.addEventListener("load", mountPlacedItem);
+      if (img.complete && img.naturalWidth) {
+        mountPlacedItem();
+      }
 
       button.addEventListener("click", function () {
         if (entry.href) {
@@ -270,12 +265,13 @@
         openModal(entry);
       });
 
-      const frame = document.createElement("span");
-      frame.className = "arquivo-item__frame";
       frame.appendChild(img);
       button.appendChild(frame);
-      cols[index % columnCount].appendChild(button);
     });
+
+    if (!files.length) {
+      container.style.minHeight = "";
+    }
   }
 
   async function init() {
@@ -313,6 +309,9 @@
     const height = Math.round(
       (window.visualViewport && window.visualViewport.height) || window.innerHeight
     );
+    if (width === lastLayoutWidth && Math.abs(height - lastLayoutHeight) < 80) {
+      return;
+    }
     if (isPhone() && Math.abs(width - lastLayoutWidth) < 80) {
       return;
     }
@@ -329,7 +328,7 @@
     window.clearTimeout(resizeTimer);
     resizeTimer = window.setTimeout(function () {
       if (manifest.length) {
-        renderArchiveGrid(manifest);
+        renderArchiveGrid(manifest, true);
       }
     }, 280);
   }

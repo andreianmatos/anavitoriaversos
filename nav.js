@@ -78,6 +78,32 @@
     star.className = "cursor-dot__star";
     star.setAttribute("aria-hidden", "true");
 
+    const starSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    starSvg.setAttribute("viewBox", "0 0 24 24");
+    starSvg.setAttribute("class", "cursor-dot__star-svg");
+    starSvg.setAttribute("aria-hidden", "true");
+
+    const lines = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    lines.setAttribute("class", "cursor-dot__star-lines");
+
+    const cx = 12;
+    const cy = 12;
+    const radius = 10;
+    for (let i = 0; i < 5; i += 1) {
+      const angle = ((-90 + i * 72) * Math.PI) / 180;
+      const x2 = cx + radius * Math.cos(angle);
+      const y2 = cy + radius * Math.sin(angle);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", String(cx));
+      line.setAttribute("y1", String(cy));
+      line.setAttribute("x2", String(x2));
+      line.setAttribute("y2", String(y2));
+      lines.appendChild(line);
+    }
+
+    starSvg.appendChild(lines);
+    star.appendChild(starSvg);
+
     dot.appendChild(ball);
     dot.appendChild(star);
     document.body.appendChild(dot);
