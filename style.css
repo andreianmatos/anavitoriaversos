@@ -1,11 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,500;0,700;1,400&display=swap");
-
 @font-face {
   font-family: "C2026versos";
   src: url("fonts/C2026versos-Regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 * {
@@ -126,7 +124,7 @@ body {
   min-height: 100dvh;
   background: var(--skin);
   color: var(--text);
-  font-family: "C2026versos", "Montserrat", system-ui, sans-serif;
+  font-family: "C2026versos", system-ui, sans-serif;
   font-size: 1.2rem;
   line-height: 1.52;
   -webkit-font-smoothing: antialiased;
@@ -1581,7 +1579,7 @@ a.page-header__section:hover {
 
 .arquivo-modal__title {
   font-size: inherit;
-  font-weight: 400;
+  font-weight: 700;
   margin-bottom: 1rem;
   text-transform: uppercase;
 }
@@ -2561,6 +2559,16 @@ a.sobre-roll__title:hover {
 
 .work.work--image .work__copy[hidden] {
   display: none;
+}
+
+.work.work--image .work__copy-title {
+  margin: 0 0 0.55em;
+  max-width: 26em;
+  font-size: clamp(0.78rem, 0.95vw, 1.15rem);
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  text-transform: uppercase;
 }
 
 .work.work--image .work__text {

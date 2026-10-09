@@ -203,11 +203,14 @@
 
   function applyWorkCopy(section, entry) {
     const textEl = section.querySelector(".work__text");
+    const titleEl = section.querySelector(".work__copy-title");
     const copyWrap = section.querySelector(".work__copy");
     if (!textEl || !copyWrap) return;
     const text = resolveWorkText(entry);
+    const title = entry ? entry.title || titleFromFile(entry.file) : "";
+    if (titleEl) titleEl.textContent = title;
     textEl.textContent = text;
-    copyWrap.hidden = !text;
+    copyWrap.hidden = !text && !title;
   }
 
   function refreshWorkCopyTexts() {
@@ -1290,8 +1293,11 @@
       const copyWrap = document.createElement("div");
       copyWrap.className = "work__copy";
       copyWrap.hidden = true;
+      const titleEl = document.createElement("h2");
+      titleEl.className = "work__copy-title";
       const textEl = document.createElement("p");
       textEl.className = "work__text";
+      copyWrap.appendChild(titleEl);
       copyWrap.appendChild(textEl);
 
       layout.appendChild(frame);
