@@ -1095,11 +1095,16 @@
     fly.setAttribute("aria-hidden", "true");
 
     const bonecoLayer = document.createElement("div");
-    bonecoLayer.className = "star-flight__boneco";
+    bonecoLayer.className = "star-flight__boneco wheel-figure";
     const img = document.createElement("img");
+    img.className = "wheel-figure__img";
     img.src = sourceImg.currentSrc || sourceImg.src;
     img.alt = "";
     bonecoLayer.appendChild(img);
+    const shine = document.createElement("span");
+    shine.className = "wheel-figure__shine";
+    shine.setAttribute("aria-hidden", "true");
+    bonecoLayer.appendChild(shine);
 
     const strokesLayer = document.createElement("div");
     strokesLayer.className = "star-flight__strokes";

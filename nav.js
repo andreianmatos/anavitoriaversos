@@ -265,8 +265,6 @@
 
   const homePage = document.body.classList.contains("home-page");
   const homeTitle = document.querySelector(".home-title");
-  const bgVideo = document.querySelector(".video-bg video");
-
   function fitHomeTitle() {
     if (!homeTitle) return;
     const width = homeTitle.clientWidth;
@@ -296,25 +294,6 @@
         if (!size) return;
         line.style.fontSize = size * scale + "px";
       });
-    }
-  }
-
-  if (bgVideo) {
-    if (prefersReducedMotion.matches) {
-      bgVideo.pause();
-      bgVideo.removeAttribute("src");
-      bgVideo.load();
-    } else {
-      bgVideo.muted = true;
-      bgVideo.defaultMuted = true;
-      bgVideo.playsInline = true;
-      bgVideo.loop = true;
-      const tryPlay = function () {
-        bgVideo.play().catch(function () {});
-      };
-      tryPlay();
-      bgVideo.addEventListener("canplay", tryPlay);
-      document.addEventListener("touchstart", tryPlay, { once: true, passive: true });
     }
   }
 
