@@ -2328,7 +2328,7 @@ a.sobre-roll__title:hover {
   display: block;
   width: 100%;
   transform-origin: 50% 50%;
-  animation: star-spin 28s linear infinite;
+  animation: star-pulse 4.2s ease-in-out infinite;
 }
 
 .wheel-figure__img {
@@ -2401,8 +2401,24 @@ a.sobre-roll__title:hover {
   pointer-events: none;
 }
 
-.star-wheel.is-draw .wheel-figure {
-  animation-duration: 1.1s;
+.star-wheel.is-draw .wheel-figure,
+.star-roll.is-draw .wheel-figure--dock {
+  animation-name: star-pinwheel-burst;
+  animation-duration: var(--pinwheel-duration, 1.48s);
+  animation-timing-function: cubic-bezier(0.05, 0.88, 0.12, 1);
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+@keyframes star-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.068);
+  }
 }
 
 @keyframes star-spin {
@@ -2412,6 +2428,16 @@ a.sobre-roll__title:hover {
 
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes star-pinwheel-burst {
+  from {
+    transform: rotate(var(--wheel-spin-base, 0deg));
+  }
+
+  to {
+    transform: rotate(calc(var(--wheel-spin-base, 0deg) + 1800deg));
   }
 }
 
@@ -3012,8 +3038,15 @@ a.sobre-roll__title:hover {
   margin: 0;
   padding: 0;
   pointer-events: none;
-  transition: transform 0.72s cubic-bezier(0.33, 1, 0.68, 1);
+  transition:
+    transform var(--star-flight-ms, 720ms) var(--star-flight-ease, cubic-bezier(0.33, 1, 0.68, 1));
   will-change: transform;
+}
+
+.star-flight__wheel {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
 }
 
 .star-flight__boneco,
@@ -3021,8 +3054,8 @@ a.sobre-roll__title:hover {
   position: absolute;
   inset: 0;
   transition:
-    opacity 0.42s ease,
-    transform 0.42s ease;
+    opacity 0.38s ease,
+    transform 0.38s ease;
 }
 
 .star-flight__boneco.wheel-figure {
@@ -3034,7 +3067,6 @@ a.sobre-roll__title:hover {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  animation: star-flight-spin 0.45s linear infinite;
 }
 
 .star-flight__strokes {
@@ -3066,16 +3098,6 @@ a.sobre-roll__title:hover {
 .star-flight.is-morph .star-flight__strokes {
   opacity: 1;
   transform: scale(1);
-}
-
-@keyframes star-flight-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .star-roll__mover {
@@ -3110,10 +3132,6 @@ a.sobre-roll__title:hover {
 
 .star-roll.is-draw .star-roll__mover {
   animation-duration: 5s;
-}
-
-.star-roll.is-draw .wheel-figure--dock {
-  animation: star-spin 1.1s linear infinite;
 }
 
 @keyframes star-roll-motion {

@@ -1077,7 +1077,8 @@
     updateWorkChrome();
   }
 
-  function flyStarBetween(fromEl, toEl, onDone) {
+  function flyStarBetween(fromEl, toEl, onDone, flyOpts) {
+    flyOpts = flyOpts || {};
     const sourceImg =
       fromEl &&
       (fromEl.querySelector(".wheel-figure__img") || fromEl.querySelector("img"));
@@ -1086,11 +1087,18 @@
       return;
     }
 
+    const deferTarget = flyOpts.deferTargetMeasure === true;
     const fromRect = fromEl.getBoundingClientRect();
-    const toRect = toEl.getBoundingClientRect();
-    if (fromRect.width < 1 || toRect.width < 1) {
+    if (fromRect.width < 1) {
       if (onDone) onDone();
       return;
+    }
+    if (!deferTarget) {
+      const toRectCheck = toEl.getBoundingClientRect();
+      if (toRectCheck.width < 1) {
+        if (onDone) onDone();
+        return;
+      }
     }
 
     const fly = document.createElement("div");
@@ -1109,6 +1117,40 @@
     shine.setAttribute("aria-hidden", "true");
     bonecoLayer.appendChild(shine);
 
+    const wheelWrap = document.createElement("div");
+    wheelWrap.className = "star-flight__wheel";
+
+    const linkedSpin =
+      typeof flyOpts.spinFromDeg === "number" && typeof flyOpts.spinExtraDeg === "number";
+    let spinAnim = null;
+    let dockSpinAnim = null;
+    if (linkedSpin) {
+      const spinKeyframes = [
+        { transform: "rotate(" + flyOpts.spinFromDeg + "deg)" },
+        {
+          transform: "rotate(" + (flyOpts.spinFromDeg + flyOpts.spinExtraDeg) + "deg)",
+        },
+      ];
+      const spinTiming = {
+        duration: flyOpts.spinDuration || FLIGHT_MS,
+        easing: flyOpts.spinEasing || FLIGHT_EASING,
+        fill: "forwards",
+      };
+      wheelWrap.style.transform = "rotate(" + flyOpts.spinFromDeg + "deg)";
+      spinAnim = wheelWrap.animate(spinKeyframes, spinTiming);
+      if (!deferTarget) {
+        const dockFig = toEl.querySelector(".wheel-figure--dock");
+        if (dockFig) {
+          dockFig.getAnimations().forEach(function (anim) {
+            anim.cancel();
+          });
+          dockFig.style.animation = "none";
+          dockFig.style.transform = "rotate(" + flyOpts.spinFromDeg + "deg)";
+          dockSpinAnim = dockFig.animate(spinKeyframes, spinTiming);
+        }
+      }
+    }
+
     const strokesLayer = document.createElement("div");
     strokesLayer.className = "star-flight__strokes";
     const linesTemplate = toEl.querySelector(".wheel-figure__lines");
@@ -1116,8 +1158,9 @@
       strokesLayer.appendChild(linesTemplate.cloneNode(true));
     }
 
-    fly.appendChild(bonecoLayer);
-    fly.appendChild(strokesLayer);
+    wheelWrap.appendChild(bonecoLayer);
+    wheelWrap.appendChild(strokesLayer);
+    fly.appendChild(wheelWrap);
     document.body.appendChild(fly);
 
     fromEl.classList.add("is-star-handoff");
@@ -1125,23 +1168,64 @@
 
     const fromCx = fromRect.left + fromRect.width / 2;
     const fromCy = fromRect.top + fromRect.height / 2;
-    const toCx = toRect.left + toRect.width / 2;
-    const toCy = toRect.top + toRect.height / 2;
-    const scale = toRect.width / fromRect.width;
+    let toCx = fromCx;
+    let toCy = fromCy;
+    let scale = 1;
 
+    const holdMs = flyOpts.holdMs || 0;
+    const flightMoveMs = flyOpts.flightMoveMs || flyOpts.spinDuration || FLIGHT_MS;
+    const morphLeadMs = flyOpts.morphLeadMs || FLIGHT_MORPH_LEAD_MS;
+    fly.style.setProperty("--star-flight-ms", flightMoveMs + "ms");
+    if (flyOpts.spinEasingMove) {
+      fly.style.setProperty("--star-flight-ease", flyOpts.spinEasingMove);
+    } else {
+      fly.style.removeProperty("--star-flight-ease");
+    }
     fly.style.width = fromRect.width + "px";
     fly.style.height = fromRect.height + "px";
     fly.style.transform =
       "translate(" + fromCx + "px, " + fromCy + "px) translate(-50%, -50%)";
 
     function finish() {
+      let finalDeg = linkedSpin ? flyOpts.spinFromDeg + flyOpts.spinExtraDeg : 0;
+      if (linkedSpin) {
+        const matrix = new DOMMatrixReadOnly(window.getComputedStyle(wheelWrap).transform);
+        finalDeg = Math.atan2(matrix.b, matrix.a) * (180 / Math.PI);
+      }
+      if (spinAnim) spinAnim.cancel();
+      if (dockSpinAnim) dockSpinAnim.cancel();
+      primeDockWheelHandoff(toEl, finalDeg);
       fly.remove();
       fromEl.classList.remove("is-star-handoff");
       toEl.classList.remove("is-star-handoff");
-      if (onDone) onDone();
+      if (onDone) onDone(finalDeg);
     }
 
     let morphTimer = 0;
+
+    function syncDockSpinForDescend() {
+      if (!linkedSpin) return;
+      const dockFig = toEl.querySelector(".wheel-figure--dock");
+      if (!dockFig) return;
+      const currentDeg = getWheelRotation(wheelWrap);
+      const endDeg = flyOpts.spinFromDeg + flyOpts.spinExtraDeg;
+      dockFig.getAnimations().forEach(function (anim) {
+        anim.cancel();
+      });
+      dockFig.style.animation = "none";
+      dockFig.style.transform = "rotate(" + currentDeg + "deg)";
+      dockSpinAnim = dockFig.animate(
+        [
+          { transform: "rotate(" + currentDeg + "deg)" },
+          { transform: "rotate(" + endDeg + "deg)" },
+        ],
+        {
+          duration: flightMoveMs,
+          easing: flyOpts.spinEasing || "linear",
+          fill: "forwards",
+        }
+      );
+    }
 
     function run() {
       fly.classList.add("is-active");
@@ -1155,12 +1239,35 @@
         ")";
       morphTimer = window.setTimeout(function () {
         fly.classList.add("is-morph");
-      }, 340);
+      }, Math.max(0, holdMs + flightMoveMs - morphLeadMs));
     }
 
-    requestAnimationFrame(function () {
-      requestAnimationFrame(run);
-    });
+    function beginDescend() {
+      if (typeof flyOpts.onBeforeDescend === "function") {
+        flyOpts.onBeforeDescend();
+      }
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () {
+          const toRect = toEl.getBoundingClientRect();
+          if (toRect.width < 1) {
+            complete();
+            return;
+          }
+          toCx = toRect.left + toRect.width / 2;
+          toCy = toRect.top + toRect.height / 2;
+          scale = toRect.width / fromRect.width;
+          fly.style.setProperty("--star-flight-ms", flightMoveMs + "ms");
+          syncDockSpinForDescend();
+          run();
+        });
+      });
+    }
+
+    if (holdMs > 0) {
+      window.setTimeout(beginDescend, holdMs);
+    } else {
+      beginDescend();
+    }
 
     let done = false;
     function complete() {
@@ -1173,7 +1280,7 @@
     fly.addEventListener("transitionend", function (event) {
       if (event.propertyName === "transform") complete();
     });
-    window.setTimeout(complete, 780);
+    window.setTimeout(complete, holdMs + flightMoveMs + 160);
   }
 
   function updateStarAgainLabel() {
@@ -1197,6 +1304,167 @@
     return pool[Math.floor(Math.random() * pool.length)];
   }
 
+  const PINWHEEL_MS = 1480;
+  const HERO_SPIN_MS = 1000;
+  const HERO_SPIN_TURNS = 1.35;
+  const FLIGHT_MS = 720;
+  const FLIGHT_SPIN_TURNS = 1.35;
+  const FLIGHT_EASING = "cubic-bezier(0.33, 1, 0.68, 1)";
+  const FLIGHT_MORPH_LEAD_MS = 300;
+
+  function getWheelRotation(fig) {
+    if (!fig) return 0;
+    const matrix = new DOMMatrixReadOnly(window.getComputedStyle(fig).transform);
+    const deg = Math.atan2(matrix.b, matrix.a) * (180 / Math.PI);
+    return Number.isFinite(deg) ? deg : 0;
+  }
+
+  function resumeWheelIdlePulse(fig) {
+    if (!fig) return;
+    fig.style.removeProperty("--wheel-spin-base");
+    fig.style.animation = "none";
+    fig.style.transform = "";
+    void fig.offsetHeight;
+    fig.style.animation = "";
+    fig.style.animationDelay = "";
+  }
+
+  function resumeWheelIdleSpin(fig, isDock) {
+    if (!fig) return;
+    const workOpen = document.body.classList.contains("is-work-open");
+    if (isDock && !workOpen) {
+      fig.style.animation = "";
+      fig.style.animationDelay = "";
+      fig.style.transform = "";
+      fig.style.removeProperty("--wheel-spin-base");
+      return;
+    }
+    if (!isDock) {
+      resumeWheelIdlePulse(fig);
+      return;
+    }
+
+    const duration = 26;
+    let deg = getWheelRotation(fig);
+    if (!Number.isFinite(deg)) deg = 0;
+    deg = ((deg % 360) + 360) % 360;
+
+    fig.style.removeProperty("--wheel-spin-base");
+    fig.style.animation = "none";
+    void fig.offsetHeight;
+    fig.style.animation = "";
+    fig.style.animationDelay = (-(deg / 360) * duration) + "s";
+    fig.style.transform = "";
+  }
+
+  function syncWheelIdleFromDeg(fig, isDock, deg) {
+    if (!fig) return;
+    fig.getAnimations().forEach(function (anim) {
+      anim.cancel();
+    });
+    fig.style.animation = "none";
+    if (typeof deg === "number" && Number.isFinite(deg)) {
+      fig.style.transform = "rotate(" + deg + "deg)";
+    } else {
+      fig.style.transform = "";
+    }
+    void fig.offsetHeight;
+    resumeWheelIdleSpin(fig, isDock);
+  }
+
+  function primeDockWheelHandoff(toEl, deg) {
+    const dockFig = toEl && toEl.querySelector(".wheel-figure--dock");
+    if (!dockFig || !Number.isFinite(deg)) return;
+    dockFig.getAnimations().forEach(function (anim) {
+      anim.cancel();
+    });
+    dockFig.style.animation = "none";
+    dockFig.style.transform = "rotate(" + deg + "deg)";
+  }
+
+  function captureWheelSpinBase(fig) {
+    fig.getAnimations().forEach(function (anim) {
+      anim.cancel();
+    });
+    const deg = getWheelRotation(fig);
+    fig.style.animation = "none";
+    fig.style.transform = "rotate(" + deg + "deg)";
+    void fig.offsetHeight;
+    fig.style.setProperty("--wheel-spin-base", deg + "deg");
+  }
+
+  function startPinwheelDraw(dockOnly) {
+    document.documentElement.style.setProperty("--pinwheel-duration", PINWHEEL_MS + "ms");
+    const mainFig = star.querySelector(".wheel-figure");
+    const dockFig = starRoll && starRoll.querySelector(".wheel-figure--dock");
+    if (!dockOnly && mainFig) captureWheelSpinBase(mainFig);
+    if (dockFig) captureWheelSpinBase(dockFig);
+    if (!dockOnly) star.classList.add("is-draw");
+    if (starRoll) starRoll.classList.add("is-draw");
+  }
+
+  function endPinwheelDraw() {
+    const mainFig = star.querySelector(".wheel-figure");
+    const dockFig = starRoll && starRoll.querySelector(".wheel-figure--dock");
+    if (mainFig) resumeWheelIdlePulse(mainFig);
+    if (dockFig) resumeWheelIdleSpin(dockFig, true);
+    star.classList.remove("is-draw");
+    if (starRoll) starRoll.classList.remove("is-draw");
+  }
+
+  function beginHeroSpinToBar(group) {
+    const mainFig = star.querySelector(".wheel-figure");
+    if (!mainFig) return;
+
+    mainFig.getAnimations().forEach(function (anim) {
+      anim.cancel();
+    });
+    star.classList.remove("is-draw");
+    if (starRoll) starRoll.classList.remove("is-draw");
+
+    const startDeg = getWheelRotation(mainFig);
+    mainFig.style.animation = "none";
+    mainFig.style.animationDelay = "";
+
+    const holdMs = HERO_SPIN_MS;
+    const flightMoveMs = FLIGHT_MS;
+    const spinDuration = holdMs + flightMoveMs;
+    const heroSpinDeg = HERO_SPIN_TURNS * 360;
+    const spinExtraDeg = (heroSpinDeg / holdMs) * spinDuration;
+
+    document.body.classList.add("is-star-flight");
+
+    flyStarBetween(
+      star,
+      starAgain,
+      function (finalDeg) {
+        document.body.classList.remove("is-star-flight");
+        spinning = false;
+
+        const dockFig = starRoll && starRoll.querySelector(".wheel-figure--dock");
+        syncWheelIdleFromDeg(dockFig, true, finalDeg);
+        syncWheelIdleFromDeg(mainFig, false, finalDeg);
+
+        restartStarRollAnimation();
+      },
+      {
+        deferTargetMeasure: true,
+        holdMs: holdMs,
+        flightMoveMs: flightMoveMs,
+        spinFromDeg: startDeg,
+        spinExtraDeg: spinExtraDeg,
+        spinDuration: spinDuration,
+        spinEasing: "linear",
+        spinEasingMove: FLIGHT_EASING,
+        onBeforeDescend: function () {
+          setWorkSectionOpen(true);
+          syncStarRollMotion();
+          scrollToWork(group.id);
+        },
+      }
+    );
+  }
+
   function spinToWork(id) {
     if (spinning) return;
     const group =
@@ -1214,32 +1482,18 @@
 
     if (document.body.classList.contains("is-work-open")) {
       spinning = true;
-      if (starRoll) starRoll.classList.add("is-draw");
+      startPinwheelDraw(true);
       restartStarRollAnimation();
       scrollToWork(group.id);
       window.setTimeout(function () {
-        if (starRoll) starRoll.classList.remove("is-draw");
+        endPinwheelDraw();
         spinning = false;
-      }, 1100);
+      }, PINWHEEL_MS);
       return;
     }
 
     spinning = true;
-    star.classList.add("is-draw");
-    if (starRoll) starRoll.classList.add("is-draw");
-    window.setTimeout(function () {
-      star.classList.remove("is-draw");
-      if (starRoll) starRoll.classList.remove("is-draw");
-      setWorkSectionOpen(true);
-      syncStarRollMotion();
-      document.body.classList.add("is-star-flight");
-      scrollToWork(group.id);
-      flyStarBetween(star, starAgain, function () {
-        document.body.classList.remove("is-star-flight");
-        spinning = false;
-        restartStarRollAnimation();
-      });
-    }, 1400);
+    beginHeroSpinToBar(group);
   }
 
   async function mountUmbigoWork(section, group) {
@@ -1396,7 +1650,7 @@
     );
     const travelPx = Math.max(0, dockWidth - moverWidth - toggleWidth - insetPx - 6);
     const radiusPx = moverWidth / 2;
-    const turnDeg = (travelPx / radiusPx) * (180 / Math.PI);
+    const turnDeg = radiusPx > 0 ? (travelPx / radiusPx) * (180 / Math.PI) : 0;
 
     mover.style.setProperty("--star-roll-travel", travelPx + "px");
     mover.style.setProperty("--star-roll-turn", turnDeg + "deg");
