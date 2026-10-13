@@ -8,26 +8,40 @@
   <meta http-equiv="Expires" content="0">
   <title>Ana Vitória Versos</title>
   <link rel="preload" href="fonts/C2026versos-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="images.json?v=14" as="fetch" crossorigin>
+  <link rel="preload" href="images.json?v=15" as="fetch" crossorigin>
   <link rel="preload" href="imagens/boneco_estrela.png?v=1" as="image">
   <script src="ui-scale.js?v=2"></script>
-  <link rel="stylesheet" href="style.css?v=353">
+  <link rel="stylesheet" href="style.css?v=380">
 </head>
-<body class="site-page" data-manifest="images.json?v=14">
+<body class="site-page" data-manifest="images.json?v=15">
   <div class="sobre-roll">
     <div class="sobre-roll__dock">
-      <div class="sobre-roll__start">
-        <a
-          href="#topo"
-          class="sobre-roll__title"
-          data-site-home
-          data-i18n-aria="mainHome"
-        >Ana Vitória Versos</a>
-        <div class="lang-toggle sobre-roll__lang" role="group" aria-label="Idioma">
-          <button type="button" class="lang-toggle__btn" data-lang="pt" aria-pressed="true">PT</button>
-          <span aria-hidden="true">/</span>
-          <button type="button" class="lang-toggle__btn" data-lang="en" aria-pressed="false">EN</button>
-        </div>
+      <button
+        type="button"
+        class="sobre-roll__home"
+        data-site-home
+        data-star-dock
+        data-i18n-aria="mainHome"
+        aria-label="Voltar ao início"
+      >
+        <span class="sobre-roll__home-figure" aria-hidden="true">
+          <span class="wheel-figure wheel-figure--dock wheel-figure--home">
+            <svg class="wheel-figure__lines" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <line x1="12" y1="12" x2="12" y2="2" />
+              <line x1="12" y1="12" x2="21.51" y2="8.91" />
+              <line x1="12" y1="12" x2="17.88" y2="20.09" />
+              <line x1="12" y1="12" x2="6.12" y2="20.09" />
+              <line x1="12" y1="12" x2="2.49" y2="8.91" />
+            </svg>
+            <img class="wheel-figure__img" src="imagens/boneco_estrela.png?v=1" alt="">
+            <span class="wheel-figure__shine" aria-hidden="true"></span>
+          </span>
+        </span>
+      </button>
+      <div class="lang-toggle sobre-roll__lang" role="group" aria-label="Idioma">
+        <button type="button" class="lang-toggle__btn" data-lang="pt" aria-pressed="true">PT</button>
+        <span aria-hidden="true">/</span>
+        <button type="button" class="lang-toggle__btn" data-lang="en" aria-pressed="false">EN</button>
       </div>
       <button type="button" class="sobre-bar__hit" data-sobre-toggle aria-expanded="false">
         <span data-i18n="sobre">Sobre</span>
@@ -169,27 +183,13 @@
         <span data-i18n="arquivo">Arquivo</span>
         <span class="star-roll__caret" aria-hidden="true"></span>
       </button>
-      <button type="button" class="star-roll__mover" data-star-again aria-label="Roleta">
-        <span class="star-roll__spin">
-          <span class="wheel-figure wheel-figure--dock">
-            <svg class="wheel-figure__lines" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <line x1="12" y1="12" x2="12" y2="2" />
-              <line x1="12" y1="12" x2="21.51" y2="8.91" />
-              <line x1="12" y1="12" x2="17.88" y2="20.09" />
-              <line x1="12" y1="12" x2="6.12" y2="20.09" />
-              <line x1="12" y1="12" x2="2.49" y2="8.91" />
-            </svg>
-            <img class="wheel-figure__img" src="imagens/boneco_estrela.png?v=1" alt="">
-            <span class="wheel-figure__shine" aria-hidden="true"></span>
-          </span>
-        </span>
-      </button>
     </div>
   </div>
 
   <script src="nav.js?v=46"></script>
   <script src="archive-scatter.js?v=15"></script>
   <script type="module" src="umbigo-text.js?v=18"></script>
-  <script src="site.js?v=67"></script>
+  <script src="manifest-parse.js?v=1"></script>
+  <script src="site.js?v=92"></script>
 </body>
 </html>

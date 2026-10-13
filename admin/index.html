@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Arquivo</title>
+  <link rel="stylesheet" href="admin.css?v=3">
+  <script src="config.js?v=1"></script>
+  <script>
+    (function () {
+      var path = window.location.pathname;
+      if (/\/admin$/i.test(path)) {
+        window.location.replace(path + "/" + window.location.search + window.location.hash);
+      }
+    })();
+  </script>
+</head>
+<body class="admin-page">
+  <div class="admin-shell">
+    <header class="admin-top">
+      <h1>Arquivo</h1>
+      <a href="../index.html">Site</a>
+    </header>
+
+    <div class="admin-auth">
+      <button type="button" class="admin-link" id="admin-login" hidden>Login GitHub</button>
+      <button type="button" class="admin-link" id="admin-logout" hidden>Terminar sessão</button>
+    </div>
+
+    <section class="admin-form" id="admin-upload" aria-label="Enviar obra">
+      <input
+        class="admin-file-input"
+        type="file"
+        id="admin-file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+
+      <div
+        class="admin-drop"
+        id="admin-drop"
+        role="button"
+        tabindex="0"
+        aria-label="Escolher imagem"
+      >
+        <span class="admin-drop__action">Escolher imagem</span>
+        <span class="admin-drop__hint">PNG, JPG, WEBP</span>
+        <span class="admin-drop__name" id="admin-filename" aria-live="polite"></span>
+      </div>
+
+      <label class="admin-label">
+        <span>Título</span>
+        <input
+          class="admin-input"
+          type="text"
+          id="admin-title"
+          autocomplete="off"
+          placeholder="Ex.: FRANGO"
+        >
+      </label>
+
+      <label class="admin-label">
+        <span>Texto</span>
+        <textarea
+          class="admin-textarea"
+          id="admin-text"
+          rows="8"
+          placeholder="Um parágrafo por linha em branco"
+        ></textarea>
+      </label>
+
+      <button type="button" class="admin-submit" id="admin-save">Publicar</button>
+
+      <p class="admin-status" id="admin-status" role="status"></p>
+    </section>
+
+    <aside class="admin-setup" id="admin-setup" hidden>
+      <p><strong>Publicar aqui no site</strong> ainda não está ligado (falta login GitHub — opcional).</p>
+      <p>Podes adicionar obras à mão: vê <code>admin/COMO-ADICIONAR-OBRA.md</code> no repositório. Quando quiseres configurar o upload online, <code>admin/SETUP.md</code>.</p>
+    </aside>
+  </div>
+
+  <script src="admin.js?v=5"></script>
+</body>
+</html>

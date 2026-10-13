@@ -279,11 +279,15 @@
     }
   }
 
+  async function loadManifest() {
+    const response = await fetch(manifestUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error("manifest");
+    manifest = parseArchiveManifest(await response.json());
+  }
+
   async function init() {
     try {
-      const response = await fetch(manifestUrl, { cache: "no-store" });
-      if (!response.ok) throw new Error("manifest");
-      manifest = await response.json();
+      await loadManifest();
     } catch (error) {
       console.error("Nao foi possivel carregar images.json", error);
       return;
@@ -291,6 +295,16 @@
 
     renderArchiveGrid(manifest);
   }
+
+  document.addEventListener("avv-archive-updated", function () {
+    loadManifest()
+      .then(function () {
+        renderArchiveGrid(manifest, true);
+      })
+      .catch(function (error) {
+        console.error("Nao foi possivel atualizar images.json", error);
+      });
+  });
 
   function layoutWidth() {
     return Math.round(window.innerWidth);

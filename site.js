@@ -5,8 +5,17 @@
   const works = document.getElementById("obras");
   const star = document.querySelector("[data-star]");
   const starRoll = document.querySelector("[data-star-roll]");
-  const starAgain = document.querySelector("[data-star-again]");
-  const siteHome = document.querySelector("[data-site-home]");
+  const starDock = document.querySelector("[data-star-dock]");
+  const sobreRoll = document.querySelector(".sobre-roll");
+  const siteHomeNodes = document.querySelectorAll("[data-site-home]");
+
+  function getHomeDockFig() {
+    return starDock ? starDock.querySelector(".wheel-figure--home") : null;
+  }
+
+  const HOME_STAR_REST_DEG = 0;
+  const HOME_DOCK_SETTLE_MS = 1200;
+
   const archivePanel = document.querySelector("[data-star-index]");
   const indexToggle = document.querySelector("[data-index-toggle]");
   const overlay = document.querySelector("[data-sobre-overlay]");
@@ -1010,7 +1019,6 @@
   }
 
   function updateWorkChrome() {
-    updateStarAgainLabel();
     syncStarRollMotion();
   }
 
@@ -1026,12 +1034,7 @@
     }
   }
 
-  function restartStarRollAnimation() {
-    if (!starAgain || reducedMotion.matches) return;
-    starAgain.style.animation = "none";
-    void starAgain.offsetHeight;
-    starAgain.style.animation = "";
-  }
+  function restartStarRollAnimation() {}
 
   function scrollToWork(id, anchorFile) {
     const section = document.getElementById(id);
@@ -1062,6 +1065,81 @@
 
   function isPastHero() {
     return document.body.classList.contains("is-work-open");
+  }
+
+  function freezeHomeDockFig(fig) {
+    if (!fig) return;
+    const deg = getWheelRotation(fig);
+    fig.getAnimations().forEach(function (anim) {
+      anim.cancel();
+    });
+    fig.style.animation = "none";
+    fig.style.animationDelay = "";
+    fig.style.removeProperty("--wheel-spin-base");
+    fig.style.transform = "rotate(" + deg + "deg)";
+  }
+
+  function settleHomeDockFig(fig) {
+    if (!fig) return;
+    fig.getAnimations().forEach(function (anim) {
+      anim.cancel();
+    });
+    fig.style.animation = "none";
+    fig.style.animationDelay = "";
+    fig.style.removeProperty("--wheel-spin-base");
+    fig.style.transform = "rotate(" + HOME_STAR_REST_DEG + "deg)";
+  }
+
+  function easeHomeDockToRest(fig, spinMeta) {
+    if (!fig) return Promise.resolve();
+    spinMeta = spinMeta || {};
+    const from = getWheelRotation(fig);
+    let delta = HOME_STAR_REST_DEG - from;
+    const spinSign = (spinMeta.spinExtraDeg || 360) >= 0 ? 1 : -1;
+    if (spinSign > 0) {
+      while (delta <= 0) delta += 360;
+    } else {
+      while (delta >= 0) delta -= 360;
+    }
+    if (Math.abs(delta) < 0.35) {
+      settleHomeDockFig(fig);
+      return Promise.resolve();
+    }
+    if (reducedMotion.matches) {
+      settleHomeDockFig(fig);
+      return Promise.resolve();
+    }
+    const end = from + delta;
+    const dist = Math.abs(delta);
+    const spinDuration = spinMeta.spinDuration || 1720;
+    const spinExtra = Math.abs(spinMeta.spinExtraDeg || 360);
+    const omega = spinExtra / spinDuration;
+    let duration = dist / Math.max(omega, 0.08);
+    duration = Math.min(Math.max(duration, 320), HOME_DOCK_SETTLE_MS);
+
+    fig.getAnimations().forEach(function (anim) {
+      anim.cancel();
+    });
+    fig.style.animation = "none";
+    const anim = fig.animate(
+      [
+        { transform: "rotate(" + from + "deg)" },
+        { transform: "rotate(" + end + "deg)" },
+      ],
+      {
+        duration: duration,
+        easing: "cubic-bezier(0.12, 0.72, 0.22, 1)",
+        fill: "forwards",
+      }
+    );
+    return anim.finished.then(function () {
+      fig.getAnimations().forEach(function (a) {
+        a.cancel();
+      });
+      fig.style.animation = "none";
+      fig.style.removeProperty("--wheel-spin-base");
+      fig.style.transform = "rotate(" + HOME_STAR_REST_DEG + "deg)";
+    });
   }
 
   function scrollToTop() {
@@ -1138,7 +1216,13 @@
       };
       wheelWrap.style.transform = "rotate(" + flyOpts.spinFromDeg + "deg)";
       spinAnim = wheelWrap.animate(spinKeyframes, spinTiming);
-      if (!deferTarget) {
+      if (flyOpts.keepDockVisible && toEl) {
+        const dockFig = toEl.querySelector(".wheel-figure--dock");
+        if (dockFig) {
+          dockFig.style.animation = "none";
+          dockFig.style.transform = "rotate(" + flyOpts.spinFromDeg + "deg)";
+        }
+      } else if (!deferTarget) {
         const dockFig = toEl.querySelector(".wheel-figure--dock");
         if (dockFig) {
           dockFig.getAnimations().forEach(function (anim) {
@@ -1164,7 +1248,9 @@
     document.body.appendChild(fly);
 
     fromEl.classList.add("is-star-handoff");
-    toEl.classList.add("is-star-handoff");
+    if (!flyOpts.keepDockVisible) {
+      toEl.classList.add("is-star-handoff");
+    }
 
     const fromCx = fromRect.left + fromRect.width / 2;
     const fromCy = fromRect.top + fromRect.height / 2;
@@ -1189,12 +1275,45 @@
     function finish() {
       let finalDeg = linkedSpin ? flyOpts.spinFromDeg + flyOpts.spinExtraDeg : 0;
       if (linkedSpin) {
-        const matrix = new DOMMatrixReadOnly(window.getComputedStyle(wheelWrap).transform);
-        finalDeg = Math.atan2(matrix.b, matrix.a) * (180 / Math.PI);
+        finalDeg = getWheelRotation(wheelWrap);
       }
+      stopDockFlySync();
       if (spinAnim) spinAnim.cancel();
       if (dockSpinAnim) dockSpinAnim.cancel();
-      primeDockWheelHandoff(toEl, finalDeg);
+
+      const instantStar = flyOpts.instantStarHandoff === true;
+      if (flyOpts.keepDockVisible && linkedSpin) {
+        const dockFig = toEl.querySelector(".wheel-figure--dock");
+        if (dockFig) {
+          dockFig.style.animation = "none";
+          dockFig.style.transform = "rotate(" + finalDeg + "deg)";
+        }
+      } else {
+        primeDockWheelHandoff(toEl, finalDeg);
+      }
+
+      if (instantStar) {
+        const boneco = fly.querySelector(".star-flight__boneco");
+        const strokes = fly.querySelector(".star-flight__strokes");
+        if (boneco) {
+          boneco.style.transition = "none";
+        }
+        if (strokes) {
+          strokes.style.transition = "none";
+          strokes.style.opacity = "1";
+          strokes.style.transform = "scale(1)";
+        }
+        fromEl.classList.remove("is-star-handoff");
+        toEl.classList.remove("is-star-handoff");
+        window.requestAnimationFrame(function () {
+          fly.remove();
+          window.requestAnimationFrame(function () {
+            if (onDone) onDone(finalDeg);
+          });
+        });
+        return;
+      }
+
       fly.remove();
       fromEl.classList.remove("is-star-handoff");
       toEl.classList.remove("is-star-handoff");
@@ -1202,9 +1321,31 @@
     }
 
     let morphTimer = 0;
+    let syncDockRaf = 0;
+
+    function stopDockFlySync() {
+      if (!syncDockRaf) return;
+      window.cancelAnimationFrame(syncDockRaf);
+      syncDockRaf = 0;
+    }
+
+    function startDockFlySync() {
+      if (!flyOpts.keepDockVisible || !linkedSpin) return;
+      const dockFig = toEl.querySelector(".wheel-figure--dock");
+      if (!dockFig) return;
+      stopDockFlySync();
+      function tick() {
+        if (!fly.isConnected) return;
+        dockFig.style.animation = "none";
+        dockFig.style.transform = "rotate(" + getWheelRotation(wheelWrap) + "deg)";
+        syncDockRaf = window.requestAnimationFrame(tick);
+      }
+      tick();
+    }
 
     function syncDockSpinForDescend() {
       if (!linkedSpin) return;
+      if (flyOpts.keepDockVisible) return;
       const dockFig = toEl.querySelector(".wheel-figure--dock");
       if (!dockFig) return;
       const currentDeg = getWheelRotation(wheelWrap);
@@ -1237,9 +1378,14 @@
         "px) translate(-50%, -50%) scale(" +
         scale +
         ")";
-      morphTimer = window.setTimeout(function () {
-        fly.classList.add("is-morph");
-      }, Math.max(0, holdMs + flightMoveMs - morphLeadMs));
+      if (!flyOpts.skipMorph) {
+        morphTimer = window.setTimeout(function () {
+          fly.classList.add("is-morph");
+          if (flyOpts.revealDockOnMorph) {
+            toEl.classList.remove("is-star-handoff");
+          }
+        }, Math.max(0, flightMoveMs - morphLeadMs));
+      }
     }
 
     function beginDescend() {
@@ -1269,28 +1415,32 @@
       beginDescend();
     }
 
+    if (linkedSpin && flyOpts.keepDockVisible) {
+      window.requestAnimationFrame(function () {
+        startDockFlySync();
+      });
+    }
+
     let done = false;
     function complete() {
       if (done) return;
       done = true;
       window.clearTimeout(morphTimer);
-      finish();
+      const morphTailMs = flyOpts.skipMorph ? 0 : flyOpts.morphTailMs || 400;
+      if (morphTailMs > 0) {
+        window.setTimeout(finish, morphTailMs);
+      } else {
+        finish();
+      }
     }
 
     fly.addEventListener("transitionend", function (event) {
       if (event.propertyName === "transform") complete();
     });
-    window.setTimeout(complete, holdMs + flightMoveMs + 160);
-  }
-
-  function updateStarAgainLabel() {
-    if (!starAgain) return;
-    const en = document.documentElement.lang === "en";
-    if (isPastHero()) {
-      starAgain.setAttribute("aria-label", en ? "Spin again" : "Roleta outra vez");
-    } else {
-      starAgain.setAttribute("aria-label", en ? "Spin" : "Roleta");
-    }
+    const morphPad = flyOpts.skipMorph
+      ? 160
+      : (flyOpts.morphLeadMs || FLIGHT_MORPH_LEAD_MS) + 180;
+    window.setTimeout(complete, holdMs + flightMoveMs + morphPad);
   }
 
   function pickWork() {
@@ -1311,6 +1461,7 @@
   const FLIGHT_SPIN_TURNS = 1.35;
   const FLIGHT_EASING = "cubic-bezier(0.33, 1, 0.68, 1)";
   const FLIGHT_MORPH_LEAD_MS = 300;
+  const HOME_LANDING_SPIN_TURNS = 0.4;
 
   function getWheelRotation(fig) {
     if (!fig) return 0;
@@ -1393,23 +1544,26 @@
     fig.style.setProperty("--wheel-spin-base", deg + "deg");
   }
 
-  function startPinwheelDraw(dockOnly) {
-    document.documentElement.style.setProperty("--pinwheel-duration", PINWHEEL_MS + "ms");
+  function startPinwheelDraw(dockOnly, durationMs) {
+    const pinMs = durationMs || PINWHEEL_MS;
+    document.documentElement.style.setProperty("--pinwheel-duration", pinMs + "ms");
     const mainFig = star.querySelector(".wheel-figure");
-    const dockFig = starRoll && starRoll.querySelector(".wheel-figure--dock");
+    const dockFig = getHomeDockFig();
     if (!dockOnly && mainFig) captureWheelSpinBase(mainFig);
     if (dockFig) captureWheelSpinBase(dockFig);
     if (!dockOnly) star.classList.add("is-draw");
     if (starRoll) starRoll.classList.add("is-draw");
+    if (sobreRoll) sobreRoll.classList.add("is-draw");
   }
 
   function endPinwheelDraw() {
     const mainFig = star.querySelector(".wheel-figure");
-    const dockFig = starRoll && starRoll.querySelector(".wheel-figure--dock");
+    const dockFig = getHomeDockFig();
     if (mainFig) resumeWheelIdlePulse(mainFig);
-    if (dockFig) resumeWheelIdleSpin(dockFig, true);
+    if (dockFig) freezeHomeDockFig(dockFig);
     star.classList.remove("is-draw");
     if (starRoll) starRoll.classList.remove("is-draw");
+    if (sobreRoll) sobreRoll.classList.remove("is-draw");
   }
 
   function beginHeroSpinToBar(group) {
@@ -1421,6 +1575,7 @@
     });
     star.classList.remove("is-draw");
     if (starRoll) starRoll.classList.remove("is-draw");
+    if (sobreRoll) sobreRoll.classList.remove("is-draw");
 
     const startDeg = getWheelRotation(mainFig);
     mainFig.style.animation = "none";
@@ -1430,20 +1585,29 @@
     const flightMoveMs = FLIGHT_MS;
     const spinDuration = holdMs + flightMoveMs;
     const heroSpinDeg = HERO_SPIN_TURNS * 360;
-    const spinExtraDeg = (heroSpinDeg / holdMs) * spinDuration;
+    const spinExtraDeg =
+      (heroSpinDeg / holdMs) * spinDuration + HOME_LANDING_SPIN_TURNS * 360;
 
     document.body.classList.add("is-star-flight");
 
     flyStarBetween(
       star,
-      starAgain,
+      starDock,
       function (finalDeg) {
         document.body.classList.remove("is-star-flight");
         spinning = false;
 
-        const dockFig = starRoll && starRoll.querySelector(".wheel-figure--dock");
-        syncWheelIdleFromDeg(dockFig, true, finalDeg);
-        syncWheelIdleFromDeg(mainFig, false, finalDeg);
+        const dockFig = getHomeDockFig();
+        if (dockFig) {
+          dockFig.classList.add("is-flight-landed");
+          easeHomeDockToRest(dockFig, {
+            spinDuration: spinDuration,
+            spinExtraDeg: spinExtraDeg,
+          }).finally(function () {
+            dockFig.classList.remove("is-flight-landed");
+          });
+        }
+        resumeWheelIdlePulse(mainFig);
 
         restartStarRollAnimation();
       },
@@ -1456,6 +1620,9 @@
         spinDuration: spinDuration,
         spinEasing: "linear",
         spinEasingMove: FLIGHT_EASING,
+        morphLeadMs: 280,
+        morphTailMs: 200,
+        keepDockVisible: true,
         onBeforeDescend: function () {
           setWorkSectionOpen(true);
           syncStarRollMotion();
@@ -1481,14 +1648,7 @@
     }
 
     if (document.body.classList.contains("is-work-open")) {
-      spinning = true;
-      startPinwheelDraw(true);
-      restartStarRollAnimation();
       scrollToWork(group.id);
-      window.setTimeout(function () {
-        endPinwheelDraw();
-        spinning = false;
-      }, PINWHEEL_MS);
       return;
     }
 
@@ -1612,50 +1772,30 @@
     });
   }
 
-  if (siteHome) {
+  siteHomeNodes.forEach(function (siteHome) {
     siteHome.addEventListener("click", function (event) {
       event.preventDefault();
-      scrollToTop();
+      event.stopPropagation();
+      if (document.body.classList.contains("is-work-open")) {
+        scrollToTop();
+        return;
+      }
+      if (
+        document.body.classList.contains("is-sobre-open") ||
+        document.body.classList.contains("is-index-open")
+      ) {
+        setSobreOpen(false);
+        setIndexOpen(false);
+      }
     });
-  }
+  });
 
-  if (starAgain) {
-    starAgain.addEventListener("click", function () {
-      scrollToTop();
-    });
-    updateWorkChrome();
-    document.addEventListener("avv-lang", updateWorkChrome);
-  }
+  updateWorkChrome();
+  document.addEventListener("avv-lang", updateWorkChrome);
 
   if (starRoll) starRoll.hidden = false;
 
-  function syncStarRollMotion() {
-    const dock = document.querySelector(".star-roll__dock");
-    const mover = starAgain;
-    const toggle = indexToggle;
-    if (!dock || !mover) return;
-    if (!document.body.classList.contains("is-work-open")) {
-      mover.style.left = "";
-      return;
-    }
-
-    const dockWidth = dock.clientWidth;
-    const moverWidth = mover.offsetWidth;
-    if (moverWidth < 1) return;
-
-    const toggleWidth = toggle ? toggle.offsetWidth : 0;
-    const insetPx = Math.max(
-      0,
-      Math.round(mover.getBoundingClientRect().left - dock.getBoundingClientRect().left)
-    );
-    const travelPx = Math.max(0, dockWidth - moverWidth - toggleWidth - insetPx - 6);
-    const radiusPx = moverWidth / 2;
-    const turnDeg = radiusPx > 0 ? (travelPx / radiusPx) * (180 / Math.PI) : 0;
-
-    mover.style.setProperty("--star-roll-travel", travelPx + "px");
-    mover.style.setProperty("--star-roll-turn", turnDeg + "deg");
-    restartStarRollAnimation();
-  }
+  function syncStarRollMotion() {}
 
   syncStarRollMotion();
   window.addEventListener("resize", syncStarRollMotion);
@@ -1668,23 +1808,42 @@
     }
   }
 
+  async function loadManifest() {
+    const response = await fetch(manifestUrl, { cache: "no-store" });
+    if (!response.ok) throw new Error("manifest");
+    manifest = parseArchiveManifest(await response.json());
+    groups = groupEntries(manifest);
+  }
+
   async function init() {
     loadUmbigoMain().catch(function () {});
     try {
-      const response = await fetch(manifestUrl);
-      if (!response.ok) throw new Error("manifest");
-      manifest = await response.json();
+      await loadManifest();
     } catch (error) {
       console.error("Nao foi possivel carregar images.json", error);
       return;
     }
 
-    groups = groupEntries(manifest);
     await renderWorks(groups);
     scheduleIdle(prefetchArchivePanelThumbs);
     lockScrollTop();
     syncStarRollMotion();
   }
+
+  document.addEventListener("avv-archive-updated", function () {
+    loadManifest()
+      .then(function () {
+        return renderWorks(groups);
+      })
+      .then(function () {
+        if (document.body.classList.contains("is-index-open")) {
+          scheduleArchivePanelRender();
+        }
+      })
+      .catch(function (error) {
+        console.error("Nao foi possivel atualizar images.json", error);
+      });
+  });
 
   let lastWidth = window.innerWidth;
   let lastHeight =
