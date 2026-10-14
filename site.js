@@ -1809,7 +1809,7 @@
   }
 
   async function loadManifest() {
-    const response = await fetch(manifestUrl, { cache: "no-store" });
+      const response = await fetch(archiveManifestFetchUrl(manifestUrl), { cache: "no-store" });
     if (!response.ok) throw new Error("manifest");
     manifest = parseArchiveManifest(await response.json());
     groups = groupEntries(manifest);

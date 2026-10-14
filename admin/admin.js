@@ -217,6 +217,84 @@
     });
   }
 
+  var THUMB_MAX_WIDTH = 560;
+  var THUMB_JPEG_QUALITY = 0.82;
+
+  function archiveThumbRepoPath(archiveFile) {
+    var rel = String(archiveFile || "").replace(/\\/g, "/");
+    var slash = rel.lastIndexOf("/");
+    var baseName = slash === -1 ? rel : rel.slice(slash + 1);
+    var dirPart = slash === -1 ? "" : rel.slice(0, slash + 1);
+    var dot = baseName.lastIndexOf(".");
+    var ext = dot === -1 ? "" : baseName.slice(dot + 1).toLowerCase();
+    var baseNoExt = dot === -1 ? baseName : baseName.slice(0, dot);
+    var thumbDir = archivePath + "/" + (dirPart ? dirPart + "thumbs/" : "thumbs/");
+    if (ext === "gif") {
+      return thumbDir + baseNoExt + ".gif";
+    }
+    return thumbDir + baseNoExt + ".jpg";
+  }
+
+  function createJpegThumbBase64(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var w = img.naturalWidth || 1;
+        var h = img.naturalHeight || 1;
+        if (w > THUMB_MAX_WIDTH) {
+          h = Math.max(1, Math.round(h * (THUMB_MAX_WIDTH / w)));
+          w = THUMB_MAX_WIDTH;
+        }
+        var canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("thumb_canvas"));
+          return;
+        }
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        var dataUrl = canvas.toDataURL("image/jpeg", THUMB_JPEG_QUALITY);
+        var comma = dataUrl.indexOf(",");
+        resolve(comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error("thumb_decode"));
+      };
+      img.src = url;
+    });
+  }
+
+  async function uploadArchiveThumb(file, archiveFile, imageBase64) {
+    var thumbPath = archiveThumbRepoPath(archiveFile);
+    var ext = String(file.name || "")
+      .split(".")
+      .pop()
+      .toLowerCase();
+    var thumbBase64;
+    if (ext === "gif") {
+      thumbBase64 = imageBase64;
+    } else {
+      thumbBase64 = await createJpegThumbBase64(file);
+    }
+    await putFile(thumbPath, thumbBase64, null, "Add archive thumbnail " + thumbPath.split("/").pop());
+  }
+
+  async function deleteArchiveThumbIfExists(archiveFile) {
+    var thumbPath = archiveThumbRepoPath(archiveFile);
+    try {
+      var thumbFile = await getFile(thumbPath);
+      await deleteFile(thumbPath, thumbFile.sha, "Remove archive thumbnail");
+    } catch (error) {
+      if (error.status !== 404) throw error;
+    }
+  }
+
   function safeBaseName(name) {
     return String(name || "obra.png")
       .replace(/\\/g, "/")
@@ -469,6 +547,12 @@
 
     await putFile(imagePath, imageBase64, null, "Add archive image " + filename);
 
+    try {
+      await uploadArchiveThumb(file, filename, imageBase64);
+    } catch (thumbError) {
+      console.warn("Thumbnail upload failed:", thumbError);
+    }
+
     var entryTitle =
       title && title.trim() ? title.trim().toUpperCase() : titleFromFilename(filename);
     var text = Array.isArray(textParagraphs) ? textParagraphs : [];
@@ -506,7 +590,7 @@
       setStatus(
         "Publicado: " +
           result.filename +
-          ". O site atualiza em 1–2 min (miniaturas pelo workflow)."
+          " (com miniatura). O arquivo no site atualiza em 1–2 min."
       );
       fileInput.value = "";
       titleInput.value = "";
@@ -543,10 +627,11 @@
   }
 
   async function fetchManifestItems() {
+    var bust = "?t=" + String(Date.now());
     var candidates = [
-      "../" + manifestPath,
-      "/" + manifestPath,
-      new URL("../" + manifestPath, window.location.href).href,
+      "../" + manifestPath + bust,
+      "/" + manifestPath + bust,
+      new URL("../" + manifestPath + bust, window.location.href).href,
     ];
     var lastError;
     for (var i = 0; i < candidates.length; i++) {
@@ -649,7 +734,17 @@
         if (imageError.status !== 404) throw imageError;
       }
 
-      setStatus("Removido: " + filename);
+      try {
+        await deleteArchiveThumbIfExists(filename);
+      } catch (thumbError) {
+        if (thumbError.status !== 404) throw thumbError;
+      }
+
+      setStatus(
+        "Removido: " +
+          filename +
+          ". O arquivo no site atualiza em 1–2 min (Ctrl+Shift+R na página do site)."
+      );
       loadRemoveList();
     } catch (error) {
       console.error(error);

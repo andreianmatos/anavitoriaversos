@@ -46,5 +46,12 @@
     return list.map(normalizeArchiveEntry);
   }
 
+  function archiveManifestFetchUrl(manifestUrl) {
+    var url = manifestUrl || "images.json";
+    var sep = url.indexOf("?") >= 0 ? "&" : "?";
+    return url + sep + "cb=" + Date.now();
+  }
+
   global.parseArchiveManifest = parseArchiveManifest;
+  global.archiveManifestFetchUrl = archiveManifestFetchUrl;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -119,3 +119,4 @@ Teste rápido no browser: `https://avv-oauth.onrender.com/gh/repos/andreianmatos
 | Admin não muda depois do GitHub | Pop-ups bloqueados, ou `ORIGINS` no Render não é só `andreianmatos.github.io` (sem `https://`) |
 | Publicar: sem permissão | Collaborator **Write** no repo |
 | Render “sleep” | Primeiro login depois de horas pode demorar ~30 s (plano grátis) |
+| Obra no site sem miniatura / não aparece no arquivo | O admin **cria e envia** a JPG em `imagens/arquivo/thumbs/` ao publicar. Faz push de `admin/admin.js` (e `index.html`). Opcional: faz push de `.github/workflows/archive-thumbs.yml` + `scripts/generate-thumbs.sh` para o GitHub Actions regenerar thumbs em commits antigos. |

@@ -50,10 +50,16 @@ while IFS= read -r -d '' file; do
 
   if [[ "$ext_lower" == "gif" ]]; then
     out="$thumb_dir/$base_no_ext.gif"
+    if [[ -f "$out" && ! "$file" -nt "$out" ]]; then
+      continue
+    fi
     cp -f "$file" "$out"
     echo "gif: $rel"
   else
     out="$thumb_dir/$base_no_ext.jpg"
+    if [[ -f "$out" && ! "$file" -nt "$out" ]]; then
+      continue
+    fi
     run_convert "$file" -resize "${MAX_WIDTH}x>" -strip -quality "$QUALITY" "$out"
     echo "thumb: $rel -> ${out#"$ROOT/"}"
   fi
