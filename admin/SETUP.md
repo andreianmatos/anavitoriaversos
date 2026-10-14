@@ -30,6 +30,7 @@ Admin: `https://andreianmatos.github.io/anavitoriaversos/admin/`
    - `ORIGINS` = `andreianmatos.github.io` *(sem `https://`, sem espaços — só este domínio; **não** uses `localhost:*`, o servidor OAuth rebenta)*
    - `REDIRECT_URL` = `https://TEU-SERVICO.onrender.com/callback`  
      (substitui `TEU-SERVICO` pelo nome que escolheste)
+   - `SCOPES` = `repo` *(obrigatório para Publicar/Remover no repo)*
 
 6. Clica **Create Web Service** e espera o deploy ficar **Live**.
 

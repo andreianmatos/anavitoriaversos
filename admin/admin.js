@@ -8,6 +8,7 @@
   var owner = parts[0];
   var repoName = parts[1];
   var TOKEN_KEY = "avv-github-token";
+  var memoryToken = "";
 
   var fileInput;
   var titleInput;
@@ -23,6 +24,7 @@
   var removeSection;
   var removeList;
   var EMPTY_CLASS = "admin-remove__empty";
+  var removeListGen = 0;
 
   function $(id) {
     return document.getElementById(id);
@@ -35,19 +37,91 @@
   }
 
   function getToken() {
+    if (memoryToken) return memoryToken;
     try {
-      return sessionStorage.getItem(TOKEN_KEY) || "";
+      var stored = sessionStorage.getItem(TOKEN_KEY) || "";
+      if (stored) memoryToken = stored;
+      return stored;
     } catch (e) {
-      return "";
+      return memoryToken || "";
     }
   }
 
   function setToken(token) {
+    memoryToken = token || "";
     try {
       if (token) sessionStorage.setItem(TOKEN_KEY, token);
       else sessionStorage.removeItem(TOKEN_KEY);
     } catch (e) {}
     syncAuthUi();
+  }
+
+  function formatGitHubError(error) {
+    if (!error) return "Erro desconhecido.";
+    if (error.message === "no_token") {
+      return "Inicia sessão com GitHub.";
+    }
+    if (error.message === "no_write") {
+      return (
+        "Esta conta GitHub não pode escrever no repositório. " +
+        "Precisas de ser Collaborator com Write em " +
+        repo +
+        "."
+      );
+    }
+    if (error.message === "github_bad_response") {
+      return (
+        "Resposta inválida do GitHub (rede ou extensão do browser). " +
+        "Tenta outro browser ou desativa bloqueadores em api.github.com."
+      );
+    }
+    if (error.status === 401) {
+      return "Sessão expirada — faz login GitHub outra vez.";
+    }
+    if (error.status === 403) {
+      return (
+        "Sem permissão no repositório (403). Faz login com a conta que tem Write em " +
+        repo +
+        "."
+      );
+    }
+    if (error.payload && error.payload.message) {
+      return String(error.payload.message);
+    }
+    return "Não foi possível contactar o GitHub. Tenta outra vez.";
+  }
+
+  function parseGithubResponse(response) {
+    return response.text().then(function (text) {
+      var data = null;
+      if (text) {
+        try {
+          data = JSON.parse(text);
+        } catch (parseError) {
+          var bad = new Error("github_bad_response");
+          bad.status = response.status;
+          throw bad;
+        }
+      }
+      if (!response.ok) {
+        var err = new Error((data && data.message) || "github_error");
+        err.status = response.status;
+        err.payload = data;
+        throw err;
+      }
+      return data;
+    });
+  }
+
+  function verifyGitHubAccess() {
+    return githubApi("/repos/" + owner + "/" + repoName, { method: "GET" }).then(function (repo) {
+      var perms = (repo && repo.permissions) || {};
+      if (!perms.push && !perms.admin && !perms.maintain) {
+        var err = new Error("no_write");
+        err.status = 403;
+        throw err;
+      }
+    });
   }
 
   function oauthConfigured() {
@@ -75,7 +149,6 @@
     if (logoutBtn) logoutBtn.hidden = !loggedIn;
     if (saveBtn) saveBtn.disabled = !loggedIn;
     if (setupEl) setupEl.hidden = canGitHub;
-    loadRemoveList();
   }
 
   function utf8ToBase64(text) {
@@ -166,17 +239,7 @@
       options.headers || {}
     );
     return fetch("https://api.github.com" + path, Object.assign({}, options, { headers })).then(
-      function (response) {
-        return response.json().then(function (data) {
-          if (!response.ok) {
-            var err = new Error(data.message || "github_error");
-            err.status = response.status;
-            err.payload = data;
-            throw err;
-          }
-          return data;
-        });
-      }
+      parseGithubResponse
     );
   }
 
@@ -278,8 +341,15 @@
           var payload = JSON.parse(event.data.slice("authorization:github:success:".length));
           if (payload && payload.token) {
             setToken(payload.token);
-            refreshAuthStatusMessage();
-            loadRemoveList();
+            verifyGitHubAccess()
+              .then(function () {
+                refreshAuthStatusMessage();
+                loadRemoveList();
+              })
+              .catch(function (accessError) {
+                setToken("");
+                setStatus(formatGitHubError(accessError), true);
+              });
             if (popup && !popup.closed) popup.close();
             window.focus();
             return;
@@ -399,14 +469,10 @@
       loadRemoveList();
     } catch (error) {
       console.error(error);
-      if (error.message === "no_token") {
-        setStatus("Inicia sessão com GitHub.", true);
-      } else if (error.status === 403 || error.status === 401) {
-        setStatus("Sem permissão no repositório. Precisas de acesso Write.", true);
+      if (error.status === 401 || error.status === 403 || error.message === "no_write") {
         setToken("");
-      } else {
-        setStatus("Não foi possível enviar. Tenta outra vez ou verifica a configuração.", true);
       }
+      setStatus(formatGitHubError(error), true);
     } finally {
       saveBtn.disabled = false;
       syncAuthUi();
@@ -454,10 +520,13 @@
 
   async function loadRemoveList() {
     if (!removeList) return;
-    removeList.innerHTML = "";
+    var gen = ++removeListGen;
+    removeList.innerHTML = "<li class=\"" + EMPTY_CLASS + "\">A carregar…</li>";
     var loggedIn = Boolean(getToken());
     try {
       var items = await fetchManifestItems();
+      if (gen !== removeListGen) return;
+      removeList.innerHTML = "";
       if (!items.length) {
         removeList.innerHTML = "<li class=\"" + EMPTY_CLASS + "\">Nenhuma obra no arquivo.</li>";
         return;
@@ -495,6 +564,7 @@
         removeList.appendChild(li);
       });
     } catch (error) {
+      if (gen !== removeListGen) return;
       console.error(error);
       removeList.innerHTML =
         "<li class=\"" + EMPTY_CLASS + "\">Não foi possível carregar a lista.</li>";
@@ -537,7 +607,10 @@
       loadRemoveList();
     } catch (error) {
       console.error(error);
-      setStatus("Não foi possível remover. Tenta outra vez.", true);
+      if (error.status === 401 || error.status === 403 || error.message === "no_write") {
+        setToken("");
+      }
+      setStatus(formatGitHubError(error), true);
     }
   }
 
@@ -603,12 +676,25 @@
     if (logoutBtn) logoutBtn.addEventListener("click", function () {
       setToken("");
       refreshAuthStatusMessage();
+      loadRemoveList();
     });
     if (saveBtn) saveBtn.addEventListener("click", onSave);
     bindDropZone();
 
     syncAuthUi();
-    refreshAuthStatusMessage();
+    if (getToken()) {
+      verifyGitHubAccess()
+        .then(function () {
+          refreshAuthStatusMessage();
+        })
+        .catch(function (accessError) {
+          setToken("");
+          setStatus(formatGitHubError(accessError), true);
+        });
+    } else {
+      refreshAuthStatusMessage();
+    }
+    loadRemoveList();
   }
 
   if (document.readyState === "loading") {
