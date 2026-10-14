@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Arquivo</title>
+  <link rel="stylesheet" href="admin.css?v=21">
+  <script src="config.js?v=1"></script>
+  <script>
+    (function () {
+      var path = window.location.pathname;
+      if (/\/admin$/i.test(path)) {
+        window.location.replace(path + "/" + window.location.search + window.location.hash);
+      }
+    })();
+  </script>
+</head>
+<body class="admin-page">
+  <div class="admin-shell">
+    <header class="admin-top">
+      <a class="admin-top__site" href="../index.html">Site</a>
+      <h1 class="admin-top__title">Arquivo</h1>
+    </header>
+
+    <section class="admin-session" id="admin-session" aria-live="polite">
+      <p class="admin-status" id="admin-status" role="status"></p>
+      <div class="admin-auth">
+        <button type="button" class="admin-login-btn" id="admin-login" hidden>Login com GitHub</button>
+        <button type="button" class="admin-link" id="admin-logout" hidden>Terminar sessão</button>
+      </div>
+    </section>
+
+    <div class="admin-grid">
+      <section class="admin-panel admin-panel--add" id="admin-upload" aria-label="Adicionar obra">
+        <h2 class="admin-panel__title">Adicionar</h2>
+
+        <input
+          class="admin-file-input"
+          type="file"
+          id="admin-file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          tabindex="-1"
+          aria-hidden="true"
+        >
+
+        <div
+          class="admin-drop"
+          id="admin-drop"
+          role="button"
+          tabindex="0"
+          aria-label="Escolher imagem"
+        >
+          <span class="admin-drop__action">Imagem</span>
+          <span class="admin-drop__hint">Clica ou arrasta</span>
+          <span class="admin-drop__name" id="admin-filename" aria-live="polite"></span>
+        </div>
+
+        <label class="admin-label">
+          <span>Título</span>
+          <input class="admin-input" type="text" id="admin-title" autocomplete="off" placeholder="Ex.: FRANGO">
+        </label>
+
+        <label class="admin-label">
+          <span>Texto</span>
+          <textarea
+            class="admin-textarea"
+            id="admin-text"
+            rows="6"
+            placeholder="Parágrafos separados por linha em branco"
+          ></textarea>
+        </label>
+
+        <button type="button" class="admin-submit" id="admin-save">Publicar</button>
+      </section>
+
+      <section class="admin-panel admin-panel--remove" id="admin-remove" aria-label="Remover obra">
+        <h2 class="admin-panel__title">Remover</h2>
+        <ul class="admin-remove__list" id="admin-remove-list">
+          <li class="admin-remove__empty">A carregar…</li>
+        </ul>
+      </section>
+    </div>
+
+    <aside class="admin-setup" id="admin-setup" hidden>
+      <p>Falta configurar login em <code>admin/config.js</code> — ver <code>SETUP.md</code>.</p>
+    </aside>
+  </div>
+
+  <script src="admin.js?v=16"></script>
+</body>
+</html>
