@@ -111,7 +111,16 @@
         "."
       );
     }
+    if (error.status === 502) {
+      return (
+        "O proxy no Render falhou (502). Faz push do render-gh-proxy.cjs atualizado e redeploy. " +
+        "Abre o admin em Chrome em github.io, não no preview do IDE."
+      );
+    }
     if (error.payload && error.payload.message) {
+      if (error.payload.message === "GitHub proxy error") {
+        return "Proxy GitHub no Render: " + (error.payload.detail || "erro de rede") + ". Vê Logs no Render.";
+      }
       return String(error.payload.message);
     }
     return "Não foi possível contactar o GitHub. Tenta outra vez.";
