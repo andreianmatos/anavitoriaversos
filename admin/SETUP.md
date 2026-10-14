@@ -90,6 +90,25 @@ Sem Write no repo, o login funciona mas o **Publicar** falha.
 
 ---
 
+## Parte F — Proxy GitHub no Render (se Publicar/Remover dá 403 ou «resposta inválida»)
+
+Alguns browsers (preview do IDE, extensões, redes) bloqueiam `api.github.com` e devolvem HTML em vez de JSON.
+
+1. Copia `admin/render-gh-proxy.cjs` do repo do site para o repo do serviço OAuth no Render (ao lado de `app.js`).
+2. Em `app.js`, antes de `app.listen`:
+
+   ```js
+   require("./render-gh-proxy.cjs")(app);
+   ```
+
+3. Redeploy no Render.
+4. Em `admin/config.js` deixa `useGithubProxy: true` (já vem assim).
+5. Login outra vez no admin.
+
+Teste rápido no browser: `https://avv-oauth.onrender.com/gh/repos/andreianmatos/anavitoriaversos` deve responder JSON (401 sem token), não página HTML do Render.
+
+---
+
 ## Problemas comuns
 
 | Sintoma | Solução |

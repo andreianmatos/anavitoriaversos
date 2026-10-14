@@ -9,6 +9,19 @@
   var repoName = parts[1];
   var TOKEN_KEY = "avv-github-token";
   var memoryToken = "";
+  var sessionStorageOk = null;
+
+  function canUseSessionStorage() {
+    if (sessionStorageOk !== null) return sessionStorageOk;
+    try {
+      sessionStorage.setItem(TOKEN_KEY + "-probe", "1");
+      sessionStorage.removeItem(TOKEN_KEY + "-probe");
+      sessionStorageOk = true;
+    } catch (e) {
+      sessionStorageOk = false;
+    }
+    return sessionStorageOk;
+  }
 
   var fileInput;
   var titleInput;
@@ -38,6 +51,7 @@
 
   function getToken() {
     if (memoryToken) return memoryToken;
+    if (!canUseSessionStorage()) return "";
     try {
       var stored = sessionStorage.getItem(TOKEN_KEY) || "";
       if (stored) memoryToken = stored;
@@ -48,11 +62,13 @@
   }
 
   function setToken(token) {
-    memoryToken = token || "";
-    try {
-      if (token) sessionStorage.setItem(TOKEN_KEY, token);
-      else sessionStorage.removeItem(TOKEN_KEY);
-    } catch (e) {}
+    memoryToken = String(token || "").trim();
+    if (canUseSessionStorage()) {
+      try {
+        if (memoryToken) sessionStorage.setItem(TOKEN_KEY, memoryToken);
+        else sessionStorage.removeItem(TOKEN_KEY);
+      } catch (e) {}
+    }
     syncAuthUi();
   }
 
@@ -70,9 +86,19 @@
       );
     }
     if (error.message === "github_bad_response") {
+      if (error.status === 403) {
+        return (
+          "Sem permissão no GitHub (403). Termina sessão, faz login outra vez, e confirma SCOPES=repo no Render. " +
+          "Se usas preview do IDE, abre o admin no Chrome em github.io."
+        );
+      }
       return (
-        "Resposta inválida do GitHub (rede ou extensão do browser). " +
-        "Tenta outro browser ou desativa bloqueadores em api.github.com."
+        "Resposta inválida do GitHub. Ativa o proxy no Render (admin/render-gh-proxy.cjs) ou abre o site em Chrome/Firefox normal."
+      );
+    }
+    if (error.message === "github_proxy_missing") {
+      return (
+        "Falta o proxy GitHub no Render. Copia admin/render-gh-proxy.cjs para o serviço OAuth e faz redeploy."
       );
     }
     if (error.status === 401) {
@@ -100,6 +126,11 @@
         } catch (parseError) {
           var bad = new Error("github_bad_response");
           bad.status = response.status;
+          if (response.status === 404) {
+            bad.message = "github_error";
+            bad.payload = { message: "Not Found" };
+            throw bad;
+          }
           throw bad;
         }
       }
@@ -227,6 +258,13 @@
       .join("/");
   }
 
+  function githubApiBaseUrl() {
+    if (config.useGithubProxy && config.oauthBaseUrl) {
+      return String(config.oauthBaseUrl).replace(/\/$/, "") + "/gh";
+    }
+    return "https://api.github.com";
+  }
+
   function githubApi(path, options) {
     var token = getToken();
     if (!token) return Promise.reject(new Error("no_token"));
@@ -238,9 +276,8 @@
       },
       options.headers || {}
     );
-    return fetch("https://api.github.com" + path, Object.assign({}, options, { headers })).then(
-      parseGithubResponse
-    );
+    var url = githubApiBaseUrl() + path;
+    return fetch(url, Object.assign({}, options, { headers })).then(parseGithubResponse);
   }
 
   function getFile(path) {
