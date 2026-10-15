@@ -232,10 +232,13 @@
     if (ext === "gif") {
       return thumbDir + baseNoExt + ".gif";
     }
+    if (ext === "png") {
+      return thumbDir + baseNoExt + ".png";
+    }
     return thumbDir + baseNoExt + ".jpg";
   }
 
-  function createJpegThumbBase64(file) {
+  function createRasterThumbBase64(file, mime) {
     return new Promise(function (resolve, reject) {
       var url = URL.createObjectURL(file);
       var img = new Image();
@@ -255,10 +258,15 @@
           reject(new Error("thumb_canvas"));
           return;
         }
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, w, h);
+        if (mime !== "image/png") {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, w, h);
+        }
         ctx.drawImage(img, 0, 0, w, h);
-        var dataUrl = canvas.toDataURL("image/jpeg", THUMB_JPEG_QUALITY);
+        var dataUrl =
+          mime === "image/jpeg"
+            ? canvas.toDataURL(mime, THUMB_JPEG_QUALITY)
+            : canvas.toDataURL(mime);
         var comma = dataUrl.indexOf(",");
         resolve(comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl);
       };
@@ -279,8 +287,10 @@
     var thumbBase64;
     if (ext === "gif") {
       thumbBase64 = imageBase64;
+    } else if (ext === "png") {
+      thumbBase64 = await createRasterThumbBase64(file, "image/png");
     } else {
-      thumbBase64 = await createJpegThumbBase64(file);
+      thumbBase64 = await createRasterThumbBase64(file, "image/jpeg");
     }
     await putFile(thumbPath, thumbBase64, null, "Add archive thumbnail " + thumbPath.split("/").pop());
   }
@@ -307,6 +317,10 @@
       add(folderThumbs + base + ".gif");
       add(rootThumbs + dirPart + base + ".gif");
     } else {
+      if (ext === "png") {
+        add(folderThumbs + base + ".png");
+        add(rootThumbs + dirPart + base + ".png");
+      }
       if (ext !== "jpg" && ext !== "jpeg") {
         add(folderThumbs + name + ".jpg");
         add(rootThumbs + dirPart + name + ".jpg");

@@ -55,6 +55,13 @@ while IFS= read -r -d '' file; do
     fi
     cp -f "$file" "$out"
     echo "gif: $rel"
+  elif [[ "$ext_lower" == "png" ]]; then
+    out="$thumb_dir/$base_no_ext.png"
+    if [[ -f "$out" && ! "$file" -nt "$out" ]]; then
+      continue
+    fi
+    run_convert "$file" -background none -alpha set -resize "${MAX_WIDTH}x>" -strip "png32:$out"
+    echo "thumb: $rel -> ${out#"$ROOT/"}"
   else
     out="$thumb_dir/$base_no_ext.jpg"
     if [[ -f "$out" && ! "$file" -nt "$out" ]]; then

@@ -514,7 +514,7 @@ html:has(body.admin-page)::-webkit-scrollbar {
   width: 2.75rem;
   height: 2.75rem;
   object-fit: cover;
-  background: rgb(255 255 255 / 0.4);
+  background: transparent;
 }
 
 .admin-remove__meta {

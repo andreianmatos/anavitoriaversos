@@ -246,6 +246,16 @@
       ];
     }
 
+    if (ext === ".png") {
+      const pngName = encodeURIComponent(base + ".png");
+      return [
+        folderThumbs + pngName,
+        rootThumbs + pngName,
+        rootThumbs + encodePath(dir + base + ".png"),
+        fullPath(file),
+      ];
+    }
+
     const jpgName = encodeURIComponent(base + ".jpg");
     const fileJpg = encodeURIComponent(name + ".jpg");
     const candidates = [];

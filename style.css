@@ -2127,11 +2127,10 @@ a.page-header__section:hover {
   z-index: -1;
   pointer-events: none;
   background-color: var(--skin);
-  background-image: url("imagens/background-scribble.png?v=2");
+  background-image: url("imagens/rabiscos%20fino.png?v=1");
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
-  background-blend-mode: multiply;
 }
 
 @media (prefers-reduced-motion: reduce) {
