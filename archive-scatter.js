@@ -316,6 +316,21 @@
     return null;
   }
 
+  function fallbackStackRect(button, placed, layout, itemW, itemH) {
+    const outer = outerSize(layout, itemW, itemH);
+    const left = layout.padding;
+    const top = placedBottom(placed) + layout.padding;
+    button.style.left = Math.round(left) + "px";
+    button.style.top = Math.round(top) + "px";
+    const rect = hitBox(left, top, outer.w, outer.h, layout);
+    return {
+      left: rect.left,
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+    };
+  }
+
   function placeItem(button, img, placed, layout, placeIndex, seed, deferReveal) {
     if (!img.naturalWidth) {
       button.remove();
@@ -358,8 +373,10 @@
     }
 
     if (!rect || collides(rect, placed, layout.gap)) {
-      button.remove();
-      return null;
+      itemW = itemW || Math.max(40, Math.round(layout.innerW * layout.minRatio));
+      imgH = imgH || Math.max(30, Math.round(Math.min(layout.imgMaxH, itemW / aspect)));
+      applyThumb(itemW, imgH);
+      rect = fallbackStackRect(button, placed, layout, itemW, imgH);
     }
 
     placed.push(rect);

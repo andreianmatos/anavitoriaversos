@@ -249,14 +249,14 @@
     const jpgName = encodeURIComponent(base + ".jpg");
     const fileJpg = encodeURIComponent(name + ".jpg");
     const candidates = [];
+    candidates.push(rootThumbs + jpgName);
+    candidates.push(folderThumbs + jpgName);
+    candidates.push(rootThumbs + encodePath(dir + base + ".jpg"));
     if (ext !== ".jpg" && ext !== ".jpeg") {
       candidates.push(folderThumbs + fileJpg);
       candidates.push(rootThumbs + encodePath(dir + name + ".jpg"));
       candidates.push(rootThumbs + fileJpg);
     }
-    candidates.push(folderThumbs + jpgName);
-    candidates.push(rootThumbs + encodePath(dir + base + ".jpg"));
-    candidates.push(rootThumbs + jpgName);
     return candidates;
   }
 

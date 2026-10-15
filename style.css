@@ -589,13 +589,26 @@ a.page-header__section:hover {
 }
 
 .sobre-hero {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
   padding: calc(var(--chrome-top) + 2.5rem) var(--chrome-x)
-    calc(1.25rem + var(--bottom-safe));
+    calc(3.6rem + var(--bottom-safe));
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.sobre-page .site-credit {
+  position: absolute;
+  z-index: 2;
+  right: var(--chrome-x);
+  bottom: var(--chrome-x);
+  margin: 0;
+  max-width: min(16rem, 70%);
+  align-items: flex-end;
+  text-align: right;
+  pointer-events: auto;
 }
 
 .sobre-stage {
@@ -719,6 +732,27 @@ a.page-header__section:hover {
 
 .sobre-contactos a:hover {
   opacity: 0.55;
+}
+
+.site-credit {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.18rem;
+  margin: 0.85rem 0 0;
+  font-size: 0.62rem;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+}
+
+.site-credit__artist,
+.site-credit__by {
+  display: block;
+}
+
+.site-credit a {
+  text-transform: none;
 }
 
 .umbigo {
@@ -1182,7 +1216,7 @@ a.page-header__section:hover {
   .sobre-hero {
     min-height: 100dvh;
     padding: calc(var(--chrome-top) + clamp(3.15rem, 9vh, 6.5rem))
-      var(--sobre-side) clamp(0.85rem, 2vh, 2.25rem);
+      var(--sobre-side) clamp(3.5rem, 8vh, 4.75rem);
     --sobre-side: clamp(1.35rem, 2.8vw, 4.5rem);
     --sobre-cols: minmax(0, 1fr) var(--sobre-photo-w);
     --sobre-overlap: clamp(0.9rem, 3.2vh, 2.5rem);
@@ -1301,6 +1335,12 @@ a.page-header__section:hover {
   .sobre-contactos a {
     display: inline-block;
     max-width: 100%;
+  }
+
+  .sobre-page .site-credit {
+    right: var(--sobre-side);
+    bottom: var(--sobre-side);
+    font-size: var(--sobre-meta);
   }
 
   .sobre-bio {
@@ -1736,13 +1776,7 @@ a.page-header__section:hover {
     max-width: calc(100vw - 1.75rem);
   }
 
-  .site-hero {
-    align-items: center;
-  }
-
   .star-wheel {
-    align-self: center;
-    margin: 0 auto;
     width: clamp(
       calc(17rem * var(--ui-scale)),
       min(
@@ -2406,6 +2440,21 @@ a.sobre-roll__title:hover {
   transform: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 1023px) {
+  .site-hero {
+    align-items: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .star-wheel {
+    align-self: center;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+  }
 }
 
 @media (min-width: 1024px) and (max-width: 1599px) {
@@ -3332,6 +3381,7 @@ a.sobre-roll__title:hover {
 }
 
 .sobre-overlay {
+  position: relative;
   --sobre-body: clamp(0.66rem, 0.74vw, 0.9rem);
   --sobre-cv: clamp(0.54rem, 0.6vw, 0.72rem);
   --sobre-meta: clamp(0.52rem, 0.58vw, 0.68rem);
@@ -3503,6 +3553,32 @@ a.sobre-roll__title:hover {
   color: var(--rose-soft);
 }
 
+.sobre-overlay .site-credit {
+  position: absolute;
+  z-index: 2;
+  --site-credit-inset: clamp(0.75rem, 2vw, 1.65rem);
+  right: var(--site-credit-inset);
+  bottom: var(--site-credit-inset);
+  margin: 0;
+  max-width: min(16rem, 70%);
+  align-items: flex-end;
+  font-size: var(--sobre-meta);
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.05em;
+  text-align: right;
+  pointer-events: auto;
+}
+
+.sobre-overlay .site-credit a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.sobre-overlay .site-credit a:hover {
+  color: var(--rose-soft);
+}
+
 .sobre-overlay .sobre-cv-panel,
 .sobre-overlay__cv {
   display: grid;
@@ -3604,6 +3680,7 @@ a.sobre-roll__title:hover {
   .sobre-overlay__stage {
     display: flex;
     flex-direction: column;
+    padding-bottom: 3.6rem;
   }
 
   .sobre-overlay__side {

@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
-  <title>Arquivo</title>
-  <link rel="stylesheet" href="admin.css?v=21">
+  <title>Admin</title>
+  <link rel="stylesheet" href="admin.css?v=37">
   <script src="config.js?v=1"></script>
   <script>
     (function () {
@@ -17,12 +17,22 @@
   </script>
 </head>
 <body class="admin-page">
-  <div class="admin-shell">
-    <header class="admin-top">
-      <a class="admin-top__site" href="../index.html">Site</a>
-      <h1 class="admin-top__title">Arquivo</h1>
+  <div class="admin-frame">
+    <header class="admin-frame__bar">
+      <a class="admin-bar__home" href="../index.html" aria-label="Site">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <line x1="12" y1="12" x2="12" y2="2" />
+          <line x1="12" y1="12" x2="21.51" y2="8.91" />
+          <line x1="12" y1="12" x2="17.88" y2="20.09" />
+          <line x1="12" y1="12" x2="6.12" y2="20.09" />
+          <line x1="12" y1="12" x2="2.49" y2="8.91" />
+        </svg>
+      </a>
+      <h1 class="admin-frame__title">Admin</h1>
     </header>
 
+    <div class="admin-frame__body">
+      <div class="admin-shell">
     <section class="admin-session" id="admin-session" aria-live="polite">
       <p class="admin-status" id="admin-status" role="status"></p>
       <div class="admin-auth">
@@ -82,11 +92,12 @@
       </section>
     </div>
 
-    <aside class="admin-setup" id="admin-setup" hidden>
-      <p>Falta configurar login em <code>admin/config.js</code> — ver <code>SETUP.md</code>.</p>
-    </aside>
+      <aside class="admin-setup" id="admin-setup" hidden>
+        <p>Falta configurar login em <code>admin/config.js</code> — ver <code>SETUP.md</code>.</p>
+      </aside>
+    </div>
   </div>
 
-  <script src="admin.js?v=22"></script>
+  <script src="admin.js?v=26"></script>
 </body>
 </html>

@@ -26,9 +26,15 @@ html:has(body.admin-page)::-webkit-scrollbar {
 }
 
 .admin-page {
+  --admin-edge: max(0.85rem, env(safe-area-inset-top), env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
   margin: 0;
+  height: 100dvh;
   min-height: 100dvh;
-  overflow-x: hidden;
+  padding: var(--admin-edge);
+  overflow: hidden;
   background: #fdd2ff;
   color: #4e196b;
   font-family: "C2026versos", Georgia, serif;
@@ -59,42 +65,87 @@ html:has(body.admin-page)::-webkit-scrollbar {
   background: transparent;
 }
 
-.admin-shell {
-  max-width: 56rem;
-  margin: 0 auto;
-  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom));
-  overflow-x: hidden;
-}
-
-.admin-top {
+.admin-frame {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.admin-top__title {
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
   margin: 0;
-  font-size: 1.05rem;
+  overflow: hidden;
+  border: 2px solid #e44e96;
+  border-radius: 1.025rem;
+  background: #fdd2ff;
+  box-sizing: border-box;
+}
+
+.admin-frame__bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  height: 2.05rem;
+  padding: 0 0.15rem 0 0.2rem;
+  background: transparent;
+  color: #4e196b;
+}
+
+.admin-frame__title {
+  margin: 0 0 0 auto;
+  padding: 0 0.75rem;
+  font-size: clamp(0.82rem, 0.52vmin + 0.68rem, 1.28rem);
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-align: right;
-  line-height: 1.15;
-}
-
-.admin-top__site {
-  color: #912a7d;
-  text-decoration: none;
-  font-size: 0.78rem;
   letter-spacing: 0.08em;
+  line-height: 1;
   text-transform: uppercase;
-  white-space: nowrap;
-  line-height: 1.2;
 }
 
-.admin-top__site:hover {
+.admin-frame__body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(1.35rem, 3.5vh, 2.25rem) clamp(1.15rem, 3vw, 2.25rem)
+    clamp(1.5rem, 4vh, 2.5rem);
+  background: transparent;
+  color: #4e196b;
+}
+
+.admin-shell {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: clamp(1rem, 2.5vh, 1.75rem);
+  width: min(64rem, 100%);
+  min-height: 0;
+  margin: 0 auto;
+}
+
+.admin-bar__home {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2.45rem;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.admin-bar__home svg {
+  display: block;
+  width: 1.24rem;
+  height: 1.24rem;
+  overflow: visible;
+}
+
+.admin-bar__home line {
+  stroke: currentColor;
+  stroke-width: 2px;
+  stroke-linecap: round;
+}
+
+.admin-bar__home:hover {
   opacity: 0.55;
 }
 
@@ -103,7 +154,7 @@ html:has(body.admin-page)::-webkit-scrollbar {
   padding: 0.35rem 0;
   border: none;
   background: none;
-  color: #912a7d;
+  color: #4e196b;
   font: inherit;
   font-size: 0.78rem;
   letter-spacing: 0.08em;
@@ -128,7 +179,8 @@ html:has(body.admin-page)::-webkit-scrollbar {
 }
 
 .admin-session {
-  margin-bottom: 1rem;
+  width: min(28rem, 100%);
+  margin: 0 auto;
 }
 
 .admin-auth {
@@ -145,10 +197,10 @@ html:has(body.admin-page)::-webkit-scrollbar {
 .admin-login-btn {
   margin: 0;
   padding: 0.65rem 1.35rem;
-  border: 2px solid #912a7d;
+  border: none;
   border-radius: 0;
-  background: #912a7d;
-  color: #fff8f4;
+  background: #e44e96;
+  color: #fdd2ff;
   font: inherit;
   font-size: 0.8rem;
   letter-spacing: 0.1em;
@@ -161,21 +213,26 @@ html:has(body.admin-page)::-webkit-scrollbar {
 }
 
 .admin-status.is-error {
-  color: #a53081;
+  color: #4e196b;
   font-weight: 700;
 }
 
 .admin-grid {
   display: grid;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  margin: 0 auto;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-  align-items: start;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(1rem, 2.2vw, 1.75rem);
+  align-items: stretch;
 }
 
 @media (min-width: 720px) {
   .admin-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.15rem;
+    grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
   }
 }
@@ -183,19 +240,22 @@ html:has(body.admin-page)::-webkit-scrollbar {
 .admin-panel {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1.05rem;
   min-width: 0;
   max-width: 100%;
   min-height: 0;
-  padding: 1.1rem 1rem 1.15rem;
-  background: rgb(255 255 255 / 0.32);
-  border: 1px solid rgb(145 42 125 / 0.22);
+  padding: 1.25rem 1.2rem 1.3rem;
+  background: #fdd2ff;
+  border: 1px solid rgb(78 25 107 / 0.18);
+  color: #4e196b;
   box-sizing: border-box;
 }
 
-.admin-panel--add {
-  min-width: 0;
-  overflow: visible;
+.admin-panel--add,
+.admin-panel--remove {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .admin-label {
@@ -215,14 +275,7 @@ html:has(body.admin-page)::-webkit-scrollbar {
 }
 
 @media (min-width: 720px) {
-  /* Esquerda: altura natural — tudo visível (imagem, campos, Publicar). */
-  .admin-panel--add {
-    height: auto;
-    min-height: 0;
-    max-height: none;
-  }
-
-  /* Direita: mesma altura da linha do grid; lista com scroll. */
+  .admin-panel--add,
   .admin-panel--remove {
     height: 100%;
     min-height: 0;
@@ -231,9 +284,10 @@ html:has(body.admin-page)::-webkit-scrollbar {
   }
 
   .admin-panel--remove .admin-remove__list {
-    flex: 1 1 0;
+    flex: 1 1 auto;
     min-height: 0;
     max-height: none;
+    overflow-x: hidden;
     overflow-y: auto;
   }
 }
@@ -258,7 +312,7 @@ html:has(body.admin-page)::-webkit-scrollbar {
   gap: 0.3rem;
   min-width: 0;
   max-width: 100%;
-  min-height: 6.5rem;
+  min-height: clamp(3.6rem, 12vh, 6.5rem);
   padding: 0.85rem;
   overflow: hidden;
   border: 1px dashed rgb(78 25 107 / 0.32);
@@ -345,8 +399,8 @@ html:has(body.admin-page)::-webkit-scrollbar {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 7rem;
-  flex: 0 1 auto;
+  min-height: 0;
+  flex: 1 1 auto;
   border: 1px solid rgb(78 25 107 / 0.18);
   background: rgb(253 210 255 / 0.35);
   color: inherit;
@@ -356,7 +410,7 @@ html:has(body.admin-page)::-webkit-scrollbar {
   letter-spacing: 0.03em;
   text-transform: uppercase;
   padding: 0.5rem 0.55rem;
-  resize: vertical;
+  resize: none;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -382,9 +436,9 @@ html:has(body.admin-page)::-webkit-scrollbar {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  border: 1px solid #4e196b;
-  background: #4e196b;
-  color: #fdd2ff;
+  border: 1px solid rgb(78 25 107 / 0.45);
+  background: transparent;
+  color: #4e196b;
   font: inherit;
   font-size: 0.8rem;
   font-weight: 700;
@@ -395,8 +449,7 @@ html:has(body.admin-page)::-webkit-scrollbar {
 }
 
 .admin-submit:hover:not(:disabled) {
-  background: #912a7d;
-  border-color: #912a7d;
+  background: rgb(255 255 255 / 0.45);
 }
 
 .admin-submit:disabled {
@@ -406,6 +459,7 @@ html:has(body.admin-page)::-webkit-scrollbar {
 
 .admin-panel--remove {
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -414,11 +468,12 @@ html:has(body.admin-page)::-webkit-scrollbar {
   margin: 0;
   padding: 0;
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 0;
   min-width: 0;
-  min-height: 8rem;
-  max-height: min(52vh, 22rem);
+  min-height: 0;
+  max-height: none;
   overflow-x: hidden;
   overflow-y: auto;
   border: 1px solid rgb(78 25 107 / 0.12);
@@ -502,9 +557,8 @@ html:has(body.admin-page)::-webkit-scrollbar {
 }
 
 .admin-remove__btn:hover:not(:disabled) {
-  background: #a53081;
-  color: #fdd2ff;
-  border-color: #a53081;
+  background: transparent;
+  opacity: 0.55;
 }
 
 .admin-remove__btn:disabled {
@@ -513,7 +567,8 @@ html:has(body.admin-page)::-webkit-scrollbar {
 }
 
 .admin-setup {
-  margin-top: 1.25rem;
+  width: min(36rem, 100%);
+  margin: 1.25rem auto 0;
   font-size: 0.75rem;
   line-height: 1.5;
   opacity: 0.8;
@@ -521,4 +576,114 @@ html:has(body.admin-page)::-webkit-scrollbar {
 
 .admin-setup p {
   margin: 0;
+}
+
+.admin-page {
+  --cursor-star-size: 22px;
+  --cursor-dot-color: #a53081;
+  --wheel-stroke-width: 2px;
+}
+
+.cursor-dot {
+  --cursor-morph: 0.42s cubic-bezier(0.34, 1.12, 0.64, 1);
+  --cursor-fade: 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  width: var(--cursor-star-size);
+  height: var(--cursor-star-size);
+  background: transparent;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform;
+}
+
+.cursor-dot.is-visible {
+  opacity: 1;
+}
+
+.cursor-dot__ball,
+.cursor-dot__star {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  transition:
+    opacity var(--cursor-fade),
+    transform var(--cursor-morph);
+  will-change: transform, opacity;
+}
+
+.cursor-dot__ball {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--cursor-dot-color);
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.cursor-dot__star {
+  width: var(--cursor-star-size);
+  height: var(--cursor-star-size);
+  background: transparent;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.32) rotate(-28deg);
+}
+
+.cursor-dot__star-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.cursor-dot__star-lines line {
+  stroke: var(--cursor-dot-color);
+  stroke-width: var(--wheel-stroke-width);
+  stroke-linecap: round;
+}
+
+.cursor-dot.is-hover .cursor-dot__ball {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.12);
+  transition-delay: 0s;
+}
+
+.cursor-dot.is-hover .cursor-dot__star {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1) rotate(36deg);
+  transition-delay: 0.06s;
+}
+
+.cursor-dot:not(.is-hover) .cursor-dot__ball {
+  transition-delay: 0.1s;
+}
+
+.cursor-dot:not(.is-hover) .cursor-dot__star {
+  transition-delay: 0s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.has-cursor-dot,
+  html.has-cursor-dot * {
+    cursor: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-dot__ball,
+  .cursor-dot__star {
+    transition-duration: 0.01ms;
+    transition-delay: 0s !important;
+    will-change: auto;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .cursor-dot {
+    display: none;
+  }
 }

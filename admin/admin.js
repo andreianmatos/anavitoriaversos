@@ -285,13 +285,47 @@
     await putFile(thumbPath, thumbBase64, null, "Add archive thumbnail " + thumbPath.split("/").pop());
   }
 
-  async function deleteArchiveThumbIfExists(archiveFile) {
-    var thumbPath = archiveThumbRepoPath(archiveFile);
-    try {
-      var thumbFile = await getFile(thumbPath);
-      await deleteFile(thumbPath, thumbFile.sha, "Remove archive thumbnail");
-    } catch (error) {
-      if (error.status !== 404) throw error;
+  function archiveThumbRepoCandidates(archiveFile) {
+    var rel = String(archiveFile || "").replace(/\\/g, "/");
+    var slash = rel.lastIndexOf("/");
+    var name = slash === -1 ? rel : rel.slice(slash + 1);
+    var dirPart = slash === -1 ? "" : rel.slice(0, slash + 1);
+    var dot = name.lastIndexOf(".");
+    var ext = dot === -1 ? "" : name.slice(dot + 1).toLowerCase();
+    var base = dot === -1 ? name : name.slice(0, dot);
+    var seen = {};
+    var paths = [];
+    function add(path) {
+      if (!path || seen[path]) return;
+      seen[path] = true;
+      paths.push(path);
+    }
+    add(archiveThumbRepoPath(archiveFile));
+    var rootThumbs = archivePath + "/thumbs/";
+    var folderThumbs = archivePath + "/" + (dirPart ? dirPart + "thumbs/" : "thumbs/");
+    if (ext === "gif") {
+      add(folderThumbs + base + ".gif");
+      add(rootThumbs + dirPart + base + ".gif");
+    } else {
+      if (ext !== "jpg" && ext !== "jpeg") {
+        add(folderThumbs + name + ".jpg");
+        add(rootThumbs + dirPart + name + ".jpg");
+      }
+      add(folderThumbs + base + ".jpg");
+      add(rootThumbs + dirPart + base + ".jpg");
+    }
+    return paths;
+  }
+
+  async function deleteArchiveThumbsIfExist(archiveFile) {
+    var paths = archiveThumbRepoCandidates(archiveFile);
+    for (var i = 0; i < paths.length; i += 1) {
+      try {
+        var thumbFile = await getFile(paths[i]);
+        await deleteFile(paths[i], thumbFile.sha, "Remove archive thumbnail");
+      } catch (error) {
+        if (error.status !== 404) throw error;
+      }
     }
   }
 
@@ -734,16 +768,12 @@
         if (imageError.status !== 404) throw imageError;
       }
 
-      try {
-        await deleteArchiveThumbIfExists(filename);
-      } catch (thumbError) {
-        if (thumbError.status !== 404) throw thumbError;
-      }
+      await deleteArchiveThumbsIfExist(filename);
 
       setStatus(
-        "Removido: " +
-          filename +
-          ". O arquivo no site atualiza em 1–2 min (Ctrl+Shift+R na página do site)."
+        "Removido do site: entrada no images.json, ficheiro em " +
+          archivePath +
+          "/ e miniatura(s) em thumbs/. Atualiza em 1–2 min (Ctrl+Shift+R no arquivo)."
       );
       loadRemoveList();
     } catch (error) {
@@ -843,4 +873,70 @@
   } else {
     init();
   }
+})();
+
+(function () {
+  var prefersHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+  if (!prefersHover.matches) return;
+
+  document.documentElement.classList.add("has-cursor-dot");
+
+  var dot = document.createElement("div");
+  dot.className = "cursor-dot";
+  dot.setAttribute("aria-hidden", "true");
+
+  var ball = document.createElement("span");
+  ball.className = "cursor-dot__ball";
+
+  var star = document.createElement("span");
+  star.className = "cursor-dot__star";
+
+  var starSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  starSvg.setAttribute("viewBox", "0 0 24 24");
+  starSvg.setAttribute("class", "cursor-dot__star-svg");
+
+  var lines = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  lines.setAttribute("class", "cursor-dot__star-lines");
+
+  var cx = 12;
+  var cy = 12;
+  var radius = 10;
+  for (var i = 0; i < 5; i += 1) {
+    var angle = ((-90 + i * 72) * Math.PI) / 180;
+    var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("x1", String(cx));
+    line.setAttribute("y1", String(cy));
+    line.setAttribute("x2", String(cx + radius * Math.cos(angle)));
+    line.setAttribute("y2", String(cy + radius * Math.sin(angle)));
+    lines.appendChild(line);
+  }
+
+  starSvg.appendChild(lines);
+  star.appendChild(starSvg);
+  dot.appendChild(ball);
+  dot.appendChild(star);
+  document.body.appendChild(dot);
+
+  function isHoverable(node) {
+    return Boolean(node && node.closest && node.closest("a, button, [role='button']"));
+  }
+
+  document.addEventListener(
+    "mousemove",
+    function (event) {
+      dot.classList.toggle("is-hover", isHoverable(event.target));
+      dot.style.transform =
+        "translate3d(" +
+        event.clientX +
+        "px, " +
+        event.clientY +
+        "px, 0) translate(-50%, -50%)";
+      dot.classList.add("is-visible");
+    },
+    { passive: true }
+  );
+
+  document.addEventListener("mouseleave", function () {
+    dot.classList.remove("is-visible");
+  });
 })();
