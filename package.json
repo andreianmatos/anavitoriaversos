@@ -1,0 +1,8 @@
+{
+  "name": "anavitoriaversos",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/dev-server.mjs",
+    "serve": "npx --yes serve@14 -s -l 3000"
+  }
+}

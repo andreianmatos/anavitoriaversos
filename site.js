@@ -171,6 +171,79 @@
     return basename(file).replace(/\.[^.]+$/, "");
   }
 
+  function workSlug(title) {
+    return String(title || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Za-z0-9]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(function (word) {
+        if (/^\d/.test(word)) return word;
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join("");
+  }
+
+  function assignWorkPaths(list) {
+    const used = {};
+    list.forEach(function (group) {
+      let base =
+        group.kind === "umbigo"
+          ? "DeQuemVens"
+          : group.kind === "leva"
+            ? "LevaMeDeVolta"
+            : group.kind === "frango"
+              ? "Frango"
+              : workSlug(group.title);
+      if (!base) base = "Obra";
+      let path = base;
+      let extra = 2;
+      while (used[path]) {
+        path = base + extra;
+        extra += 1;
+      }
+      used[path] = true;
+      group.path = path;
+    });
+  }
+
+  function pathSlugFromLocation() {
+    const fromQuery = new URLSearchParams(location.search).get("obra");
+    if (fromQuery) return fromQuery;
+    let path = location.pathname || "/";
+    path = path.replace(/\/index\.html$/i, "").replace(/\/+$/, "");
+    const parts = path.split("/").filter(Boolean);
+    if (!parts.length) return "";
+    const last = decodeURIComponent(parts[parts.length - 1]);
+    if (/\.[a-z0-9]+$/i.test(last)) return "";
+    return last;
+  }
+
+  function findGroupByPath(slug) {
+    if (!slug) return null;
+    return (
+      groups.find(function (group) {
+        return group.path === slug;
+      }) || null
+    );
+  }
+
+  function showWorkUrl(group) {
+    if (!group || !group.path) return;
+    const next = "/" + group.path;
+    if (location.pathname === next) return;
+    history.pushState({ work: group.path }, "", next);
+  }
+
+  function showHomeUrl() {
+    const slug = pathSlugFromLocation();
+    if (!slug) return;
+    const home = "/";
+    history.pushState({ work: "" }, "", home);
+  }
+
   function slugify(value) {
     return String(value)
       .toLowerCase()
@@ -210,16 +283,56 @@
     return "";
   }
 
+  function buildWorkTextStream(entry) {
+    if (typeof window.avvBuildWorkTextStream === "function") {
+      return window.avvBuildWorkTextStream(entry);
+    }
+    const stream = document.createElement("div");
+    stream.className = "work__stream";
+    return stream;
+  }
+
+  function workUsesTextStream(entry) {
+    if (!entry) return false;
+    return Boolean(entry.textStream);
+  }
+
+  function workTextParts(entry) {
+    if (!entry) return [];
+    if (Array.isArray(entry.text)) {
+      return entry.text.map(function (part) {
+        return String(part || "").trim();
+      }).filter(Boolean);
+    }
+    const text = resolveWorkText(entry);
+    return text ? [text] : [];
+  }
+
+  function paintWorkText(textEl, parts) {
+    textEl.textContent = "";
+    const hasNotes = parts.some(function (part, index) {
+      if (index === 0) return false;
+      return /[a-záàâãéêíóôõúç]/.test(part);
+    });
+    parts.forEach(function (part, index) {
+      const block = document.createElement("p");
+      block.className = !hasNotes || index === 0 ? "work__text-verse" : "work__text-note";
+      block.textContent = part;
+      textEl.appendChild(block);
+    });
+  }
+
   function applyWorkCopy(section, entry) {
+    if (workUsesTextStream(entry)) return;
     const textEl = section.querySelector(".work__text");
     const titleEl = section.querySelector(".work__copy-title");
     const copyWrap = section.querySelector(".work__copy");
     if (!textEl || !copyWrap) return;
-    const text = resolveWorkText(entry);
+    const parts = workTextParts(entry);
     const title = entry ? entry.title || titleFromFile(entry.file) : "";
     if (titleEl) titleEl.textContent = title;
-    textEl.textContent = text;
-    copyWrap.hidden = !text && !title;
+    paintWorkText(textEl, parts);
+    copyWrap.hidden = !parts.length && !title;
   }
 
   function refreshWorkCopyTexts() {
@@ -309,9 +422,33 @@
     return file.indexOf("umbigo/") === 0 || href === "umbigo.html";
   }
 
+  function isLevaEntry(entry) {
+    const file = String(entry.file || "");
+    const href = entry.href ? String(entry.href).trim() : "";
+    return (
+      file === "in utero 3D.png" ||
+      file === "primeira queda.png" ||
+      file.indexOf("leva-me-de-volta/") === 0 ||
+      href === "leva-me-de-volta.html"
+    );
+  }
+
+  function isFrangoEntry(entry) {
+    const file = String(entry.file || "");
+    const href = entry.href ? String(entry.href).trim() : "";
+    return (
+      file === "frango.png" ||
+      file === "frango(1).png" ||
+      file.indexOf("frango/") === 0 ||
+      href === "frango.html"
+    );
+  }
+
   function groupEntries(items) {
     const groups = [];
     let umbigoGroup = null;
+    let levaGroup = null;
+    let frangoGroup = null;
 
     items.forEach(function (entry, index) {
       const title = entry.title || titleFromFile(entry.file);
@@ -328,6 +465,36 @@
           groups.push(umbigoGroup);
         }
         umbigoGroup.files.push(entry);
+        return;
+      }
+
+      if (isLevaEntry(entry)) {
+        if (!levaGroup) {
+          levaGroup = {
+            id: "obra-leva-me-de-volta",
+            title: "Leva-me de volta",
+            kind: "leva",
+            files: [],
+            file: entry.file,
+          };
+          groups.push(levaGroup);
+        }
+        levaGroup.files.push(entry);
+        return;
+      }
+
+      if (isFrangoEntry(entry)) {
+        if (!frangoGroup) {
+          frangoGroup = {
+            id: "obra-frango",
+            title: "Frango",
+            kind: "frango",
+            files: [],
+            file: entry.file,
+          };
+          groups.push(frangoGroup);
+        }
+        frangoGroup.files.push(entry);
         return;
       }
 
@@ -411,6 +578,25 @@
 
   let umbigoMainTemplate = null;
   let umbigoLoadPromise = null;
+  let levaMainTemplate = null;
+  let levaLoadPromise = null;
+  let frangoMainTemplate = null;
+  let frangoLoadPromise = null;
+
+  function levaTextEntry(group) {
+    if (!group || !group.files) return null;
+    return (
+      group.files.find(function (entry) {
+        return entry.textStream || (Array.isArray(entry.text) && entry.text.length);
+      }) || group.files[0]
+    );
+  }
+
+  function mountLevaLegend(legendHost) {
+    if (typeof window.avvMountLevaLegend === "function") {
+      window.avvMountLevaLegend(legendHost);
+    }
+  }
 
   function loadUmbigoMain() {
     if (umbigoMainTemplate) {
@@ -435,6 +621,60 @@
       })();
     }
     return umbigoLoadPromise.then(function (main) {
+      return main ? main.cloneNode(true) : null;
+    });
+  }
+
+  function loadLevaMain() {
+    if (levaMainTemplate) {
+      return Promise.resolve(levaMainTemplate.cloneNode(true));
+    }
+    if (!levaLoadPromise) {
+      levaLoadPromise = (async function () {
+        try {
+          const response = await fetch("leva-me-de-volta.html");
+          if (!response.ok) throw new Error("leva");
+          const html = await response.text();
+          const doc = new DOMParser().parseFromString(html, "text/html");
+          const main = doc.querySelector("main.leva");
+          if (!main) throw new Error("leva");
+          levaMainTemplate = main;
+          return levaMainTemplate;
+        } catch (error) {
+          console.error("Nao foi possivel carregar leva-me-de-volta.html", error);
+          levaLoadPromise = null;
+          return null;
+        }
+      })();
+    }
+    return levaLoadPromise.then(function (main) {
+      return main ? main.cloneNode(true) : null;
+    });
+  }
+
+  function loadFrangoMain() {
+    if (frangoMainTemplate) {
+      return Promise.resolve(frangoMainTemplate.cloneNode(true));
+    }
+    if (!frangoLoadPromise) {
+      frangoLoadPromise = (async function () {
+        try {
+          const response = await fetch("frango.html");
+          if (!response.ok) throw new Error("frango");
+          const html = await response.text();
+          const doc = new DOMParser().parseFromString(html, "text/html");
+          const main = doc.querySelector("main.frango");
+          if (!main) throw new Error("frango");
+          frangoMainTemplate = main;
+          return frangoMainTemplate;
+        } catch (error) {
+          console.error("Nao foi possivel carregar frango.html", error);
+          frangoLoadPromise = null;
+          return null;
+        }
+      })();
+    }
+    return frangoLoadPromise.then(function (main) {
       return main ? main.cloneNode(true) : null;
     });
   }
@@ -887,14 +1127,22 @@
     const scatterWidth = scrollSurface.clientWidth || panelWidth;
 
     const scatter = window.avvArchiveScatter;
+    if (!scatter || typeof scatter.getLayout !== "function") {
+      console.error("Nao foi possivel carregar o arquivo (archive-scatter.js).");
+      archivePanel.classList.remove("is-arranging");
+      scrollSurface.classList.remove("is-preparing");
+      return;
+    }
     const panelSeed = freshArchiveSeed();
     const files = seededShuffle(manifest.slice(), panelSeed);
     const layout = scatter.getLayout(files.length, scatterWidth, panelHeight, { panel: true });
     const placed = [];
     let contentBottom = layout.padding;
     let pending = files.length;
+    let arrangeDeadline = 0;
 
     function revealArchiveScatter() {
+      window.clearTimeout(arrangeDeadline);
       scrollSurface.appendChild(placeFragment);
       scrollSurface.querySelectorAll(".archive-panel-item").forEach(function (node) {
         node.classList.remove("is-loading");
@@ -916,6 +1164,17 @@
         revealArchiveScatter();
       });
     }
+
+    if (!files.length) {
+      revealArchiveScatter();
+      return;
+    }
+
+    arrangeDeadline = window.setTimeout(function () {
+      if (token !== scatterToken) return;
+      if (!scrollSurface.classList.contains("is-preparing")) return;
+      revealArchiveScatter();
+    }, 12000);
 
     files.forEach(function (entry, orderIndex) {
       const title = entry.title || titleFromFile(entry.file);
@@ -983,13 +1242,29 @@
         mountPlacedItem();
       }
 
+      window.setTimeout(function () {
+        if (token !== scatterToken) return;
+        if (button.parentNode || placeFragment.contains(button)) return;
+        mountPlacedItem();
+        if (!button.parentNode && !placeFragment.contains(button)) {
+          finishArchiveArrange();
+        }
+      }, 7500);
+
       button.addEventListener("click", function () {
         archivePanel.querySelectorAll(".arquivo-item.is-picked").forEach(function (node) {
           node.classList.remove("is-picked");
         });
         button.classList.add("is-picked");
         setIndexOpen(false);
-        if (group) navigateToGroup(group, entry.file);
+        const targetGroup = findGroupForFile(entry.file) || group;
+        if (targetGroup) {
+          navigateToGroup(targetGroup, entry.file);
+          return;
+        }
+        if (entry.href) {
+          window.location.href = entry.href;
+        }
       });
 
       frame.appendChild(img);
@@ -1046,13 +1321,19 @@
 
   function restartStarRollAnimation() {}
 
-  function scrollToWork(id, anchorFile) {
+  function scrollToWork(id, anchorFile, options) {
     const section = document.getElementById(id);
     if (!section) return;
     lastWorkId = id;
     setWorkSectionOpen(true);
     window.scrollTo(0, 0);
     activateWorkSection(section);
+    if (!options || !options.skipUrl) {
+      const group = groups.find(function (item) {
+        return item.id === id;
+      });
+      showWorkUrl(group);
+    }
 
     function alignViewport() {
       if (!anchorFile) {
@@ -1152,7 +1433,7 @@
     });
   }
 
-  function scrollToTop() {
+  function scrollToTop(options) {
     setSobreOpen(false);
     setIndexOpen(false);
     document.body.classList.remove("is-star-flight");
@@ -1163,6 +1444,7 @@
     setWorkSectionOpen(false);
     window.scrollTo(0, 0);
     updateWorkChrome();
+    if (!options || !options.skipUrl) showHomeUrl();
   }
 
   function flyStarBetween(fromEl, toEl, onDone, flyOpts) {
@@ -1677,9 +1959,41 @@
     document.dispatchEvent(new CustomEvent("umbigo-mounted"));
   }
 
+  async function mountFrangoWork(section, group) {
+    const main = await loadFrangoMain();
+    if (!main || !section.isConnected) return;
+    section.appendChild(main);
+    group.files.forEach(function (entry) {
+      const anchor = findWorkAnchor(section, entry.file);
+      if (anchor) anchor.setAttribute("data-archive-file", entry.file);
+    });
+  }
+
+  async function mountLevaWork(section, group) {
+    const main = await loadLevaMain();
+    if (!main || !section.isConnected) return;
+    section.appendChild(main);
+    const frameHost = main.querySelector("[data-leva-frame]");
+    const legendHost = main.querySelector("[data-leva-legend]");
+    const textEntry = levaTextEntry(group);
+    if (frameHost && textEntry) {
+      if (typeof window.avvMountLevaFrame === "function") {
+        window.avvMountLevaFrame(frameHost, textEntry);
+      } else {
+        frameHost.innerHTML = "";
+        frameHost.appendChild(buildWorkTextStream(textEntry));
+      }
+      if (legendHost) {
+        mountLevaLegend(legendHost);
+      }
+    }
+  }
+
   async function renderWorks(items) {
     works.innerHTML = "";
     let umbigoMount = null;
+    let levaMount = null;
+    let frangoMount = null;
     for (let i = 0; i < items.length; i += 1) {
       const group = items[i];
 
@@ -1690,6 +2004,26 @@
         section.setAttribute("aria-hidden", "true");
         works.appendChild(section);
         umbigoMount = mountUmbigoWork(section, group);
+        continue;
+      }
+
+      if (group.kind === "leva") {
+        const section = document.createElement("section");
+        section.className = "work work--leva leva-page work--text-stream";
+        section.id = group.id;
+        section.setAttribute("aria-hidden", "true");
+        works.appendChild(section);
+        levaMount = mountLevaWork(section, group);
+        continue;
+      }
+
+      if (group.kind === "frango") {
+        const section = document.createElement("section");
+        section.className = "work work--frango frango-page";
+        section.id = group.id;
+        section.setAttribute("aria-hidden", "true");
+        works.appendChild(section);
+        frangoMount = mountFrangoWork(section, group);
         continue;
       }
 
@@ -1714,26 +2048,38 @@
         frame.appendChild(img);
       });
 
-      const copyWrap = document.createElement("div");
-      copyWrap.className = "work__copy";
-      copyWrap.hidden = true;
-      const titleEl = document.createElement("h2");
-      titleEl.className = "work__copy-title";
-      const textEl = document.createElement("p");
-      textEl.className = "work__text";
-      copyWrap.appendChild(titleEl);
-      copyWrap.appendChild(textEl);
-
+      const manifestEntry = group.files[0];
       layout.appendChild(frame);
-      layout.appendChild(copyWrap);
+      {
+        const copyWrap = document.createElement("div");
+        copyWrap.className = "work__copy";
+        copyWrap.hidden = true;
+        const titleEl = document.createElement("h2");
+        titleEl.className = "work__copy-title";
+        const textEl = document.createElement("div");
+        textEl.className = "work__text";
+        copyWrap.appendChild(titleEl);
+        copyWrap.appendChild(textEl);
+        layout.appendChild(copyWrap);
+      }
       section.appendChild(layout);
-      applyWorkCopy(section, group.files[0]);
+      applyWorkCopy(section, manifestEntry);
 
       works.appendChild(section);
     }
     if (umbigoMount) {
       umbigoMount.catch(function (error) {
         console.error("Nao foi possivel montar umbigo", error);
+      });
+    }
+    if (levaMount) {
+      levaMount.catch(function (error) {
+        console.error("Nao foi possivel montar leva-me-de-volta", error);
+      });
+    }
+    if (frangoMount) {
+      frangoMount.catch(function (error) {
+        console.error("Nao foi possivel montar frango", error);
       });
     }
   }
@@ -1802,6 +2148,7 @@
 
   updateWorkChrome();
   document.addEventListener("avv-lang", updateWorkChrome);
+  window.addEventListener("popstate", onWorkPop);
 
   if (starRoll) starRoll.hidden = false;
 
@@ -1823,10 +2170,36 @@
     if (!response.ok) throw new Error("manifest");
     manifest = parseArchiveManifest(await response.json());
     groups = groupEntries(manifest);
+    assignWorkPaths(groups);
+  }
+
+  function openWorkFromLocation() {
+    const slug = pathSlugFromLocation();
+    const group = findGroupByPath(slug);
+    if (!group) return;
+    scrollToWork(group.id, "", { skipUrl: true });
+  }
+
+  function onWorkPop(event) {
+    const slug =
+      event.state && typeof event.state.work === "string"
+        ? event.state.work
+        : pathSlugFromLocation();
+    if (!slug) {
+      if (document.body.classList.contains("is-work-open")) {
+        scrollToTop({ skipUrl: true });
+      }
+      return;
+    }
+    const group = findGroupByPath(slug);
+    if (!group) return;
+    scrollToWork(group.id, "", { skipUrl: true });
   }
 
   async function init() {
     loadUmbigoMain().catch(function () {});
+    loadLevaMain().catch(function () {});
+    loadFrangoMain().catch(function () {});
     try {
       await loadManifest();
     } catch (error) {
@@ -1838,6 +2211,8 @@
     scheduleIdle(prefetchArchivePanelThumbs);
     lockScrollTop();
     syncStarRollMotion();
+    history.replaceState({ work: pathSlugFromLocation() }, "", location.href);
+    openWorkFromLocation();
   }
 
   document.addEventListener("avv-archive-updated", function () {

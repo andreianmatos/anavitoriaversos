@@ -307,6 +307,7 @@
   }
 
   function fitUmbigoSubtitle() {
+    if (document.querySelector(".umbigo-hero")) return;
     const el = document.querySelector(".umbigo-work__subtitle:not([hidden])");
     if (!el) return;
     const parent = el.parentElement;
