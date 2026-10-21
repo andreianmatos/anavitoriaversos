@@ -38,3 +38,18 @@ Se tiveres o repositório aberto no GitHub:
 ## `/admin` no site público
 
 Só funciona depois do login GitHub + servidor OAuth (ver `SETUP.md`). Podes ignorar até quiseres configurar com calma.
+
+### Obras com página própria
+
+No admin, escolhe **«Foto na página da obra»** e a obra na lista (nomes em `admin/config.js`):
+
+| Lista no admin | Pasta (`baseDir`) | URL no site |
+|----------------|-------------------|-------------|
+| De quem vens? | `de-quem-vens` | `/DeQuemVens` |
+| Quem veio primeiro | `quem-veio-primeiro` | `/QuemVeioPrimeiro` |
+| Leva-me de volta | `leva-me-de-volta` | `/LevaMeDeVolta` |
+| Reinventar a roda | `reinventar-a-roda` | `/ReInventarARoda` |
+
+As imagens vão para `imagens/arquivo/<baseDir>/consequencias/` e o manifest `imagens/arquivo/<baseDir>/images.json`. Detalhes em `imagens/arquivo/README.md`.
+
+Para ligar uma peça do arquivo à página, acrescenta **`"href": "quem-veio-primeiro.html"`** (ou o fragmento correspondente) na entrada em `images.json` na raiz.

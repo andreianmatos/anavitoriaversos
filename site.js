@@ -2,6 +2,42 @@
   const imageDir = "imagens/arquivo/";
   const thumbDir = "imagens/arquivo/thumbs/";
   const manifestUrl = document.body.getAttribute("data-manifest") || "images.json";
+
+  /** URL slug (path segment) per obra kind — ver também _redirects */
+  const WORK_ROUTE_SLUG = {
+    umbigo: "DeQuemVens",
+    leva: "LevaMeDeVolta",
+    frango: "QuemVeioPrimeiro",
+    "reinventar-aroda": "ReInventarARoda",
+  };
+
+  /** HTML fragments na raiz do site (carregados em #obras) */
+  const WORK_FRAGMENTS = {
+    umbigo: { file: "umbigo.html", selector: "main.umbigo" },
+    leva: { file: "leva-me-de-volta.html", selector: "main.leva" },
+    frango: { file: "quem-veio-primeiro.html", selector: "main.frango" },
+    "reinventar-aroda": { file: "reinventar-a-roda.html", selector: "main.reinventar-aroda" },
+  };
+
+  /** Pastas em imagens/arquivo/ — mesmo nome que o fragmento HTML (kebab-case) */
+  const WORK_ARCHIVE_DIR = {
+    umbigo: "de-quem-vens",
+    frango: "quem-veio-primeiro",
+    leva: "leva-me-de-volta",
+    "reinventar-aroda": "reinventar-a-roda",
+  };
+
+  const WORK_PAGE_HREFS = {
+    umbigo: ["umbigo.html"],
+    leva: ["leva-me-de-volta.html"],
+    frango: ["quem-veio-primeiro.html", "frango.html"],
+    "reinventar-aroda": ["reinventar-a-roda.html"],
+  };
+
+  function workPageHrefMatches(kind, href) {
+    const list = WORK_PAGE_HREFS[kind];
+    return list ? list.indexOf(href) !== -1 : false;
+  }
   const works = document.getElementById("obras");
   const star = document.querySelector("[data-star]");
   const starRoll = document.querySelector("[data-star-roll]");
@@ -190,13 +226,9 @@
     const used = {};
     list.forEach(function (group) {
       let base =
-        group.kind === "umbigo"
-          ? "DeQuemVens"
-          : group.kind === "leva"
-            ? "LevaMeDeVolta"
-            : group.kind === "frango"
-              ? "Frango"
-              : workSlug(group.title);
+        WORK_ROUTE_SLUG[group.kind] !== undefined
+          ? WORK_ROUTE_SLUG[group.kind]
+          : workSlug(group.title);
       if (!base) base = "Obra";
       let path = base;
       let extra = 2;
@@ -221,8 +253,13 @@
     return last;
   }
 
+  const WORK_PATH_ALIASES = {
+    Frango: "QuemVeioPrimeiro",
+  };
+
   function findGroupByPath(slug) {
     if (!slug) return null;
+    if (WORK_PATH_ALIASES[slug]) slug = WORK_PATH_ALIASES[slug];
     return (
       groups.find(function (group) {
         return group.path === slug;
@@ -255,6 +292,124 @@
 
   function fullPath(file) {
     return imageDir + encodePath(file);
+  }
+
+  const PAGE_PHOTO_PREFIX = "consequencias/";
+
+  function normalizeAssetSrc(src) {
+    if (!src) return "";
+    const clean = String(src).split("?")[0];
+    try {
+      return decodeURIComponent(clean);
+    } catch (error) {
+      return clean;
+    }
+  }
+
+  function assetKeyFromSrc(src) {
+    const normalized = normalizeAssetSrc(src);
+    const marker = "imagens/arquivo/";
+    const idx = normalized.indexOf(marker);
+    return idx === -1 ? normalized : normalized.slice(idx);
+  }
+
+  function existingImageKeys(root) {
+    const set = new Set();
+    if (!root) return set;
+    root.querySelectorAll("img[src]").forEach(function (img) {
+      set.add(assetKeyFromSrc(img.getAttribute("src") || img.currentSrc || ""));
+    });
+    return set;
+  }
+
+  async function loadPagePhotoManifest(baseDir) {
+    try {
+      const response = await fetch(imageDir + encodePath(baseDir + "/images.json"), {
+        cache: "no-store",
+      });
+      if (!response.ok) return [];
+      const data = await response.json();
+      const items = Array.isArray(data) ? data : data.items || [];
+      return items.filter(function (entry) {
+        const file = entry && entry.file ? String(entry.file) : "";
+        if (file.indexOf(PAGE_PHOTO_PREFIX) !== 0) return false;
+        if (entry.polaroid === false) return false;
+        return true;
+      });
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function appendPagePhotoFigure(host, src, options) {
+    const figure = document.createElement("figure");
+    if (options && options.figureClass) figure.className = options.figureClass;
+    if (options && options.tilt != null) {
+      figure.style.setProperty("--polaroid-tilt", String(options.tilt));
+    }
+    if (options && options.tabIndex) figure.tabIndex = 0;
+    if (options && options.ariaLabel) figure.setAttribute("aria-label", options.ariaLabel);
+    const img = document.createElement("img");
+    if (options && options.imgClass) img.className = options.imgClass;
+    img.src = src;
+    img.alt = "";
+    img.loading = "lazy";
+    img.decoding = "async";
+    figure.appendChild(img);
+    host.appendChild(figure);
+    return figure;
+  }
+
+  async function hydrateCustomPagePhotos(main, baseDir) {
+    const items = await loadPagePhotoManifest(baseDir);
+    if (!items.length) return;
+    const existing = existingImageKeys(main);
+    const polaroidTilts = [-5, 3, -2, 4, -3];
+
+    items.forEach(function (entry, index) {
+      const file = baseDir + "/" + entry.file;
+      const src = fullPath(file);
+      if (existing.has(assetKeyFromSrc(src))) return;
+
+      if (baseDir === WORK_ARCHIVE_DIR.umbigo) {
+        const caixas = main.querySelector(".umbigo-caixas");
+        if (!caixas) return;
+        appendPagePhotoFigure(caixas, src);
+      } else if (baseDir === WORK_ARCHIVE_DIR.frango) {
+        if (entry.polaroid !== true) return;
+        const deck =
+          main.querySelector(".frango-polaroids__deck--play") ||
+          main.querySelector(".frango-polaroids__deck");
+        if (!deck) return;
+        appendPagePhotoFigure(deck, src, {
+          figureClass: "frango-polaroid",
+          imgClass: "frango-polaroid__frame",
+          tilt: polaroidTilts[index % polaroidTilts.length],
+          tabIndex: true,
+          ariaLabel: "Polaroid",
+        });
+      } else if (baseDir === "leva-me-de-volta") {
+        const host = main.querySelector("[data-page-extra-photos]");
+        if (!host) return;
+        host.hidden = false;
+        appendPagePhotoFigure(host, src);
+      } else if (baseDir === "reinventar-a-roda") {
+        const stage = main.querySelector(".reinventar-aroda__stage");
+        if (!stage) return;
+        appendPagePhotoFigure(stage, src, {
+          figureClass: "reinventar-aroda__float reinventar-aroda__float--extra",
+          tabIndex: true,
+          ariaLabel: "Imagem",
+        });
+      } else {
+        const host = main.querySelector("[data-page-extra-photos]");
+        if (!host) return;
+        host.hidden = false;
+        appendPagePhotoFigure(host, src);
+      }
+
+      existing.add(assetKeyFromSrc(src));
+    });
   }
 
   function manifestEntryForFile(file) {
@@ -419,7 +574,11 @@
   function isUmbigoEntry(entry) {
     const file = String(entry.file || "");
     const href = entry.href ? String(entry.href).trim() : "";
-    return file.indexOf("umbigo/") === 0 || href === "umbigo.html";
+    return (
+      file.indexOf(WORK_ARCHIVE_DIR.umbigo + "/") === 0 ||
+      file.indexOf("umbigo/") === 0 ||
+      workPageHrefMatches("umbigo", href)
+    );
   }
 
   function isLevaEntry(entry) {
@@ -428,8 +587,10 @@
     return (
       file === "in utero 3D.png" ||
       file === "primeira queda.png" ||
+      file === "leva-me-de-volta/in utero 3D.png" ||
+      file === "leva-me-de-volta/primeira queda.png" ||
       file.indexOf("leva-me-de-volta/") === 0 ||
-      href === "leva-me-de-volta.html"
+      workPageHrefMatches("leva", href)
     );
   }
 
@@ -439,8 +600,24 @@
     return (
       file === "frango.png" ||
       file === "frango(1).png" ||
+      file === "frango/frango.png" ||
+      file === "frango/frango(1).png" ||
+      file === WORK_ARCHIVE_DIR.frango + "/frango.png" ||
+      file === WORK_ARCHIVE_DIR.frango + "/frango(1).png" ||
+      file.indexOf(WORK_ARCHIVE_DIR.frango + "/") === 0 ||
       file.indexOf("frango/") === 0 ||
-      href === "frango.html"
+      workPageHrefMatches("frango", href)
+    );
+  }
+
+  function isReinventarArodaEntry(entry) {
+    const file = String(entry.file || "");
+    const href = entry.href ? String(entry.href).trim() : "";
+    return (
+      file === "reinventar a roda.png" ||
+      file === "reinventar-a-roda/reinventar a roda.png" ||
+      file.indexOf("reinventar-a-roda/") === 0 ||
+      workPageHrefMatches("reinventar-aroda", href)
     );
   }
 
@@ -449,6 +626,7 @@
     let umbigoGroup = null;
     let levaGroup = null;
     let frangoGroup = null;
+    let reinventarArodaGroup = null;
 
     items.forEach(function (entry, index) {
       const title = entry.title || titleFromFile(entry.file);
@@ -457,7 +635,7 @@
         if (!umbigoGroup) {
           umbigoGroup = {
             id: "obra-umbigo",
-            title: "umbigo",
+            title: "De quem vens?",
             kind: "umbigo",
             files: [],
             file: entry.file,
@@ -487,7 +665,7 @@
         if (!frangoGroup) {
           frangoGroup = {
             id: "obra-frango",
-            title: "Frango",
+            title: "Quem veio primeiro",
             kind: "frango",
             files: [],
             file: entry.file,
@@ -495,6 +673,21 @@
           groups.push(frangoGroup);
         }
         frangoGroup.files.push(entry);
+        return;
+      }
+
+      if (isReinventarArodaEntry(entry)) {
+        if (!reinventarArodaGroup) {
+          reinventarArodaGroup = {
+            id: "obra-reinventar-a-roda",
+            title: "Reinventar a roda",
+            kind: "reinventar-aroda",
+            files: [],
+            file: entry.file,
+          };
+          groups.push(reinventarArodaGroup);
+        }
+        reinventarArodaGroup.files.push(entry);
         return;
       }
 
@@ -519,6 +712,10 @@
 
   function navigateToGroup(group, anchorFile) {
     if (!group) return;
+    if (group.kind === "frango") {
+      scrollToWork(group.id, "");
+      return;
+    }
     scrollToWork(group.id, anchorFile || "");
   }
 
@@ -574,14 +771,191 @@
       node.classList.toggle("is-active", active);
       node.setAttribute("aria-hidden", active ? "false" : "true");
     });
+    stopInactiveFrangoVideos();
+    if (section.classList.contains("work--frango")) {
+      startFrangoVideo(section);
+    }
+    if (section.classList.contains("work--reinventar-aroda")) {
+      requestAnimationFrame(function () {
+        initReinventarArodaDrag(section);
+      });
+    }
+    if (section.classList.contains("work--frango")) {
+      requestAnimationFrame(function () {
+        initFrangoPolaroids(section, { forceLayout: true });
+        fitFrangoIntroHeading(section);
+      });
+    }
   }
 
-  let umbigoMainTemplate = null;
-  let umbigoLoadPromise = null;
-  let levaMainTemplate = null;
-  let levaLoadPromise = null;
-  let frangoMainTemplate = null;
-  let frangoLoadPromise = null;
+  const umbigoFragmentCache = { template: null, promise: null };
+  const levaFragmentCache = { template: null, promise: null };
+  const frangoFragmentCache = { template: null, promise: null };
+  const reinventarFragmentCache = { template: null, promise: null };
+
+  function createWorkFragmentLoader(spec, cache) {
+    return function loadWorkMain() {
+      if (cache.template) {
+        return Promise.resolve(cache.template.cloneNode(true));
+      }
+      if (!cache.promise) {
+        cache.promise = (async function () {
+          try {
+            const response = await fetch(spec.file);
+            if (!response.ok) throw new Error(spec.file);
+            const html = await response.text();
+            const doc = new DOMParser().parseFromString(html, "text/html");
+            const main = doc.querySelector(spec.selector);
+            if (!main) throw new Error(spec.file);
+            cache.template = main;
+            return cache.template;
+          } catch (error) {
+            console.error("Nao foi possivel carregar " + spec.file, error);
+            cache.promise = null;
+            return null;
+          }
+        })();
+      }
+      return cache.promise.then(function (main) {
+        return main ? main.cloneNode(true) : null;
+      });
+    };
+  }
+  const FRANGO_VIMEO_SRC =
+    "https://player.vimeo.com/video/1031577006?autoplay=0&loop=1&muted=1&background=1&title=0&byline=0&portrait=0&playsinline=1&dnt=1&api=1";
+  const FRANGO_VIMEO_START_SEC = 8;
+
+  function frangoVideoIframe(section) {
+    return section ? section.querySelector(".frango-video__player") : null;
+  }
+
+  function frangoVideoFrame(section) {
+    return section ? section.querySelector(".frango-video__frame") : null;
+  }
+
+  function frangoSetVideoRevealed(section, revealed) {
+    const frame = frangoVideoFrame(section);
+    if (!frame) return;
+    frame.classList.toggle("is-playing", Boolean(revealed));
+  }
+
+  function frangoPlayerPost(iframe, payload) {
+    if (!iframe || !iframe.contentWindow) return;
+    try {
+      iframe.contentWindow.postMessage(JSON.stringify(payload), "https://player.vimeo.com");
+    } catch (error) {}
+  }
+
+  function frangoWhenPlayerReady(iframe, fn) {
+    if (!iframe) return;
+    var done = false;
+    function run() {
+      if (done) return;
+      done = true;
+      fn();
+    }
+    function onMessage(event) {
+      if (event.origin !== "https://player.vimeo.com") return;
+      if (event.source !== iframe.contentWindow) return;
+      var data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (error) {
+        return;
+      }
+      if (data && data.event === "ready") {
+        window.removeEventListener("message", onMessage);
+        run();
+      }
+    }
+    window.addEventListener("message", onMessage);
+    frangoPlayerPost(iframe, { method: "addEventListener", value: "ready" });
+    if (iframe.classList.contains("is-ready")) {
+      window.setTimeout(run, 0);
+    }
+  }
+
+  function frangoBindPlayerShell(iframe) {
+    if (!iframe || iframe.dataset.avvFrangoBound === "1") return;
+    iframe.dataset.avvFrangoBound = "1";
+    iframe.addEventListener("load", function () {
+      iframe.classList.add("is-ready");
+      frangoPlayerPost(iframe, { method: "addEventListener", value: "ready" });
+    });
+  }
+
+  function preloadFrangoVideo(section) {
+    const iframe = frangoVideoIframe(section);
+    if (!iframe) return;
+    frangoBindPlayerShell(iframe);
+    if (!iframe.getAttribute("src")) {
+      iframe.setAttribute("src", FRANGO_VIMEO_SRC);
+    }
+  }
+
+  function pauseFrangoVideo(section) {
+    const iframe = frangoVideoIframe(section);
+    if (!iframe || !iframe.getAttribute("src")) return;
+    frangoPlayerPost(iframe, { method: "pause" });
+    frangoSetVideoRevealed(section, false);
+  }
+
+  function stopFrangoVideo(section) {
+    pauseFrangoVideo(section);
+  }
+
+  function stopInactiveFrangoVideos() {
+    works.querySelectorAll(".work.work--frango:not(.is-active)").forEach(stopFrangoVideo);
+  }
+
+  function frangoWhenPlayerEvent(iframe, eventName, fn) {
+    if (!iframe) return;
+    var done = false;
+    function run() {
+      if (done) return;
+      done = true;
+      fn();
+    }
+    function onMessage(event) {
+      if (event.origin !== "https://player.vimeo.com") return;
+      if (event.source !== iframe.contentWindow) return;
+      var data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (error) {
+        return;
+      }
+      if (data && data.event === eventName) {
+        window.removeEventListener("message", onMessage);
+        run();
+      }
+    }
+    window.addEventListener("message", onMessage);
+    frangoWhenPlayerReady(iframe, function () {
+      frangoPlayerPost(iframe, { method: "addEventListener", value: eventName });
+    });
+  }
+
+  function frangoPlayFromMark(section, iframe) {
+    frangoSetVideoRevealed(section, false);
+    frangoWhenPlayerEvent(iframe, "playing", function () {
+      frangoSetVideoRevealed(section, true);
+    });
+    frangoPlayerPost(iframe, { method: "setCurrentTime", value: FRANGO_VIMEO_START_SEC });
+    frangoPlayerPost(iframe, { method: "play" });
+    frangoWhenPlayerReady(iframe, function () {
+      frangoPlayerPost(iframe, { method: "setCurrentTime", value: FRANGO_VIMEO_START_SEC });
+      frangoPlayerPost(iframe, { method: "play" });
+    });
+  }
+
+  function startFrangoVideo(section) {
+    const iframe = frangoVideoIframe(section);
+    if (!iframe) return;
+    if (!section.classList.contains("is-active")) return;
+    preloadFrangoVideo(section);
+    frangoPlayFromMark(section, iframe);
+  }
 
   function levaTextEntry(group) {
     if (!group || !group.files) return null;
@@ -598,86 +972,13 @@
     }
   }
 
-  function loadUmbigoMain() {
-    if (umbigoMainTemplate) {
-      return Promise.resolve(umbigoMainTemplate.cloneNode(true));
-    }
-    if (!umbigoLoadPromise) {
-      umbigoLoadPromise = (async function () {
-        try {
-          const response = await fetch("umbigo.html");
-          if (!response.ok) throw new Error("umbigo");
-          const html = await response.text();
-          const doc = new DOMParser().parseFromString(html, "text/html");
-          const main = doc.querySelector("main.umbigo");
-          if (!main) throw new Error("umbigo");
-          umbigoMainTemplate = main;
-          return umbigoMainTemplate;
-        } catch (error) {
-          console.error("Nao foi possivel carregar umbigo.html", error);
-          umbigoLoadPromise = null;
-          return null;
-        }
-      })();
-    }
-    return umbigoLoadPromise.then(function (main) {
-      return main ? main.cloneNode(true) : null;
-    });
-  }
-
-  function loadLevaMain() {
-    if (levaMainTemplate) {
-      return Promise.resolve(levaMainTemplate.cloneNode(true));
-    }
-    if (!levaLoadPromise) {
-      levaLoadPromise = (async function () {
-        try {
-          const response = await fetch("leva-me-de-volta.html");
-          if (!response.ok) throw new Error("leva");
-          const html = await response.text();
-          const doc = new DOMParser().parseFromString(html, "text/html");
-          const main = doc.querySelector("main.leva");
-          if (!main) throw new Error("leva");
-          levaMainTemplate = main;
-          return levaMainTemplate;
-        } catch (error) {
-          console.error("Nao foi possivel carregar leva-me-de-volta.html", error);
-          levaLoadPromise = null;
-          return null;
-        }
-      })();
-    }
-    return levaLoadPromise.then(function (main) {
-      return main ? main.cloneNode(true) : null;
-    });
-  }
-
-  function loadFrangoMain() {
-    if (frangoMainTemplate) {
-      return Promise.resolve(frangoMainTemplate.cloneNode(true));
-    }
-    if (!frangoLoadPromise) {
-      frangoLoadPromise = (async function () {
-        try {
-          const response = await fetch("frango.html");
-          if (!response.ok) throw new Error("frango");
-          const html = await response.text();
-          const doc = new DOMParser().parseFromString(html, "text/html");
-          const main = doc.querySelector("main.frango");
-          if (!main) throw new Error("frango");
-          frangoMainTemplate = main;
-          return frangoMainTemplate;
-        } catch (error) {
-          console.error("Nao foi possivel carregar frango.html", error);
-          frangoLoadPromise = null;
-          return null;
-        }
-      })();
-    }
-    return frangoLoadPromise.then(function (main) {
-      return main ? main.cloneNode(true) : null;
-    });
-  }
+  const loadUmbigoMain = createWorkFragmentLoader(WORK_FRAGMENTS.umbigo, umbigoFragmentCache);
+  const loadLevaMain = createWorkFragmentLoader(WORK_FRAGMENTS.leva, levaFragmentCache);
+  const loadFrangoMain = createWorkFragmentLoader(WORK_FRAGMENTS.frango, frangoFragmentCache);
+  const loadReinventarArodaMain = createWorkFragmentLoader(
+    WORK_FRAGMENTS["reinventar-aroda"],
+    reinventarFragmentCache
+  );
 
   function panelUiScale(width, height) {
     const viewportScale = parseFloat(
@@ -1325,26 +1626,30 @@
     const section = document.getElementById(id);
     if (!section) return;
     lastWorkId = id;
+    const group = groups.find(function (item) {
+      return item.id === id;
+    });
+    const frangoVideoFirst = group && group.kind === "frango";
     setWorkSectionOpen(true);
     window.scrollTo(0, 0);
     activateWorkSection(section);
     if (!options || !options.skipUrl) {
-      const group = groups.find(function (item) {
-        return item.id === id;
-      });
       showWorkUrl(group);
     }
 
     function alignViewport() {
-      if (!anchorFile) {
-        section.scrollTo({ top: 0, behavior: reducedMotion.matches ? "auto" : "smooth" });
+      if (frangoVideoFirst || !anchorFile) {
+        section.scrollTo({ top: 0, behavior: "auto" });
         return;
       }
       const anchor = findWorkAnchor(section, anchorFile);
       if (anchor) {
         scrollElementToReveal(section, anchor);
       } else {
-        section.scrollTo({ top: 0, behavior: reducedMotion.matches ? "auto" : "smooth" });
+        section.scrollTo({
+          top: 0,
+          behavior: reducedMotion.matches ? "auto" : "smooth",
+        });
       }
     }
 
@@ -1951,6 +2256,7 @@
   async function mountUmbigoWork(section, group) {
     const main = await loadUmbigoMain();
     if (!main || !section.isConnected) return;
+    await hydrateCustomPagePhotos(main, WORK_ARCHIVE_DIR.umbigo);
     section.appendChild(main);
     group.files.forEach(function (entry) {
       const anchor = findWorkAnchor(section, entry.file);
@@ -1959,19 +2265,498 @@
     document.dispatchEvent(new CustomEvent("umbigo-mounted"));
   }
 
+  function fitFrangoIntroHeading(section) {
+    if (!section || !section.classList.contains("work--frango")) return;
+    const heading = section.querySelector(".frango-intro .frango-heading");
+    if (!heading) return;
+    const title = heading.querySelector(".umbigo-work__title:not([hidden])");
+    const subtitle = heading.querySelector(".umbigo-work__subtitle:not([hidden])");
+    const maxWidth = heading.clientWidth;
+    if (maxWidth < 48) return;
+
+    function fitLine(el, maxPx, minPx, probePx) {
+      if (!el) return;
+      el.style.removeProperty("font-size");
+      el.style.whiteSpace = "nowrap";
+      el.style.display = "inline-block";
+      el.style.width = "auto";
+      el.style.fontSize = probePx + "px";
+      const measured = el.getBoundingClientRect().width;
+      if (!measured) {
+        el.style.removeProperty("display");
+        el.style.removeProperty("width");
+        el.style.removeProperty("white-space");
+        return;
+      }
+      const size = Math.max(minPx, Math.min(probePx, (probePx * maxPx) / measured));
+      el.style.fontSize = size + "px";
+      el.style.display = "block";
+      el.style.width = "100%";
+      if (size <= minPx + 0.5 && measured > maxPx) {
+        el.style.whiteSpace = "normal";
+        el.style.textWrap = "balance";
+      }
+    }
+
+    fitLine(title, maxWidth, 11, 42);
+    fitLine(subtitle, maxWidth, 10, 28);
+  }
+
+  let frangoHeadingFitWired = false;
+  function wireFrangoIntroHeadingFit() {
+    if (frangoHeadingFitWired) return;
+    frangoHeadingFitWired = true;
+    const run = function () {
+      const section = works.querySelector(".work.work--frango.is-active");
+      if (section) fitFrangoIntroHeading(section);
+    };
+    window.addEventListener("resize", run);
+    window.addEventListener("orientationchange", function () {
+      window.setTimeout(run, 350);
+    });
+    document.addEventListener("avv-lang", run);
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(run);
+    }
+  }
+
   async function mountFrangoWork(section, group) {
     const main = await loadFrangoMain();
     if (!main || !section.isConnected) return;
+    await hydrateCustomPagePhotos(main, WORK_ARCHIVE_DIR.frango);
     section.appendChild(main);
     group.files.forEach(function (entry) {
       const anchor = findWorkAnchor(section, entry.file);
       if (anchor) anchor.setAttribute("data-archive-file", entry.file);
     });
+    wireFrangoIntroHeadingFit();
+    wireFrangoPolaroids();
+    window.requestAnimationFrame(function () {
+      initFrangoPolaroids(section, { forceLayout: true });
+      fitFrangoIntroHeading(section);
+    });
+    section.scrollTo(0, 0);
+    window.requestAnimationFrame(function () {
+      if (section.isConnected) section.scrollTo(0, 0);
+    });
+    preloadFrangoVideo(section);
+    if (section.classList.contains("is-active")) {
+      startFrangoVideo(section);
+    }
+  }
+
+  const frangoPolaroidSpots = new WeakMap();
+  let frangoPolaroidDrag = null;
+
+  function frangoApplyPolaroidSpotRaw(fig, spot) {
+    const tilt = spot.tilt != null ? spot.tilt : 0;
+    fig.style.left = spot.x + "px";
+    fig.style.top = spot.y + "px";
+    fig.style.transform = "rotate(" + tilt + "deg)";
+  }
+
+  function frangoReadCssVarPx(varName, contextEl) {
+    const host = contextEl && contextEl.isConnected ? contextEl : document.documentElement;
+    const probe = document.createElement("div");
+    probe.style.cssText =
+      "position:absolute;left:0;top:0;width:0;height:var(" +
+      varName +
+      ");visibility:hidden;pointer-events:none;border:0;margin:0;padding:0;";
+    host.appendChild(probe);
+    const px = probe.getBoundingClientRect().height;
+    host.removeChild(probe);
+    return px || 0;
+  }
+
+  function frangoPolaroidClipRect(deck) {
+    const pad = 6;
+    const deckRect = deck.getBoundingClientRect();
+    const style = window.getComputedStyle(deck);
+    const padL = parseFloat(style.paddingLeft) || 0;
+    const padR = parseFloat(style.paddingRight) || 0;
+    const padT = parseFloat(style.paddingTop) || 0;
+    const padB = parseFloat(style.paddingBottom) || 0;
+    const stage = deck.closest(".frango-poem-stage");
+
+    if (stage) {
+      const stageRect = stage.getBoundingClientRect();
+      const section = deck.closest(".work.work--frango");
+      const frangoRoot = section ? section.querySelector(".frango") : null;
+      const bleed = frangoRoot ? frangoReadCssVarPx("--frango-polaroid-bleed-left", frangoRoot) : 0;
+      return {
+        left: stageRect.left + pad - bleed,
+        right: stageRect.right - pad,
+        top: stageRect.top + pad,
+        bottom: stageRect.bottom - pad,
+        padL: padL,
+        padT: padT,
+        padR: padR,
+        padB: padB,
+        deckRect: deckRect,
+      };
+    }
+
+    return {
+      left: deckRect.left + padL + pad,
+      right: deckRect.right - padR - pad,
+      top: deckRect.top + padT + pad,
+      bottom: deckRect.bottom - padB - pad,
+      padL: padL,
+      padT: padT,
+      padR: padR,
+      padB: padB,
+      deckRect: deckRect,
+    };
+  }
+
+  function frangoClampPolaroidSpot(fig, deck, spot) {
+    const clip = frangoPolaroidClipRect(deck);
+    let x = spot.x;
+    let y = spot.y;
+    const tilt = spot.tilt != null ? spot.tilt : 0;
+    const z = spot.z;
+
+    frangoApplyPolaroidSpotRaw(fig, { x: x, y: y, tilt: tilt });
+
+    for (let pass = 0; pass < 12; pass += 1) {
+      const figRect = fig.getBoundingClientRect();
+      let dx = 0;
+      let dy = 0;
+      if (figRect.left < clip.left) {
+        dx = clip.left - figRect.left;
+      } else if (figRect.right > clip.right) {
+        dx = clip.right - figRect.right;
+      }
+      if (figRect.top < clip.top) {
+        dy = clip.top - figRect.top;
+      } else if (figRect.bottom > clip.bottom) {
+        dy = clip.bottom - figRect.bottom;
+      }
+      if (Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2) break;
+      x += dx;
+      y += dy;
+      frangoApplyPolaroidSpotRaw(fig, { x: x, y: y, tilt: tilt });
+    }
+
+    return {
+      x: Math.round(x),
+      y: Math.round(y),
+      tilt: tilt,
+      z: z,
+    };
+  }
+
+  function applyFrangoPolaroidSpot(fig, deck, spot) {
+    if (!deck) {
+      frangoApplyPolaroidSpotRaw(fig, spot);
+      return spot;
+    }
+    const clamped = frangoClampPolaroidSpot(fig, deck, spot);
+    frangoApplyPolaroidSpotRaw(fig, clamped);
+    return clamped;
+  }
+
+  function syncFrangoPolaroidSpot(fig, deck, reset) {
+    if (!fig || !deck) return;
+    const deckRect = deck.getBoundingClientRect();
+    let spot = frangoPolaroidSpots.get(fig);
+    if (!spot || reset) {
+      const rect = fig.getBoundingClientRect();
+      if (rect.width < 2) return;
+      const clip = frangoPolaroidClipRect(deck);
+      const tiltRaw = fig.style.getPropertyValue("--polaroid-tilt").trim();
+      const tilt = tiltRaw ? parseFloat(tiltRaw) : 0;
+      spot = {
+        x: rect.left - clip.deckRect.left - clip.padL,
+        y: rect.top - clip.deckRect.top - clip.padT,
+        tilt: tilt,
+        z: parseInt(fig.style.zIndex, 10) || 1,
+      };
+      spot = frangoClampPolaroidSpot(fig, deck, spot);
+      frangoPolaroidSpots.set(fig, spot);
+      fig.style.left = spot.x + "px";
+      fig.style.top = spot.y + "px";
+      fig.style.right = "auto";
+      fig.style.bottom = "auto";
+    }
+    spot = applyFrangoPolaroidSpot(fig, deck, spot);
+    frangoPolaroidSpots.set(fig, spot);
+    if (spot.z) fig.style.zIndex = String(spot.z);
+  }
+
+  function layoutFrangoPolaroidsDeck(deck) {
+    if (!deck) return false;
+    const figures = Array.from(deck.querySelectorAll(".frango-polaroid"));
+    if (!figures.length) return false;
+    const style = window.getComputedStyle(deck);
+    const padL = parseFloat(style.paddingLeft) || 0;
+    const padR = parseFloat(style.paddingRight) || 0;
+    const padT = parseFloat(style.paddingTop) || 0;
+    const padB = parseFloat(style.paddingBottom) || 0;
+    const deckW = deck.clientWidth - padL - padR;
+    const deckH = deck.clientHeight - padT - padB;
+    if (deckW < 24 || deckH < 24) return false;
+
+    const shuffled = figures.slice();
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = shuffled[i];
+      shuffled[i] = shuffled[j];
+      shuffled[j] = tmp;
+    }
+
+    shuffled.forEach(function (fig, index) {
+      const w = fig.offsetWidth || fig.getBoundingClientRect().width;
+      const h = fig.offsetHeight || fig.getBoundingClientRect().height;
+      if (w < 2) return;
+      const x = Math.random() * Math.max(0, deckW - w);
+      const y = Math.random() * Math.max(0, deckH - h);
+      const tilt = Math.round((Math.random() * 14 - 7) * 10) / 10;
+      let spot = {
+        x: Math.round(x),
+        y: Math.round(y),
+        tilt: tilt,
+        z: index + 1,
+      };
+      spot = applyFrangoPolaroidSpot(fig, deck, spot);
+      frangoPolaroidSpots.set(fig, spot);
+      fig.style.zIndex = String(spot.z);
+    });
+    deck.classList.add("is-ready");
+    return true;
+  }
+
+  function initFrangoPolaroids(section, options) {
+    if (!section) return;
+    const forceLayout = Boolean(options && options.forceLayout);
+    const decks = section.querySelectorAll(".frango-polaroids__deck");
+    if (!decks.length) return;
+    decks.forEach(function (deck) {
+      const figures = deck.querySelectorAll(".frango-polaroid");
+      let needsRandom = false;
+      figures.forEach(function (fig) {
+        if (!frangoPolaroidSpots.has(fig)) needsRandom = true;
+      });
+      if (forceLayout || needsRandom) {
+        const laidOut = layoutFrangoPolaroidsDeck(deck);
+        if (!laidOut) {
+          window.requestAnimationFrame(function () {
+            if (!section.isConnected) return;
+            if (layoutFrangoPolaroidsDeck(deck)) return;
+            window.requestAnimationFrame(function () {
+              if (section.isConnected) layoutFrangoPolaroidsDeck(deck);
+            });
+          });
+        }
+        return;
+      }
+      figures.forEach(function (fig) {
+        syncFrangoPolaroidSpot(fig, deck, false);
+      });
+      deck.classList.add("is-ready");
+    });
+  }
+
+  function wireFrangoPolaroids() {
+    if (document.documentElement.dataset.frangoPolaroidDragWired === "1") return;
+    document.documentElement.dataset.frangoPolaroidDragWired = "1";
+
+    document.addEventListener("pointerdown", function (event) {
+      if (event.button !== 0) return;
+      const fig = event.target.closest(".work--frango .frango-polaroid");
+      if (!fig) return;
+      const section = fig.closest(".work.work--frango");
+      if (!section || !section.classList.contains("is-active")) return;
+      const deck = fig.closest(".frango-polaroids__deck");
+      if (!deck) return;
+      syncFrangoPolaroidSpot(fig, deck, false);
+      const spot = frangoPolaroidSpots.get(fig);
+      if (!spot) return;
+      frangoPolaroidDrag = {
+        fig: fig,
+        deck: deck,
+        section: section,
+        pointerId: event.pointerId,
+        pointerX: event.clientX,
+        pointerY: event.clientY,
+        originX: spot.x,
+        originY: spot.y,
+        tilt: spot.tilt,
+        baseZ: fig.style.zIndex,
+      };
+      fig.style.zIndex = "16";
+      fig.classList.add("is-dragging");
+      if (fig.setPointerCapture) fig.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+
+    function endFrangoPolaroidDrag(event) {
+      if (!frangoPolaroidDrag || event.pointerId !== frangoPolaroidDrag.pointerId) return;
+      const fig = frangoPolaroidDrag.fig;
+      fig.style.zIndex = frangoPolaroidDrag.baseZ || "";
+      fig.classList.remove("is-dragging");
+      if (fig.releasePointerCapture) {
+        try {
+          fig.releasePointerCapture(event.pointerId);
+        } catch (error) {
+          /* already released */
+        }
+      }
+      frangoPolaroidDrag = null;
+    }
+
+    document.addEventListener("pointermove", function (event) {
+      if (!frangoPolaroidDrag || event.pointerId !== frangoPolaroidDrag.pointerId) return;
+      const fig = frangoPolaroidDrag.fig;
+      const deck = frangoPolaroidDrag.deck;
+      const spot = applyFrangoPolaroidSpot(fig, deck, {
+        x: frangoPolaroidDrag.originX + (event.clientX - frangoPolaroidDrag.pointerX),
+        y: frangoPolaroidDrag.originY + (event.clientY - frangoPolaroidDrag.pointerY),
+        tilt: frangoPolaroidDrag.tilt,
+        z: parseInt(fig.style.zIndex, 10) || 1,
+      });
+      frangoPolaroidSpots.set(fig, spot);
+    });
+
+    document.addEventListener("pointerup", endFrangoPolaroidDrag);
+    document.addEventListener("pointercancel", endFrangoPolaroidDrag);
+  }
+
+  const reinventarFloatSpots = new WeakMap();
+  let reinventarFloatDrag = null;
+
+  function reinventarArodaStage(section) {
+    return section ? section.querySelector(".reinventar-aroda__stage") : null;
+  }
+
+  function refreshReinventarStageExtents(section) {
+    const stage = reinventarArodaStage(section);
+    if (!stage) return;
+    const base = Math.max(
+      window.innerHeight,
+      stage.getBoundingClientRect().height
+    );
+    let maxBottom = base;
+    stage.querySelectorAll(".reinventar-aroda__float").forEach(function (fig) {
+      const spot = reinventarFloatSpots.get(fig);
+      const y = spot ? spot.y : fig.offsetTop;
+      maxBottom = Math.max(maxBottom, y + fig.offsetHeight);
+    });
+    stage.style.minHeight = Math.round(maxBottom + 72) + "px";
+  }
+
+  function syncReinventarFloatSpot(fig, stage, reset) {
+    if (!fig || !stage) return;
+    const stageRect = stage.getBoundingClientRect();
+    let spot = reinventarFloatSpots.get(fig);
+    if (!spot || reset) {
+      const rect = fig.getBoundingClientRect();
+      if (rect.width < 2) return;
+      spot = {
+        x: rect.left - stageRect.left,
+        y: rect.top - stageRect.top,
+      };
+      reinventarFloatSpots.set(fig, spot);
+    }
+    fig.style.left = spot.x + "px";
+    fig.style.top = spot.y + "px";
+  }
+
+  function initReinventarArodaDrag(section) {
+    const stage = reinventarArodaStage(section);
+    if (!stage) return;
+    const floats = stage.querySelectorAll(".reinventar-aroda__float");
+    floats.forEach(function (fig) {
+      syncReinventarFloatSpot(fig, stage, !reinventarFloatSpots.has(fig));
+    });
+    refreshReinventarStageExtents(section);
+  }
+
+  function wireReinventarArodaDrag() {
+    if (document.documentElement.dataset.reinventarDragWired === "1") return;
+    document.documentElement.dataset.reinventarDragWired = "1";
+
+    document.addEventListener("pointerdown", function (event) {
+      if (event.button !== 0) return;
+      const fig = event.target.closest(".work--reinventar-aroda .reinventar-aroda__float");
+      if (!fig) return;
+      const section = fig.closest(".work.work--reinventar-aroda");
+      if (!section || !section.classList.contains("is-active")) return;
+      const stage = reinventarArodaStage(section);
+      if (!stage) return;
+      syncReinventarFloatSpot(fig, stage, false);
+      const spot = reinventarFloatSpots.get(fig);
+      if (!spot) return;
+      reinventarFloatDrag = {
+        fig: fig,
+        stage: stage,
+        section: section,
+        pointerId: event.pointerId,
+        pointerX: event.clientX,
+        pointerY: event.clientY,
+        originX: spot.x,
+        originY: spot.y,
+        baseZ: fig.style.zIndex,
+      };
+      fig.style.zIndex = "12";
+      fig.classList.add("is-dragging");
+      if (fig.setPointerCapture) fig.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+
+    function endReinventarFloatDrag(event) {
+      if (!reinventarFloatDrag || event.pointerId !== reinventarFloatDrag.pointerId) return;
+      const fig = reinventarFloatDrag.fig;
+      fig.style.zIndex = reinventarFloatDrag.baseZ || "";
+      fig.classList.remove("is-dragging");
+      if (fig.releasePointerCapture) {
+        try {
+          fig.releasePointerCapture(event.pointerId);
+        } catch (error) {
+          /* already released */
+        }
+      }
+      reinventarFloatDrag = null;
+    }
+
+    document.addEventListener("pointermove", function (event) {
+      if (!reinventarFloatDrag || event.pointerId !== reinventarFloatDrag.pointerId) return;
+      const fig = reinventarFloatDrag.fig;
+      const section = reinventarFloatDrag.section;
+      const spot = {
+        x: reinventarFloatDrag.originX + (event.clientX - reinventarFloatDrag.pointerX),
+        y: reinventarFloatDrag.originY + (event.clientY - reinventarFloatDrag.pointerY),
+      };
+      reinventarFloatSpots.set(fig, spot);
+      fig.style.left = spot.x + "px";
+      fig.style.top = spot.y + "px";
+      refreshReinventarStageExtents(section);
+    });
+
+    document.addEventListener("pointerup", endReinventarFloatDrag);
+    document.addEventListener("pointercancel", endReinventarFloatDrag);
+  }
+
+  async function mountReinventarArodaWork(section, group) {
+    const main = await loadReinventarArodaMain();
+    if (!main || !section.isConnected) return;
+    await hydrateCustomPagePhotos(main, "reinventar-a-roda");
+    section.appendChild(main);
+    group.files.forEach(function (entry) {
+      const anchor = findWorkAnchor(section, entry.file);
+      if (anchor) anchor.setAttribute("data-archive-file", entry.file);
+    });
+    wireReinventarArodaDrag();
+    requestAnimationFrame(function () {
+      initReinventarArodaDrag(section);
+    });
+    section.scrollTo(0, 0);
   }
 
   async function mountLevaWork(section, group) {
     const main = await loadLevaMain();
     if (!main || !section.isConnected) return;
+    await hydrateCustomPagePhotos(main, "leva-me-de-volta");
     section.appendChild(main);
     const frameHost = main.querySelector("[data-leva-frame]");
     const legendHost = main.querySelector("[data-leva-legend]");
@@ -1994,6 +2779,7 @@
     let umbigoMount = null;
     let levaMount = null;
     let frangoMount = null;
+    let reinventarArodaMount = null;
     for (let i = 0; i < items.length; i += 1) {
       const group = items[i];
 
@@ -2024,6 +2810,16 @@
         section.setAttribute("aria-hidden", "true");
         works.appendChild(section);
         frangoMount = mountFrangoWork(section, group);
+        continue;
+      }
+
+      if (group.kind === "reinventar-aroda") {
+        const section = document.createElement("section");
+        section.className = "work work--reinventar-aroda reinventar-aroda-page";
+        section.id = group.id;
+        section.setAttribute("aria-hidden", "true");
+        works.appendChild(section);
+        reinventarArodaMount = mountReinventarArodaWork(section, group);
         continue;
       }
 
@@ -2080,6 +2876,11 @@
     if (frangoMount) {
       frangoMount.catch(function (error) {
         console.error("Nao foi possivel montar frango", error);
+      });
+    }
+    if (reinventarArodaMount) {
+      reinventarArodaMount.catch(function (error) {
+        console.error("Nao foi possivel montar reinventar a roda", error);
       });
     }
   }
@@ -2200,6 +3001,7 @@
     loadUmbigoMain().catch(function () {});
     loadLevaMain().catch(function () {});
     loadFrangoMain().catch(function () {});
+    loadReinventarArodaMain().catch(function () {});
     try {
       await loadManifest();
     } catch (error) {

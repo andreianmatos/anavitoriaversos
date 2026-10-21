@@ -9,12 +9,20 @@
   <meta http-equiv="Expires" content="0">
   <title>Ana Vitória Versos</title>
   <link rel="preload" href="fonts/C2026versos-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="images.json?v=21" as="fetch" crossorigin>
-  <link rel="preload" href="imagens/boneco_estrela.png?v=1" as="image">
+  <link rel="preload" href="images.json?v=24" as="fetch" crossorigin>
+  <link rel="preload" href="imagens/inicio/boneco-estrela-roxo.png?v=1" as="image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;1,600;1,700&display=swap"
+  >
+  <link rel="preconnect" href="https://player.vimeo.com">
+  <link rel="preconnect" href="https://i.vimeocdn.com">
   <script src="ui-scale.js?v=2"></script>
-  <link rel="stylesheet" href="style.css?v=472">
+  <link rel="stylesheet" href="style.css?v=639">
 </head>
-<body class="site-page" data-manifest="images.json?v=21">
+<body class="site-page" data-manifest="images.json?v=24">
   <div class="sobre-roll">
     <div class="sobre-roll__dock">
       <button
@@ -34,7 +42,7 @@
               <line x1="12" y1="12" x2="6.12" y2="20.09" />
               <line x1="12" y1="12" x2="2.49" y2="8.91" />
             </svg>
-            <img class="wheel-figure__img" src="imagens/boneco_estrela.png?v=1" alt="">
+            <img class="wheel-figure__img" src="imagens/inicio/boneco-estrela-roxo.png?v=1" alt="">
             <span class="wheel-figure__shine" aria-hidden="true"></span>
           </span>
         </span>
@@ -67,6 +75,7 @@
           </div>
 
           <div class="sobre-overlay__cv sobre-cv-panel">
+            <div class="sobre-cv-panel__body" id="sobre-cv-body" aria-hidden="true">
             <section class="sobre-cv sobre-formacao">
               <h2 data-i18n="formacao">Formação</h2>
               <ul lang="pt" data-lang-panel="pt">
@@ -145,14 +154,29 @@
                 </li>
               </ul>
             </section>
+            </div>
           </div>
           </div>
 
           <aside class="sobre-overlay__side">
             <figure class="sobre-overlay__photo sobre-photo">
-              <img src="imagens/vit%C3%B3ria.png" alt="" width="640" height="800" decoding="async" loading="lazy">
+              <img src="imagens/sobre/retrato.png" alt="Ana Vitória Versos" width="640" height="800" decoding="async" loading="lazy">
+            </figure>
+            <figure class="sobre-overlay__mark sobre-name">
+              <img src="imagens/sobre/vitoria-roxo.png" alt="" width="640" height="200" decoding="async" loading="lazy">
             </figure>
             <div class="sobre-overlay__ping sobre-contactos" data-i18n-aria="contactos" aria-label="Contactos">
+              <button
+                type="button"
+                class="sobre-cv-toggle sobre-contactos__cv"
+                data-cv-toggle
+                aria-expanded="false"
+                aria-controls="sobre-cv-body"
+                data-i18n-aria="cvToggle"
+                aria-label="Currículo"
+              >
+                <span class="sobre-cv-toggle__spark" aria-hidden="true">CV</span>
+              </button>
               <ul class="sobre-overlay__links">
                 <li><a href="mailto:anavitoriaversos@gmail.com">anavitoriaversos@gmail.com</a></li>
                 <li><a href="https://instagram.com/talheresajeito" target="_blank" rel="noopener noreferrer">@talheresajeito</a></li>
@@ -176,7 +200,7 @@
   <section class="site-hero" id="topo">
     <button type="button" class="star-wheel" data-star aria-label="Roleta">
       <span class="wheel-figure">
-        <img class="wheel-figure__img" src="imagens/boneco_estrela.png?v=1" alt="">
+        <img class="wheel-figure__img" src="imagens/inicio/boneco-estrela-roxo.png?v=1" alt="">
         <span class="wheel-figure__shine" aria-hidden="true"></span>
       </span>
     </button>
@@ -194,11 +218,11 @@
     </div>
   </div>
 
-  <script src="nav.js?v=48"></script>
+  <script src="nav.js?v=51"></script>
   <script src="archive-scatter.js?v=17"></script>
-  <script type="module" src="umbigo-text.js?v=38"></script>
+  <script type="module" src="umbigo-text.js?v=71"></script>
   <script src="manifest-parse.js?v=2"></script>
-  <script src="work-stream.js?v=21"></script>
-  <script src="site.js?v=112"></script>
+  <script src="work-stream.js?v=24"></script>
+  <script src="site.js?v=144"></script>
 </body>
 </html>

@@ -164,6 +164,7 @@ function sectionFolhas(section) {
 
 function buildFolhas(section) {
   if (!section || section.querySelector(".umbigo-folhas")) return;
+  if (section.querySelector(".umbigo-notebook")) return;
   const essay = section.querySelector(".umbigo-essay");
   if (!essay) return;
   const paragraphs = Array.from(essay.children).filter(function (el) {
@@ -198,13 +199,41 @@ function buildFolhas(section) {
 
 const heroLabelSpot = { x: 0, y: 0, ready: false };
 let heroLabelDrag = null;
+const heroFloatSpots = new WeakMap();
+let heroFloatDrag = null;
+
+function heroIntroStage() {
+  return document.querySelector(".umbigo-opening__right");
+}
+
+function heroFloatStage(fig) {
+  if (fig && fig.classList.contains("umbigo-hero__float--box")) {
+    return document.querySelector(".umbigo-opening__box-stage");
+  }
+  return document.querySelector(".umbigo-display--portrait .umbigo-hero__stage");
+}
 
 function heroStage() {
-  return document.querySelector(".umbigo-hero__stage");
+  return heroIntroStage();
 }
 
 function heroLabelEl() {
   return document.querySelector(".umbigo-hero__label");
+}
+
+function isOpeningHeroLabel(label) {
+  return Boolean(
+    label && label.closest(".umbigo-opening__intro-head, .umbigo-opening__right")
+  );
+}
+
+function resetOpeningHeroLabel(label) {
+  if (!label) return;
+  label.style.left = "";
+  label.style.top = "";
+  label.style.right = "";
+  label.style.bottom = "";
+  label.style.position = "";
 }
 
 function heroLayoutReady() {
@@ -248,6 +277,10 @@ function syncHeroLabelPosition(reset) {
   const stage = heroStage();
   const label = heroLabelEl();
   if (!stage || !label) return;
+  if (isOpeningHeroLabel(label)) {
+    resetOpeningHeroLabel(label);
+    return;
+  }
   if (!heroLayoutReady()) return;
   if (reset || !heroLabelSpot.ready) {
     label.style.left = "";
@@ -294,11 +327,113 @@ function clampHeroLabel(x, y) {
 }
 
 function initHeroLabel() {
+  const label = heroLabelEl();
+  if (isOpeningHeroLabel(label)) {
+    resetOpeningHeroLabel(label);
+    if (heroLayoutReady()) initHeroFloats();
+    return;
+  }
   if (!heroLayoutReady()) return;
   if (document.body.classList.contains("site-page")) {
     heroLabelSpot.ready = false;
   }
   syncHeroLabelPosition(document.body.classList.contains("site-page"));
+  initHeroFloats();
+}
+
+function heroFloatEls() {
+  return Array.from(document.querySelectorAll(".umbigo-hero__float"));
+}
+
+function isAnchoredFaceFloat(fig) {
+  return Boolean(fig && fig.classList.contains("umbigo-hero__float--face"));
+}
+
+function isAnchoredBoxFloat(fig) {
+  return Boolean(fig && fig.classList.contains("umbigo-hero__float--box"));
+}
+
+function isAnchoredHeroFloat(fig) {
+  return isAnchoredFaceFloat(fig) || isAnchoredBoxFloat(fig);
+}
+
+function resetAnchoredHeroFloat(fig) {
+  if (!fig) return;
+  fig.style.left = "";
+  fig.style.top = "";
+  fig.style.right = "";
+  fig.style.bottom = "";
+  fig.style.position = "";
+  heroFloatSpots.delete(fig);
+}
+
+function heroFloatBounds(fig) {
+  const stage = heroFloatStage(fig);
+  if (!stage || !fig) return null;
+  const pad = 8;
+  return {
+    minX: pad,
+    maxX: Math.max(pad, stage.clientWidth - fig.offsetWidth - pad),
+    minY: pad,
+    maxY: Math.max(pad, stage.clientHeight - fig.offsetHeight - pad),
+  };
+}
+
+function syncHeroFloatSpot(fig, reset) {
+  const stage = heroFloatStage(fig);
+  if (!stage || !fig) return;
+  if (!heroLayoutReady()) return;
+  const stageRect = stage.getBoundingClientRect();
+  let spot = heroFloatSpots.get(fig);
+  if (!spot || reset) {
+    const rect = fig.getBoundingClientRect();
+    if (rect.width < 2) return;
+    spot = {
+      x: rect.left - stageRect.left,
+      y: rect.top - stageRect.top,
+    };
+    heroFloatSpots.set(fig, spot);
+  }
+  const bounds = heroFloatBounds(fig);
+  if (bounds) {
+    spot.x = clamp(spot.x, bounds.minX, bounds.maxX);
+    spot.y = clamp(spot.y, bounds.minY, bounds.maxY);
+  }
+  fig.style.left = spot.x + "px";
+  fig.style.top = spot.y + "px";
+  fig.style.right = "auto";
+  fig.style.bottom = "auto";
+}
+
+function initHeroFloats() {
+  if (!heroLayoutReady() || isSimpleView()) return;
+  heroFloatEls().forEach(function (fig) {
+    if (isAnchoredHeroFloat(fig)) {
+      resetAnchoredHeroFloat(fig);
+      return;
+    }
+    syncHeroFloatSpot(fig, !heroFloatSpots.has(fig));
+  });
+}
+
+function setHeroFloatActive(fig, on) {
+  if (!fig) return;
+  fig.classList.toggle("is-umbigo-float-active", on);
+}
+
+function moveHeroFloat(clientX, clientY) {
+  if (!heroFloatDrag) return;
+  const fig = heroFloatDrag.fig;
+  const bounds = heroFloatBounds(fig);
+  const x = heroFloatDrag.originX + (clientX - heroFloatDrag.pointerX);
+  const y = heroFloatDrag.originY + (clientY - heroFloatDrag.pointerY);
+  const spot = {
+    x: bounds ? clamp(x, bounds.minX, bounds.maxX) : x,
+    y: bounds ? clamp(y, bounds.minY, bounds.maxY) : y,
+  };
+  heroFloatSpots.set(fig, spot);
+  fig.style.left = spot.x + "px";
+  fig.style.top = spot.y + "px";
 }
 
 function ringBounds(poem) {
@@ -344,6 +479,185 @@ function initPoemRing(poem) {
   if (!poem) return;
   fitRingToPoem(poem);
   syncRingTrack(poem);
+}
+
+function syncOpeningEssayAlign() {
+  const stage = document.querySelector(".umbigo-display--portrait .umbigo-portrait__stage");
+  const fitRow = stage ? stage.querySelector(".umbigo-opening__fit-row") : null;
+  const face = stage ? stage.querySelector(".umbigo-hero__float--face") : null;
+
+  if (!fitRow) return;
+
+  if (window.innerWidth < 768 || !stage || !face) {
+    fitRow.style.marginTop = "";
+    return;
+  }
+
+  const stageTop = stage.getBoundingClientRect().top;
+  const faceRect = face.getBoundingClientRect();
+  const faceTopRel = faceRect.top - stageTop;
+  const anchor = faceTopRel + faceRect.height * 0.44;
+  const nudge = clamp(window.innerHeight * 0.012 + 4, 6, 16);
+  fitRow.style.marginTop = Math.max(0, Math.round(anchor - nudge)) + "px";
+}
+
+function initOpeningRing() {
+  const opening = document.querySelector(".umbigo-opening");
+  const gutter = document.querySelector(".umbigo-opening__ring-gutter");
+  const lane = gutter ? gutter.querySelector(".umbigo-opening__ring-lane") : null;
+  const ring = gutter ? gutter.querySelector(".umbigo-opening__ring") : null;
+  const introHead = document.querySelector(".umbigo-opening__intro-head");
+  const photo = document.querySelector(".umbigo-display--intro .umbigo-hero__photo img");
+  const poem = document.querySelector(".umbigo-canvas--opening .umbigo-poem:not([hidden])");
+  if (!opening || !gutter || !lane || !ring || !photo) return;
+
+  const openRect = opening.getBoundingClientRect();
+  const photoRect = photo.getBoundingClientRect();
+  const poemRect = poem ? poem.getBoundingClientRect() : null;
+  const headRect = introHead ? introHead.getBoundingClientRect() : photoRect;
+
+  const inset = 4;
+  const gapLeft = Math.max(0, photoRect.right - openRect.left + inset);
+  const gutterWidth = Math.max(0, openRect.right - photoRect.right - inset * 2);
+
+  if (gutterWidth < 28) {
+    gutter.style.visibility = "hidden";
+    return;
+  }
+  gutter.style.visibility = "visible";
+
+  const trackTop = headRect.top - openRect.top;
+  const poemBottom = poemRect ? poemRect.bottom - openRect.top : headRect.bottom - openRect.top;
+  const trackHeight = Math.max(160, poemBottom - trackTop);
+
+  gutter.style.left = Math.round(gapLeft) + "px";
+  gutter.style.top = Math.round(trackTop) + "px";
+  gutter.style.width = Math.round(gutterWidth) + "px";
+  gutter.style.height = Math.round(trackHeight) + "px";
+
+  const size = Math.round(Math.max(36, Math.min(gutterWidth - 4, gutterWidth * 0.98)));
+  ring.style.width = size + "px";
+  ring.style.height = size + "px";
+  const travel = Math.max(0, lane.clientHeight - size);
+  const scroller = openingRingScrollRoot();
+  if (scroller) {
+    const scrollP = openingRingScrollProgress(scroller, opening, poem);
+    openingRingVisualY = scrollP * travel;
+    ring.style.top = "0";
+    ring.style.transform = "translate3d(-50%, " + openingRingVisualY + "px, 0)";
+  }
+  openingRingLoopOn = false;
+  wireOpeningRingScroll();
+  scheduleOpeningRingTick();
+  ensureOpeningRingLoop();
+
+  if (photo && photo.dataset.openingRingLoad !== "1") {
+    photo.dataset.openingRingLoad = "1";
+    photo.addEventListener(
+      "load",
+      function () {
+        initOpeningRing();
+      },
+      { passive: true }
+    );
+  }
+}
+
+let openingRingRaf = 0;
+let openingRingLoopOn = false;
+let openingRingVisualY = 0;
+
+function openingRingElementScrollTop(scroller, el) {
+  const elRect = el.getBoundingClientRect();
+  const scrollerRect = scroller.getBoundingClientRect();
+  return elRect.top - scrollerRect.top + scroller.scrollTop;
+}
+
+function openingRingScrollRoot() {
+  const work = document.querySelector(".work.work--umbigo");
+  if (!work || !document.body.classList.contains("is-work-open")) return null;
+  if (!work.classList.contains("is-active")) return null;
+  return work;
+}
+
+function openingRingScrollProgress(scroller, opening, poem) {
+  const viewH = scroller.clientHeight;
+  const openTop = openingRingElementScrollTop(scroller, opening);
+  if (!poem) {
+    const openH = opening.offsetHeight;
+    const leadIn = viewH * 0.08;
+    const tail = viewH * 0.22;
+    const start = openTop - leadIn;
+    const range = Math.max(1, openH - tail);
+    return clamp((scroller.scrollTop - start) / range, 0, 1);
+  }
+  const poemTop = openingRingElementScrollTop(scroller, poem);
+  const poemH = poem.offsetHeight;
+  const start = openTop - viewH * 0.04;
+  const end = Math.max(start + 1, poemTop + poemH * 0.38);
+  const range = Math.max(1, end - start);
+  const linear = clamp((scroller.scrollTop - start) / range, 0, 1);
+  return clamp(Math.pow(linear, 0.68), 0, 1);
+}
+
+function openingRingShouldRun() {
+  return Boolean(
+    document.querySelector(".umbigo-opening__ring-gutter .umbigo-opening__ring") &&
+      openingRingScrollRoot()
+  );
+}
+
+function tickOpeningRing() {
+  openingRingRaf = 0;
+  const ring = document.querySelector(".umbigo-opening__ring-gutter .umbigo-opening__ring");
+  const lane = document.querySelector(".umbigo-opening__ring-gutter .umbigo-opening__ring-lane");
+  const opening = document.querySelector(".umbigo-opening");
+  const scroller = openingRingScrollRoot();
+  if (!ring || !lane || !opening || !scroller) return;
+
+  const travel = Math.max(0, lane.clientHeight - ring.offsetHeight);
+  if (travel < 1) return;
+
+  ring.classList.add("is-scroll-driven");
+  const poem = document.querySelector(".umbigo-canvas--opening .umbigo-poem:not([hidden])");
+  const scrollP = openingRingScrollProgress(scroller, opening, poem);
+  const targetY = scrollP * travel;
+  const smooth = 0.55;
+  openingRingVisualY += (targetY - openingRingVisualY) * smooth;
+  if (Math.abs(targetY - openingRingVisualY) < 0.15) {
+    openingRingVisualY = targetY;
+  }
+  ring.style.top = "0";
+  ring.style.transform = "translate3d(-50%, " + openingRingVisualY + "px, 0)";
+}
+
+function scheduleOpeningRingTick() {
+  if (openingRingRaf) return;
+  openingRingRaf = requestAnimationFrame(tickOpeningRing);
+}
+
+function wireOpeningRingScroll() {
+  const scroller = document.querySelector(".work.work--umbigo");
+  if (!scroller) return;
+  if (scroller.dataset.openingRingScroll !== "1") {
+    scroller.dataset.openingRingScroll = "1";
+    scroller.addEventListener("scroll", scheduleOpeningRingTick, { passive: true });
+  }
+  scheduleOpeningRingTick();
+}
+
+function ensureOpeningRingLoop() {
+  if (openingRingLoopOn) return;
+  openingRingLoopOn = true;
+  (function frame() {
+    if (!openingRingShouldRun()) {
+      openingRingLoopOn = false;
+      openingRingRaf = 0;
+      return;
+    }
+    tickOpeningRing();
+    requestAnimationFrame(frame);
+  })();
 }
 
 function visiblePoem() {
@@ -593,6 +907,13 @@ function layoutVisible(options) {
   try {
     clearFloatMotion();
     layoutPoem(poem, options);
+    initOpeningRing();
+    syncOpeningEssayAlign();
+    requestAnimationFrame(function () {
+      initOpeningRing();
+      syncOpeningEssayAlign();
+      scheduleOpeningRingTick();
+    });
     initHeroLabel();
     if (motionAllowed()) pinFloats();
   } catch (error) {
@@ -622,7 +943,32 @@ function onResize() {
 
 function onPointerDown(event) {
   if (event.button !== 0) return;
+  const floatFig = event.target.closest(".umbigo-hero__float");
+  if (floatFig && isAnchoredHeroFloat(floatFig)) {
+    return;
+  }
+  if (floatFig && !isSimpleView()) {
+    syncHeroFloatSpot(floatFig, !heroFloatSpots.has(floatFig));
+    const spot = heroFloatSpots.get(floatFig);
+    if (!spot) return;
+    heroFloatDrag = {
+      fig: floatFig,
+      pointerId: event.pointerId,
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      originX: spot.x,
+      originY: spot.y,
+    };
+    floatFig.classList.add("is-dragging");
+    setHeroFloatActive(floatFig, true);
+    if (floatFig.setPointerCapture) floatFig.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    return;
+  }
   const label = event.target.closest(".umbigo-hero__label");
+  if (label && isOpeningHeroLabel(label)) {
+    return;
+  }
   if (label) {
     syncHeroLabelPosition(false);
     heroLabelDrag = {
@@ -656,6 +1002,10 @@ function onPointerDown(event) {
 }
 
 function onPointerMove(event) {
+  if (heroFloatDrag && event.pointerId === heroFloatDrag.pointerId) {
+    moveHeroFloat(event.clientX, event.clientY);
+    return;
+  }
   if (heroLabelDrag && event.pointerId === heroLabelDrag.pointerId) {
     moveHeroLabel(event.clientX, event.clientY);
     return;
@@ -665,6 +1015,20 @@ function onPointerMove(event) {
 }
 
 function onPointerUp(event) {
+  if (heroFloatDrag && event.pointerId === heroFloatDrag.pointerId) {
+    const fig = heroFloatDrag.fig;
+    fig.classList.remove("is-dragging");
+    setHeroFloatActive(fig, fig.matches(":hover"));
+    if (fig.releasePointerCapture) {
+      try {
+        fig.releasePointerCapture(event.pointerId);
+      } catch (error) {
+        /* already released */
+      }
+    }
+    heroFloatDrag = null;
+    return;
+  }
   if (heroLabelDrag && event.pointerId === heroLabelDrag.pointerId) {
     heroLabelDrag.label.classList.remove("is-dragging");
     if (heroLabelDrag.label.releasePointerCapture) {
@@ -700,6 +1064,9 @@ function watchWorkOpen() {
     if (active && !wasActive) {
       clearFloatMotion();
       schedule();
+      openingRingLoopOn = false;
+      wireOpeningRingScroll();
+      ensureOpeningRingLoop();
     }
     wasActive = active;
   });
@@ -726,7 +1093,10 @@ document.addEventListener("avv-lang", function () {
 });
 document.addEventListener("umbigo-mounted", function () {
   watchWorkOpen();
+  wireHeroFloats();
   schedule();
+  wireOpeningRingScroll();
+  ensureOpeningRingLoop();
 });
 window.matchMedia("(max-width: 767px)").addEventListener("change", function () {
   clearFloatMotion();
@@ -743,6 +1113,28 @@ document.querySelectorAll(".umbigo-hero__photo img").forEach(function (img) {
     schedule();
   });
 });
+function wireHeroFloats() {
+  heroFloatEls().forEach(function (fig) {
+    if (fig.dataset.floatWired === "1") return;
+    fig.dataset.floatWired = "1";
+    fig.addEventListener("pointerenter", function () {
+      setHeroFloatActive(fig, true);
+    });
+    fig.addEventListener("pointerleave", function () {
+      if (heroFloatDrag && heroFloatDrag.fig === fig) return;
+      setHeroFloatActive(fig, false);
+    });
+    fig.querySelectorAll(".umbigo-hero__float-img").forEach(function (img) {
+      if (img.complete) return;
+      img.addEventListener("load", function () {
+        heroFloatSpots.delete(fig);
+        schedule();
+      });
+    });
+  });
+}
+
+wireHeroFloats();
 document.addEventListener("pointerdown", onPointerDown);
 document.addEventListener("pointermove", onPointerMove);
 document.addEventListener("pointerup", onPointerUp);

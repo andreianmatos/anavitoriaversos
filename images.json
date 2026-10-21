@@ -1,8 +1,9 @@
 {
   "items": [
     {
-      "file": "frango.png",
+      "file": "quem-veio-primeiro/frango.png",
       "title": "FRANGO",
+      "href": "quem-veio-primeiro.html",
       "text": [
         "LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT. PELLENTESQUE HABITANT MORBI TRISTIQUE SENECTUS ET NETUS ET MALESUADA FAMES AC TURPIS EGESTAS. VESTIBULUM TORTOR QUAM, FEUGIAT VITAE, ULTRICIES EGET, TEMPOR SIT AMET, ANTE.",
         "DONEC EU LIBERO SIT AMET QUAM EGESTAS SEMPER. AENEAN ULTRICIES MI VITAE EST. MAURIS PLACERAT ELEIFEND LEO. QUISQUE SIT AMET EST ET SAPIEN ULLAMCORPER PHARETRA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT.",
@@ -10,7 +11,7 @@
       ]
     },
     {
-      "file": "frango(1).png",
+      "file": "quem-veio-primeiro/frango(1).png",
       "title": "FRANGO",
       "text": [
         "SED UT PERSPICIATIS UNDE OMNIS ISTE NATUS ERROR SIT VOLUPTATEM ACCUSANTIUM DOLOREMQUE LAUDANTIUM, TOTAM REM APERIAM, EAQUE IPSA QUAE AB ILLO INVENTORE VERITATIS ET QUASI ARCHITECTO BEATAE VITAE DICTA SUNT EXPLICABO.",
@@ -19,7 +20,7 @@
       ]
     },
     {
-      "file": "in utero 3D.png",
+      "file": "leva-me-de-volta/in utero 3D.png",
       "title": "IN UTERO 3D",
       "displayTitle": "Leva-me de volta!",
       "displaySubtitle": "Deixa-me viver tudo outra vez!",
@@ -59,45 +60,22 @@
       ]
     },
     {
-      "file": "primeira queda.png",
+      "file": "leva-me-de-volta/primeira queda.png",
       "title": "PRIMEIRA QUEDA"
     },
     {
-      "file": "umbigo/umbigo gif.gif",
+      "file": "reinventar-a-roda/reinventar a roda.png",
+      "title": "REINVENTAR A RODA",
+      "href": "reinventar-a-roda.html"
+    },
+    {
+      "file": "de-quem-vens/umbigo gif.gif",
       "title": "UMBIGO GIF"
     },
     {
-      "file": "umbigo/umbigo.jpg",
-      "title": "UMBIGO"
-    },
-    {
-      "file": "in utero 3D.png",
-      "title": "IN UTERO 3D",
-      "text": []
-    },
-    {
-      "file": "um pneu.JPEG",
-      "title": "UM PNEU",
-      "text": [
-        "Um Pneu, Tinta spray preta, uma jante cor de rosa em forma de estrela, Há buracos em tudo é assim que a luz entra."
-      ]
-    },
-    {
-      "file": "cuidado com o cao.png",
-      "title": "CUIDADO COM O CÃO",
-      "text": [
-        "Projeto autobiográfico",
-        "Azulejo",
-        "2025",
-        "9,50x9,50cm"
-      ]
-    },
-    {
-      "file": "mãos de criança.png",
-      "title": "DUAS MÃOS CHEIAS",
-      "text": [
-        "Contorno de duas mãos esquerdas feito em criança"
-      ]
+      "file": "de-quem-vens/umbigo.jpg",
+      "title": "UMBIGO",
+      "href": "umbigo.html"
     }
   ]
 }

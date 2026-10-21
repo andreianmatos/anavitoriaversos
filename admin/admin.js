@@ -24,6 +24,10 @@
   }
 
   var fileInput;
+  var tipoFieldset;
+  var paginaInput;
+  var paginaWrap;
+  var obraFieldsEl;
   var titleInput;
   var textInput;
   var saveBtn;
@@ -38,6 +42,76 @@
   var removeList;
   var EMPTY_CLASS = "admin-remove__empty";
   var removeListGen = 0;
+  var PAGE_PHOTO_PREFIX = "consequencias/";
+
+  function getCustomPages() {
+    var pages = config.customPages;
+    return Array.isArray(pages) ? pages : [];
+  }
+
+  function findCustomPage(id) {
+    if (!id) return null;
+    for (var i = 0; i < getCustomPages().length; i += 1) {
+      if (getCustomPages()[i].id === id) return getCustomPages()[i];
+    }
+    return null;
+  }
+
+  function pageManifestPath(page) {
+    return archivePath + "/" + page.baseDir + "/images.json";
+  }
+
+  function pagePhotoArchiveFile(page, filename) {
+    return page.baseDir + "/" + PAGE_PHOTO_PREFIX + filename;
+  }
+
+  function parseManifestItems(text) {
+    var data = JSON.parse(text || "[]");
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.items)) return data.items;
+    return [];
+  }
+
+  function stringifyManifestItems(items) {
+    return JSON.stringify(items, null, 2) + "\n";
+  }
+
+  function isPagePhotoManifestEntry(entry) {
+    var file = entry && entry.file ? String(entry.file) : "";
+    return file.indexOf(PAGE_PHOTO_PREFIX) === 0;
+  }
+
+  function publishMode() {
+    if (!tipoFieldset) return "arquivo";
+    var checked = tipoFieldset.querySelector('input[name="admin-tipo"]:checked');
+    return checked && checked.value === "pagina" ? "pagina" : "arquivo";
+  }
+
+  function selectedCustomPage() {
+    if (publishMode() !== "pagina") return null;
+    return findCustomPage(paginaInput && paginaInput.value);
+  }
+
+  function syncPublishModeUi() {
+    var isArquivo = publishMode() === "arquivo";
+    if (obraFieldsEl) obraFieldsEl.hidden = !isArquivo;
+    if (paginaWrap) paginaWrap.hidden = isArquivo;
+    if (titleInput) titleInput.disabled = !isArquivo;
+    if (textInput) textInput.disabled = !isArquivo;
+    if (paginaInput) paginaInput.disabled = isArquivo;
+  }
+
+  function populatePageSelect() {
+    if (!paginaInput) return;
+    var pages = getCustomPages();
+    for (var i = 0; i < pages.length; i += 1) {
+      var option = document.createElement("option");
+      option.value = pages[i].id;
+      option.textContent = pages[i].label;
+      paginaInput.appendChild(option);
+    }
+    syncPublishModeUi();
+  }
 
   function $(id) {
     return document.getElementById(id);
@@ -604,7 +678,9 @@
     var entryTitle =
       title && title.trim() ? title.trim().toUpperCase() : titleFromFilename(filename);
     var text = Array.isArray(textParagraphs) ? textParagraphs : [];
-    manifest.items.push({ file: filename, title: entryTitle, text: text });
+    var entry = { file: filename, title: entryTitle };
+    if (text.length) entry.text = text;
+    manifest.items.push(entry);
 
     var manifestText = JSON.stringify(manifest, null, 2) + "\n";
     await putFile(
@@ -614,7 +690,48 @@
       "Update images.json"
     );
 
-    return { filename: filename, entry: { file: filename, title: entryTitle, text: text } };
+    return { filename: filename, entry: entry };
+  }
+
+  async function uploadPagePhotoViaGitHub(file, page) {
+    var manifestPath = pageManifestPath(page);
+    var manifestFile;
+    try {
+      manifestFile = await getFile(manifestPath);
+    } catch (error) {
+      if (error.status !== 404) throw error;
+      manifestFile = { sha: null, text: "[]\n" };
+    }
+
+    var items = parseManifestItems(manifestFile.text);
+    var existingNames = items
+      .filter(isPagePhotoManifestEntry)
+      .map(function (item) {
+        return String(item.file).slice(PAGE_PHOTO_PREFIX.length);
+      });
+    var filename = uniqueFilename(safeBaseName(file.name), existingNames);
+    var archiveFile = pagePhotoArchiveFile(page, filename);
+    var imagePath = archivePath + "/" + archiveFile;
+    var imageBase64 = await readFileAsBase64(file);
+
+    await putFile(imagePath, imageBase64, null, "Add page photo " + archiveFile);
+
+    try {
+      await uploadArchiveThumb(file, archiveFile, imageBase64);
+    } catch (thumbError) {
+      console.warn("Thumbnail upload failed:", thumbError);
+    }
+
+    items.push({ file: PAGE_PHOTO_PREFIX + filename });
+    var manifestText = stringifyManifestItems(items);
+    await putFile(
+      manifestPath,
+      utf8ToBase64(manifestText),
+      manifestFile.sha,
+      "Update " + page.baseDir + " images.json"
+    );
+
+    return { filename: archiveFile, page: page };
   }
 
   async function onSave() {
@@ -624,8 +741,13 @@
       return;
     }
 
+    var page = selectedCustomPage();
     var title = titleInput.value.trim();
     var textParagraphs = parseTextParagraphs(textInput && textInput.value);
+    if (publishMode() === "pagina" && !page) {
+      setStatus("Escolhe a página.", true);
+      return;
+    }
     saveBtn.disabled = true;
     setStatus("A enviar…");
 
@@ -634,12 +756,24 @@
         setStatus("Inicia sessão com GitHub primeiro.", true);
         return;
       }
-      var result = await uploadViaGitHub(file, title, textParagraphs);
-      setStatus(
-        "Publicado: " +
-          result.filename +
-          " (com miniatura). O arquivo no site atualiza em 1–2 min."
-      );
+      var result;
+      if (page) {
+        result = await uploadPagePhotoViaGitHub(file, page);
+        setStatus(
+          "Foto publicada em " +
+            page.label +
+            ": " +
+            result.filename +
+            ". A página atualiza em 1–2 min."
+        );
+      } else {
+        result = await uploadViaGitHub(file, title, textParagraphs);
+        setStatus(
+          "Publicado: " +
+            result.filename +
+            " (com miniatura). O arquivo no site atualiza em 1–2 min."
+        );
+      }
       fileInput.value = "";
       titleInput.value = "";
       if (textInput) textInput.value = "";
@@ -660,18 +794,67 @@
   function onFileChosen() {
     var file = fileInput.files && fileInput.files[0];
     if (fileNameEl) fileNameEl.textContent = file ? file.name : "";
-    if (file && !titleInput.value.trim()) {
-      titleInput.value = titleFromFilename(file.name);
+    if (file && titleInput && publishMode() === "arquivo") {
+      if (!titleInput.value.trim()) {
+        titleInput.value = titleFromFilename(file.name);
+      }
     }
   }
 
-  function archivePublicUrl(filename) {
+  function publicSiteUrl(repoPath) {
     return (
       "../" +
-      archivePath.split("/").map(encodeURIComponent).join("/") +
-      "/" +
-      encodeURIComponent(String(filename))
+      String(repoPath || "")
+        .replace(/\\/g, "/")
+        .split("/")
+        .map(function (segment) {
+          return encodeURIComponent(segment);
+        })
+        .join("/")
     );
+  }
+
+  function archivePublicUrl(filename) {
+    var rel = String(filename || "").replace(/\\/g, "/");
+    return publicSiteUrl(archivePath + "/" + rel);
+  }
+
+  /** Mesma ordem de fallback que o arquivo no site (miniatura primeiro). */
+  function archiveRemovePreviewUrls(file) {
+    var rel = String(file || "").replace(/\\/g, "/");
+    var slash = rel.lastIndexOf("/");
+    var name = slash === -1 ? rel : rel.slice(slash + 1);
+    var dir = slash === -1 ? "" : rel.slice(0, slash + 1);
+    var dot = name.lastIndexOf(".");
+    var ext = dot === -1 ? "" : name.slice(dot).toLowerCase();
+    var base = dot === -1 ? name : name.slice(0, dot);
+    var urls = [];
+    var seen = {};
+
+    function add(repoPath) {
+      if (!repoPath || seen[repoPath]) return;
+      seen[repoPath] = true;
+      urls.push(publicSiteUrl(repoPath));
+    }
+
+    archiveThumbRepoCandidates(rel).forEach(function (thumbPath) {
+      add(thumbPath);
+    });
+    add(archivePath + "/" + rel);
+    return urls;
+  }
+
+  function bindRemovePreviewImg(img, file) {
+    var sources = archiveRemovePreviewUrls(file);
+    if (!sources.length) return;
+    var index = 0;
+    img.src = sources[0];
+    img.addEventListener("error", function () {
+      index += 1;
+      if (index < sources.length) {
+        img.src = sources[index];
+      }
+    });
   }
 
   async function fetchManifestItems() {
@@ -718,7 +901,7 @@
         var img = document.createElement("img");
         img.className = "admin-remove__thumb";
         img.alt = "";
-        img.src = archivePublicUrl(item.file);
+        bindRemovePreviewImg(img, item.file);
         img.loading = "lazy";
 
         var meta = document.createElement("div");
@@ -845,6 +1028,10 @@
 
   function init() {
     fileInput = $("admin-file");
+    tipoFieldset = $("admin-tipo");
+    paginaInput = $("admin-pagina");
+    paginaWrap = $("admin-pagina-wrap");
+    obraFieldsEl = $("admin-obra-fields");
     titleInput = $("admin-title");
     textInput = $("admin-text");
     saveBtn = $("admin-save");
@@ -864,6 +1051,10 @@
       loadRemoveList();
     });
     if (saveBtn) saveBtn.addEventListener("click", onSave);
+    if (tipoFieldset) {
+      tipoFieldset.addEventListener("change", syncPublishModeUi);
+    }
+    populatePageSelect();
     bindDropZone();
 
     syncAuthUi();

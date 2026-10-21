@@ -32,9 +32,29 @@
     return lines;
   }
 
+  function levaRootFontPx() {
+    if (typeof document === "undefined") return 16;
+    var root = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return Number.isFinite(root) && root > 0 ? root : 16;
+  }
+
+  function levaColumnWidth() {
+    if (typeof window === "undefined") return 200;
+    return Math.max(72, Math.floor(window.innerWidth / 3));
+  }
+
+  function levaUseSingleColumn() {
+    return typeof window !== "undefined" && window.innerWidth < 768;
+  }
+
   function levaDefaultLineChars() {
     if (typeof window === "undefined") return 14;
-    var colW = Math.max(120, window.innerWidth / 3);
+    if (!levaUseSingleColumn()) {
+      var colW = Math.max(120, window.innerWidth / 3);
+      var fontPx = Math.max(21, Math.min(colW * 0.11, 73));
+      return Math.max(7, Math.min(22, Math.round(colW / (fontPx * 0.46))));
+    }
+    var colW = Math.max(120, window.innerWidth);
     var fontPx = Math.max(21, Math.min(colW * 0.11, 73));
     return Math.max(7, Math.min(22, Math.round(colW / (fontPx * 0.46))));
   }
@@ -207,12 +227,16 @@
   var LEVA_COLUMN_COUNT = 3;
 
   function buildLevaTextFrame(entry) {
+    var single = levaUseSingleColumn();
+    var columnCount = single ? 1 : LEVA_COLUMN_COUNT;
     var canvas = document.createElement("div");
-    canvas.className = "leva-canvas leva-canvas--triptych";
+    canvas.className =
+      "leva-canvas leva-canvas--triptych" + (single ? " leva-canvas--single" : "");
     var frame = document.createElement("div");
-    frame.className = "leva-frame leva-frame--triptych";
-    for (var i = 0; i < LEVA_COLUMN_COUNT; i += 1) {
-      var invert = i !== 1;
+    frame.className =
+      "leva-frame leva-frame--triptych" + (single ? " leva-frame--single" : "");
+    for (var i = 0; i < columnCount; i += 1) {
+      var invert = !single && i !== 1;
       var slot = document.createElement("div");
       slot.className = "leva-frame__slot leva-frame__slot--column";
       if (invert) {
@@ -240,8 +264,48 @@
 
   function mountLevaFrame(host, entry) {
     if (!host || !entry) return;
+    host._avvLevaEntry = entry;
     host.innerHTML = "";
     host.appendChild(buildLevaTextFrame(entry));
+  }
+
+  var levaResizeTimer = 0;
+  var levaLayoutWidth = 0;
+  var levaLayoutSingle = null;
+
+  function remountActiveLevaFrames() {
+    if (typeof document === "undefined") return;
+    document.querySelectorAll("[data-leva-frame]").forEach(function (host) {
+      var work = host.closest(".work.work--leva");
+      if (!work || !work.classList.contains("is-active")) return;
+      var entry = host._avvLevaEntry;
+      if (entry) mountLevaFrame(host, entry);
+    });
+  }
+
+  function onLevaViewportLayoutChange() {
+    if (typeof window === "undefined") return;
+    var width = window.innerWidth;
+    var single = levaUseSingleColumn();
+    var modeChanged = levaLayoutSingle !== null && levaLayoutSingle !== single;
+    if (!modeChanged && Math.abs(width - levaLayoutWidth) < 32) return;
+    levaLayoutWidth = width;
+    levaLayoutSingle = single;
+    if (!single && !modeChanged) return;
+    window.clearTimeout(levaResizeTimer);
+    levaResizeTimer = window.setTimeout(remountActiveLevaFrames, 280);
+  }
+
+  if (typeof window !== "undefined") {
+    levaLayoutWidth = window.innerWidth;
+    levaLayoutSingle = levaUseSingleColumn();
+    window.addEventListener("resize", onLevaViewportLayoutChange);
+    window.addEventListener("orientationchange", function () {
+      levaLayoutWidth = 0;
+      levaLayoutSingle = null;
+      window.clearTimeout(levaResizeTimer);
+      levaResizeTimer = window.setTimeout(onLevaViewportLayoutChange, 400);
+    });
   }
 
   global.avvBuildWorkTextStream = buildWorkTextStream;

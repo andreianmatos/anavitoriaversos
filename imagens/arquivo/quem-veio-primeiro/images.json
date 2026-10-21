@@ -1,0 +1,27 @@
+{
+  "items": [
+    {
+      "file": "frango.png",
+      "title": "arquivo"
+    },
+    {
+      "file": "frango(1).png",
+      "title": "arquivo 2"
+    },
+    {
+      "file": "consequencias/frango fotograma.png",
+      "title": "fotograma videoperformance",
+      "polaroid": false
+    },
+    {
+      "file": "consequencias/frango-panfleto folha de sala frente.png",
+      "title": "panfleto folha de sala (frente)",
+      "polaroid": false
+    },
+    {
+      "file": "consequencias/frango-panfleto folha de sala verso.jpg",
+      "title": "panfleto folha de sala (verso)",
+      "polaroid": false
+    }
+  ]
+}

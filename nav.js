@@ -154,6 +154,7 @@
       arquivo: "Arquivo",
       formacao: "Formação",
       exposicoes: "Exposições // Residências",
+      cvToggle: "Currículo",
       contactos: "Contactos",
       credito: "website por",
       indice: "Índice",
@@ -167,6 +168,7 @@
       arquivo: "Archive",
       formacao: "Education",
       exposicoes: "Exhibitions // Residencies",
+      cvToggle: "Résumé",
       contactos: "Contacts",
       credito: "website by",
       indice: "Index",
@@ -222,8 +224,6 @@
     const customTitle = document.body.getAttribute("data-title");
     if (customTitle) {
       document.title = customTitle;
-    } else if (document.body.classList.contains("sobre-page")) {
-      document.title = copy.sobre;
     } else if (document.body.classList.contains("arquivo-page")) {
       document.title = copy.arquivo;
     }
@@ -242,8 +242,8 @@
       toggles.forEach(function (button) {
         button.setAttribute("aria-expanded", open ? "true" : "false");
       });
-      const panel = document.querySelector(".sobre-cv-panel");
-      if (panel) panel.hidden = !open;
+      const body = document.getElementById("sobre-cv-body");
+      if (body) body.setAttribute("aria-hidden", open ? "false" : "true");
     }
 
     toggles.forEach(function (button) {
