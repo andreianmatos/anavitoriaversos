@@ -73,9 +73,37 @@
       "title": "UMBIGO GIF"
     },
     {
-      "file": "de-quem-vens/umbigo.jpg",
-      "title": "UMBIGO",
-      "href": "umbigo.html"
+      "file": "umbigo/umbigo.jpg",
+      "title": "UMBIGO"
+    },
+    {
+      "file": "um pneu.JPEG",
+      "title": "UM PNEU",
+      "text": [
+        "Um Pneu, Tinta spray preta, uma jante cor de rosa em forma de estrela, Há buracos em tudo é assim que a luz entra."
+      ]
+    },
+    {
+      "file": "cuidado com o cao.png",
+      "title": "CUIDADO COM O CÃO",
+      "text": [
+        "Projeto autobiográfico",
+        "Azulejo",
+        "2025",
+        "9,50x9,50cm"
+      ]
+    },
+    {
+      "file": "mãos de criança.png",
+      "title": "DUAS MÃOS CHEIAS",
+      "text": [
+        "Contorno de duas mãos esquerdas feito em criança"
+      ]
+    },
+    {
+      "file": "sketchbook sobre umbigo.png",
+      "title": "SKETCHBOOK SOBRE UMBIGO",
+      "text": []
     }
   ]
 }
