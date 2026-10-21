@@ -1,16 +1,17 @@
-{
-  "items": [
-    {
-      "file": "reinventar a roda.png",
-      "title": "reinventar a roda"
-    },
-    {
-      "file": "consequencias/reinventararoda.jpg",
-      "title": "foto amarela"
-    },
-    {
-      "file": "consequencias/rabiscos grosso.png",
-      "title": "rabiscos"
-    }
-  ]
-}
+[
+  {
+    "file": "reinventar a roda.png",
+    "title": "reinventar a roda"
+  },
+  {
+    "file": "consequencias/reinventararoda.jpg",
+    "title": "foto amarela"
+  },
+  {
+    "file": "consequencias/rabiscos grosso.png",
+    "title": "rabiscos"
+  },
+  {
+    "file": "consequencias/bdd1d5e226cd486257900a950fc001e8.jpg"
+  }
+]
