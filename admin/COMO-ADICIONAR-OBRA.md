@@ -41,7 +41,7 @@ Só funciona depois do login GitHub + servidor OAuth (ver `SETUP.md`). Podes ign
 
 ### Obras com página própria
 
-No admin, escolhe **«Foto na página da obra»** e a obra na lista (nomes em `admin/config.js`):
+No admin, **«Arquivo (obra com página)»** grava como as outras peças do arquivo: entrada em `images.json` (raiz), ficheiro em `imagens/arquivo/<baseDir>/`, miniatura em `<baseDir>/thumbs/`. O HTML da obra **não** é alterado.
 
 | Lista no admin | Pasta (`baseDir`) | URL no site |
 |----------------|-------------------|-------------|
@@ -50,6 +50,4 @@ No admin, escolhe **«Foto na página da obra»** e a obra na lista (nomes em `a
 | Leva-me de volta | `leva-me-de-volta` | `/LevaMeDeVolta` |
 | Reinventar a roda | `reinventar-a-roda` | `/ReInventarARoda` |
 
-As imagens vão para `imagens/arquivo/<baseDir>/consequencias/` e o manifest `imagens/arquivo/<baseDir>/images.json`. Detalhes em `imagens/arquivo/README.md`.
-
-Para ligar uma peça do arquivo à página, acrescenta **`"href": "quem-veio-primeiro.html"`** (ou o fragmento correspondente) na entrada em `images.json` na raiz.
+**Arquivo geral** = ficheiro em `imagens/arquivo/` (sem subpasta). Detalhes em `imagens/arquivo/README.md`.

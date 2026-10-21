@@ -1,6 +1,5 @@
 (function () {
   const imageDir = "imagens/arquivo/";
-  const thumbDir = "imagens/arquivo/thumbs/";
   const manifestUrl = document.body.getAttribute("data-manifest") || "images.json";
 
   /** URL slug (path segment) per obra kind — ver também _redirects */
@@ -294,124 +293,6 @@
     return imageDir + encodePath(file);
   }
 
-  const PAGE_PHOTO_PREFIX = "consequencias/";
-
-  function normalizeAssetSrc(src) {
-    if (!src) return "";
-    const clean = String(src).split("?")[0];
-    try {
-      return decodeURIComponent(clean);
-    } catch (error) {
-      return clean;
-    }
-  }
-
-  function assetKeyFromSrc(src) {
-    const normalized = normalizeAssetSrc(src);
-    const marker = "imagens/arquivo/";
-    const idx = normalized.indexOf(marker);
-    return idx === -1 ? normalized : normalized.slice(idx);
-  }
-
-  function existingImageKeys(root) {
-    const set = new Set();
-    if (!root) return set;
-    root.querySelectorAll("img[src]").forEach(function (img) {
-      set.add(assetKeyFromSrc(img.getAttribute("src") || img.currentSrc || ""));
-    });
-    return set;
-  }
-
-  async function loadPagePhotoManifest(baseDir) {
-    try {
-      const response = await fetch(imageDir + encodePath(baseDir + "/images.json"), {
-        cache: "no-store",
-      });
-      if (!response.ok) return [];
-      const data = await response.json();
-      const items = Array.isArray(data) ? data : data.items || [];
-      return items.filter(function (entry) {
-        const file = entry && entry.file ? String(entry.file) : "";
-        if (file.indexOf(PAGE_PHOTO_PREFIX) !== 0) return false;
-        if (entry.polaroid === false) return false;
-        return true;
-      });
-    } catch (error) {
-      return [];
-    }
-  }
-
-  function appendPagePhotoFigure(host, src, options) {
-    const figure = document.createElement("figure");
-    if (options && options.figureClass) figure.className = options.figureClass;
-    if (options && options.tilt != null) {
-      figure.style.setProperty("--polaroid-tilt", String(options.tilt));
-    }
-    if (options && options.tabIndex) figure.tabIndex = 0;
-    if (options && options.ariaLabel) figure.setAttribute("aria-label", options.ariaLabel);
-    const img = document.createElement("img");
-    if (options && options.imgClass) img.className = options.imgClass;
-    img.src = src;
-    img.alt = "";
-    img.loading = "lazy";
-    img.decoding = "async";
-    figure.appendChild(img);
-    host.appendChild(figure);
-    return figure;
-  }
-
-  async function hydrateCustomPagePhotos(main, baseDir) {
-    const items = await loadPagePhotoManifest(baseDir);
-    if (!items.length) return;
-    const existing = existingImageKeys(main);
-    const polaroidTilts = [-5, 3, -2, 4, -3];
-
-    items.forEach(function (entry, index) {
-      const file = baseDir + "/" + entry.file;
-      const src = fullPath(file);
-      if (existing.has(assetKeyFromSrc(src))) return;
-
-      if (baseDir === WORK_ARCHIVE_DIR.umbigo) {
-        const caixas = main.querySelector(".umbigo-caixas");
-        if (!caixas) return;
-        appendPagePhotoFigure(caixas, src);
-      } else if (baseDir === WORK_ARCHIVE_DIR.frango) {
-        if (entry.polaroid !== true) return;
-        const deck =
-          main.querySelector(".frango-polaroids__deck--play") ||
-          main.querySelector(".frango-polaroids__deck");
-        if (!deck) return;
-        appendPagePhotoFigure(deck, src, {
-          figureClass: "frango-polaroid",
-          imgClass: "frango-polaroid__frame",
-          tilt: polaroidTilts[index % polaroidTilts.length],
-          tabIndex: true,
-          ariaLabel: "Polaroid",
-        });
-      } else if (baseDir === "leva-me-de-volta") {
-        const host = main.querySelector("[data-page-extra-photos]");
-        if (!host) return;
-        host.hidden = false;
-        appendPagePhotoFigure(host, src);
-      } else if (baseDir === "reinventar-a-roda") {
-        const stage = main.querySelector(".reinventar-aroda__stage");
-        if (!stage) return;
-        appendPagePhotoFigure(stage, src, {
-          figureClass: "reinventar-aroda__float reinventar-aroda__float--extra",
-          tabIndex: true,
-          ariaLabel: "Imagem",
-        });
-      } else {
-        const host = main.querySelector("[data-page-extra-photos]");
-        if (!host) return;
-        host.hidden = false;
-        appendPagePhotoFigure(host, src);
-      }
-
-      existing.add(assetKeyFromSrc(src));
-    });
-  }
-
   function manifestEntryForFile(file) {
     return manifest.find(function (entry) {
       return entry.file === file;
@@ -498,42 +379,33 @@
     });
   }
 
+  function thumbDirForArchiveFile(file) {
+    const dir = dirname(file);
+    const thumbSubdir = dir ? dir + "/thumbs/" : "thumbs/";
+    return imageDir + encodePath(thumbSubdir);
+  }
+
   function thumbCandidates(file) {
     const dir = dirname(file);
     const name = basename(file);
     const ext = name.slice(name.lastIndexOf(".")).toLowerCase();
     const base = name.slice(0, name.length - ext.length);
-    const folderThumbs = imageDir + encodePath(dir + "thumbs/");
-    const rootThumbs = thumbDir;
+    const thumbs = thumbDirForArchiveFile(file);
 
     if (ext === ".gif") {
-      return [
-        folderThumbs + encodeURIComponent(base + ".gif"),
-        rootThumbs + encodePath(dir + base + ".gif"),
-        rootThumbs + encodeURIComponent(base + ".gif"),
-      ];
+      return [thumbs + encodeURIComponent(base + ".gif")];
     }
 
     if (ext === ".png") {
       const pngName = encodeURIComponent(base + ".png");
-      return [
-        folderThumbs + pngName,
-        rootThumbs + pngName,
-        rootThumbs + encodePath(dir + base + ".png"),
-        fullPath(file),
-      ];
+      return [thumbs + pngName, fullPath(file)];
     }
 
     const jpgName = encodeURIComponent(base + ".jpg");
     const fileJpg = encodeURIComponent(name + ".jpg");
-    const candidates = [];
-    candidates.push(rootThumbs + jpgName);
-    candidates.push(folderThumbs + jpgName);
-    candidates.push(rootThumbs + encodePath(dir + base + ".jpg"));
+    const candidates = [thumbs + jpgName];
     if (ext !== ".jpg" && ext !== ".jpeg") {
-      candidates.push(folderThumbs + fileJpg);
-      candidates.push(rootThumbs + encodePath(dir + name + ".jpg"));
-      candidates.push(rootThumbs + fileJpg);
+      candidates.push(thumbs + fileJpg);
     }
     return candidates;
   }
@@ -783,7 +655,6 @@
     if (section.classList.contains("work--frango")) {
       requestAnimationFrame(function () {
         initFrangoPolaroids(section, { forceLayout: true });
-        fitFrangoIntroHeading(section);
       });
     }
   }
@@ -2256,7 +2127,6 @@
   async function mountUmbigoWork(section, group) {
     const main = await loadUmbigoMain();
     if (!main || !section.isConnected) return;
-    await hydrateCustomPagePhotos(main, WORK_ARCHIVE_DIR.umbigo);
     section.appendChild(main);
     group.files.forEach(function (entry) {
       const anchor = findWorkAnchor(section, entry.file);
@@ -2265,75 +2135,31 @@
     document.dispatchEvent(new CustomEvent("umbigo-mounted"));
   }
 
-  function fitFrangoIntroHeading(section) {
+  function resetFrangoIntroHeading(section) {
     if (!section || !section.classList.contains("work--frango")) return;
     const heading = section.querySelector(".frango-intro .frango-heading");
     if (!heading) return;
-    const title = heading.querySelector(".umbigo-work__title:not([hidden])");
-    const subtitle = heading.querySelector(".umbigo-work__subtitle:not([hidden])");
-    const maxWidth = heading.clientWidth;
-    if (maxWidth < 48) return;
-
-    function fitLine(el, maxPx, minPx, probePx) {
-      if (!el) return;
+    heading.querySelectorAll(".umbigo-work__title, .umbigo-work__subtitle").forEach(function (el) {
       el.style.removeProperty("font-size");
-      el.style.whiteSpace = "nowrap";
-      el.style.display = "inline-block";
-      el.style.width = "auto";
-      el.style.fontSize = probePx + "px";
-      const measured = el.getBoundingClientRect().width;
-      if (!measured) {
-        el.style.removeProperty("display");
-        el.style.removeProperty("width");
-        el.style.removeProperty("white-space");
-        return;
-      }
-      const size = Math.max(minPx, Math.min(probePx, (probePx * maxPx) / measured));
-      el.style.fontSize = size + "px";
-      el.style.display = "block";
-      el.style.width = "100%";
-      if (size <= minPx + 0.5 && measured > maxPx) {
-        el.style.whiteSpace = "normal";
-        el.style.textWrap = "balance";
-      }
-    }
-
-    fitLine(title, maxWidth, 11, 42);
-    fitLine(subtitle, maxWidth, 10, 28);
-  }
-
-  let frangoHeadingFitWired = false;
-  function wireFrangoIntroHeadingFit() {
-    if (frangoHeadingFitWired) return;
-    frangoHeadingFitWired = true;
-    const run = function () {
-      const section = works.querySelector(".work.work--frango.is-active");
-      if (section) fitFrangoIntroHeading(section);
-    };
-    window.addEventListener("resize", run);
-    window.addEventListener("orientationchange", function () {
-      window.setTimeout(run, 350);
+      el.style.removeProperty("white-space");
+      el.style.removeProperty("display");
+      el.style.removeProperty("width");
+      el.style.removeProperty("text-wrap");
     });
-    document.addEventListener("avv-lang", run);
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(run);
-    }
   }
 
   async function mountFrangoWork(section, group) {
     const main = await loadFrangoMain();
     if (!main || !section.isConnected) return;
-    await hydrateCustomPagePhotos(main, WORK_ARCHIVE_DIR.frango);
     section.appendChild(main);
     group.files.forEach(function (entry) {
       const anchor = findWorkAnchor(section, entry.file);
       if (anchor) anchor.setAttribute("data-archive-file", entry.file);
     });
-    wireFrangoIntroHeadingFit();
+    resetFrangoIntroHeading(section);
     wireFrangoPolaroids();
     window.requestAnimationFrame(function () {
       initFrangoPolaroids(section, { forceLayout: true });
-      fitFrangoIntroHeading(section);
     });
     section.scrollTo(0, 0);
     window.requestAnimationFrame(function () {
@@ -2740,7 +2566,6 @@
   async function mountReinventarArodaWork(section, group) {
     const main = await loadReinventarArodaMain();
     if (!main || !section.isConnected) return;
-    await hydrateCustomPagePhotos(main, "reinventar-a-roda");
     section.appendChild(main);
     group.files.forEach(function (entry) {
       const anchor = findWorkAnchor(section, entry.file);
@@ -2756,7 +2581,6 @@
   async function mountLevaWork(section, group) {
     const main = await loadLevaMain();
     if (!main || !section.isConnected) return;
-    await hydrateCustomPagePhotos(main, "leva-me-de-volta");
     section.appendChild(main);
     const frameHost = main.querySelector("[data-leva-frame]");
     const legendHost = main.querySelector("[data-leva-legend]");

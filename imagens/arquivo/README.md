@@ -24,8 +24,16 @@ imagens/arquivo/<slug>/
 
 Entradas em **`images.json` (raiz)**: `"file": "<slug>/nome.ext"` e opcional `"href": "<fragmento>.html"`.
 
+## Miniaturas (sem duplicar)
+
+| Onde está o original | Onde vai a miniatura |
+|----------------------|----------------------|
+| `imagens/arquivo/foto.jpg` | `imagens/arquivo/thumbs/foto.jpg` |
+| `imagens/arquivo/<slug>/obra.png` | `imagens/arquivo/<slug>/thumbs/obra.png` |
+| `imagens/arquivo/<slug>/consequencias/x.jpg` | `imagens/arquivo/<slug>/consequencias/thumbs/x.jpg` |
+
+O script `scripts/generate-thumbs.sh` e o admin seguem esta regra. **Não** guardes a mesma miniatura em `arquivo/thumbs/` e outra vez na pasta da obra.
+
 ## Só arquivo (sem página)
 
-Na raiz de `imagens/arquivo/`: ex. `natureza mae.png` — miniaturas em `imagens/arquivo/thumbs/`.
-
-Miniaturas do arquivo: `<slug>/thumbs/` ou `consequencias/thumbs/` — não duplicar em `arquivo/thumbs/` obras que já têm subpasta.
+Ficheiros soltos na raiz de `imagens/arquivo/` (ex. `natureza mae.png`) — ver `thumbs/README.md`.

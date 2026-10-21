@@ -25,19 +25,22 @@
 }
 
 :root {
-  --palette-pink-light: #fde7fe;
+  /* Fundo geral do site + letras claras (barras, sobre, etc.) */
+  --brand-surface: #fde7fe;
+  --brand-surface-rgb: 253 231 254;
+  --palette-pink-light: var(--brand-surface);
   --palette-magenta: #e44e96;
   --palette-purple: #912a7d;
   --palette-magenta-deep: #a53081;
   --palette-rose: #c03578;
   --palette-purple-deep: #4e196b;
   --ink: var(--palette-purple-deep);
-  --paper: var(--palette-pink-light);
-  --skin: var(--palette-pink-light);
+  --paper: var(--brand-surface);
+  --skin: var(--brand-surface);
   --rose: var(--palette-magenta);
   --rose-soft: #e88ab8;
   --rose-muted: #d96a9e;
-  --rose-fog: #fde7fe;
+  --rose-fog: var(--brand-surface);
   --plum: var(--palette-purple);
   --plum-deep: var(--palette-purple-deep);
   --navy: var(--palette-purple-deep);
@@ -50,13 +53,13 @@
   --cursor-star-size: 22px;
   --wheel-home-filter: sepia(1) saturate(5.4) hue-rotate(292deg) brightness(0.68) contrast(1.12);
   --text: var(--ink);
-  --text-on-dark: var(--palette-pink-light);
+  --text-on-dark: var(--brand-surface);
   --bar-sobre-bg: var(--palette-magenta);
-  --bar-sobre-border: rgb(253 231 254 / 0.32);
-  --bar-bottom-bg: var(--skin);
+  --bar-sobre-border: rgb(var(--brand-surface-rgb) / 0.32);
+  --bar-bottom-bg: var(--brand-surface);
   --bar-bottom-border: var(--palette-purple);
   --bar-bottom-fg: var(--ink);
-  --bar-archive-surface: var(--skin);
+  --bar-archive-surface: var(--brand-surface);
   --bar-chrome-border: var(--bar-bottom-border);
   --cursor-dot-color: var(--wheel-stroke);
   --type-scale: 1.42;
@@ -2213,7 +2216,7 @@ body.is-cv-open.sobre-page .sobre-cv-panel__body {
   padding: clamp(1.25rem, 3.5vw, 2.75rem) var(--chrome-x);
   border-top: 1px solid rgb(145 42 125 / 0.09);
   border-bottom: 1px solid rgb(145 42 125 / 0.09);
-  background: rgb(255 252 255 / 0.35);
+  background: rgb(var(--brand-surface-rgb) / 0.72);
   box-sizing: border-box;
 }
 
@@ -5085,8 +5088,10 @@ a.sobre-roll__title:hover {
 }
 
 .frango-intro {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: stretch;
   flex: 0 0 var(--frango-intro-canvas);
   width: calc(100% - 2 * var(--frango-video-side-inset));
   max-width: none;
@@ -5108,7 +5113,7 @@ a.sobre-roll__title:hover {
   position: relative;
   z-index: 0;
   display: flex;
-  flex: 1 1 0%;
+  grid-row: 1;
   align-items: stretch;
   justify-content: center;
   width: 100%;
@@ -5174,6 +5179,7 @@ a.sobre-roll__title:hover {
 .frango-heading {
   position: relative;
   z-index: 2;
+  grid-row: 2;
   flex: 0 0 auto;
   flex-shrink: 0;
   width: 100%;
@@ -5185,6 +5191,21 @@ a.sobre-roll__title:hover {
   text-align: left;
 }
 
+.work.work--frango .frango-heading.umbigo-hero__label {
+  width: 100%;
+  max-width: 100%;
+  cursor: default;
+  touch-action: auto;
+  user-select: text;
+}
+
+.work.work--frango .frango-heading .umbigo-work__title,
+.work.work--frango .frango-heading .umbigo-work__subtitle {
+  position: static;
+  opacity: 1;
+  visibility: visible;
+}
+
 .work.work--frango .frango-heading.umbigo-hero__label .umbigo-work__subtitle {
   width: 100%;
   max-width: 100%;
@@ -5194,19 +5215,19 @@ a.sobre-roll__title:hover {
 }
 
 .work.work--frango .frango-intro .frango-heading .umbigo-work__title {
-  margin: 0 0 clamp(0.15rem, 0.9cqh, 0.45rem);
+  margin: 0 0 clamp(0.12rem, 0.45cqh, 0.28rem);
   max-width: 100%;
-  font-size: clamp(0.82rem, 4.25cqi, 1.72rem);
-  line-height: 1.06;
-  letter-spacing: -0.028em;
+  font-size: clamp(0.92rem, 2.8vw, 1.55rem);
+  line-height: 1.08;
+  letter-spacing: 0.02em;
   text-wrap: balance;
   overflow-wrap: break-word;
 }
 
 .work.work--frango .frango-intro .frango-heading .umbigo-work__subtitle {
-  font-size: clamp(0.68rem, 3.1cqi, 1.05rem);
-  line-height: 1.22;
-  letter-spacing: -0.024em;
+  font-size: clamp(0.72rem, 1.65vw, 0.98rem);
+  line-height: 1.24;
+  letter-spacing: 0.04em;
 }
 
 .frango-poem-stage {

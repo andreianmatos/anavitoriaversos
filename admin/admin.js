@@ -72,7 +72,19 @@
     return [];
   }
 
-  function stringifyManifestItems(items) {
+  function manifestWrapsItems(text) {
+    try {
+      var data = JSON.parse(text || "null");
+      return Boolean(data && !Array.isArray(data) && Array.isArray(data.items));
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function stringifyManifestItems(items, wrapItems) {
+    if (wrapItems) {
+      return JSON.stringify({ items: items }, null, 2) + "\n";
+    }
     return JSON.stringify(items, null, 2) + "\n";
   }
 
@@ -94,11 +106,12 @@
 
   function syncPublishModeUi() {
     var isArquivo = publishMode() === "arquivo";
-    if (obraFieldsEl) obraFieldsEl.hidden = !isArquivo;
     if (paginaWrap) paginaWrap.hidden = isArquivo;
-    if (titleInput) titleInput.disabled = !isArquivo;
-    if (textInput) textInput.disabled = !isArquivo;
     if (paginaInput) paginaInput.disabled = isArquivo;
+    if (titleInput) titleInput.disabled = false;
+    if (textInput) textInput.disabled = !isArquivo;
+    var textLabel = textInput && textInput.closest(".admin-label");
+    if (textLabel) textLabel.hidden = !isArquivo;
   }
 
   function populatePageSelect() {
@@ -385,22 +398,18 @@
       paths.push(path);
     }
     add(archiveThumbRepoPath(archiveFile));
-    var rootThumbs = archivePath + "/thumbs/";
-    var folderThumbs = archivePath + "/" + (dirPart ? dirPart + "thumbs/" : "thumbs/");
-    if (ext === "gif") {
-      add(folderThumbs + base + ".gif");
-      add(rootThumbs + dirPart + base + ".gif");
-    } else {
-      if (ext === "png") {
-        add(folderThumbs + base + ".png");
+    if (dirPart) {
+      var rootThumbs = archivePath + "/thumbs/";
+      if (ext === "gif") {
+        add(rootThumbs + dirPart + base + ".gif");
+      } else if (ext === "png") {
         add(rootThumbs + dirPart + base + ".png");
+      } else {
+        if (ext !== "jpg" && ext !== "jpeg") {
+          add(rootThumbs + dirPart + name + ".jpg");
+        }
+        add(rootThumbs + dirPart + base + ".jpg");
       }
-      if (ext !== "jpg" && ext !== "jpeg") {
-        add(folderThumbs + name + ".jpg");
-        add(rootThumbs + dirPart + name + ".jpg");
-      }
-      add(folderThumbs + base + ".jpg");
-      add(rootThumbs + dirPart + base + ".jpg");
     }
     return paths;
   }
@@ -693,28 +702,25 @@
     return { filename: filename, entry: entry };
   }
 
-  async function uploadPagePhotoViaGitHub(file, page) {
-    var manifestPath = pageManifestPath(page);
-    var manifestFile;
-    try {
-      manifestFile = await getFile(manifestPath);
-    } catch (error) {
-      if (error.status !== 404) throw error;
-      manifestFile = { sha: null, text: "[]\n" };
-    }
+  async function uploadObraArchiveViaGitHub(file, page, title) {
+    var manifestFile = await getFile(manifestPath);
+    var manifest = JSON.parse(manifestFile.text);
+    if (!manifest.items || !Array.isArray(manifest.items)) manifest.items = [];
 
-    var items = parseManifestItems(manifestFile.text);
-    var existingNames = items
-      .filter(isPagePhotoManifestEntry)
+    var prefix = page.baseDir + "/";
+    var existingNames = manifest.items
+      .filter(function (item) {
+        return item && item.file && String(item.file).indexOf(prefix) === 0;
+      })
       .map(function (item) {
-        return String(item.file).slice(PAGE_PHOTO_PREFIX.length);
+        return String(item.file).slice(prefix.length);
       });
     var filename = uniqueFilename(safeBaseName(file.name), existingNames);
-    var archiveFile = pagePhotoArchiveFile(page, filename);
+    var archiveFile = prefix + filename;
     var imagePath = archivePath + "/" + archiveFile;
     var imageBase64 = await readFileAsBase64(file);
 
-    await putFile(imagePath, imageBase64, null, "Add page photo " + archiveFile);
+    await putFile(imagePath, imageBase64, null, "Add archive image " + archiveFile);
 
     try {
       await uploadArchiveThumb(file, archiveFile, imageBase64);
@@ -722,16 +728,21 @@
       console.warn("Thumbnail upload failed:", thumbError);
     }
 
-    items.push({ file: PAGE_PHOTO_PREFIX + filename });
-    var manifestText = stringifyManifestItems(items);
+    var entryTitle =
+      title && title.trim() ? title.trim().toUpperCase() : titleFromFilename(filename);
+    var entry = { file: archiveFile, title: entryTitle };
+    if (page.href) entry.href = page.href;
+    manifest.items.push(entry);
+
+    var manifestText = JSON.stringify(manifest, null, 2) + "\n";
     await putFile(
       manifestPath,
       utf8ToBase64(manifestText),
       manifestFile.sha,
-      "Update " + page.baseDir + " images.json"
+      "Update images.json"
     );
 
-    return { filename: archiveFile, page: page };
+    return { filename: archiveFile, entry: entry, page: page };
   }
 
   async function onSave() {
@@ -758,14 +769,15 @@
       }
       var result;
       if (page) {
-        result = await uploadPagePhotoViaGitHub(file, page);
+        result = await uploadObraArchiveViaGitHub(file, page, title);
         setStatus(
-          "Foto publicada em " +
+          "Nova peça no arquivo (" +
             page.label +
-            ": " +
+            "): " +
             result.filename +
-            ". A página atualiza em 1–2 min."
+            ". Aparece na roda com as outras; o HTML da página não é alterado."
         );
+        loadRemoveList();
       } else {
         result = await uploadViaGitHub(file, title, textParagraphs);
         setStatus(
