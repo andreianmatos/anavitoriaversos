@@ -24,6 +24,8 @@ imagens/arquivo/<slug>/
 
 Entradas em **`images.json` (raiz)**: `"file": "<slug>/nome.ext"` e opcional `"href": "<fragmento>.html"`.
 
+Com **`href`** (obra com página), o `file` serve sobretudo para a **roda do arquivo**: a miniatura é `thumbs/<mesmo nome que em file>`. Não é obrigatório existir o original na raiz da pasta da obra se a página usa só `consequencias/` — basta a miniatura em `thumbs/`.
+
 ## Miniaturas (sem duplicar)
 
 | Onde está o original | Onde vai a miniatura |

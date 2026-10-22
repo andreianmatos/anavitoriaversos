@@ -869,7 +869,7 @@
     });
   }
 
-  async function fetchManifestItems() {
+  async function fetchManifestItemsFromSite() {
     var bust = "?t=" + String(Date.now());
     var candidates = [
       "../" + manifestPath + bust,
@@ -890,6 +890,18 @@
       }
     }
     throw lastError || new Error("manifest");
+  }
+
+  async function fetchManifestItems() {
+    if (getToken()) {
+      try {
+        var manifestFile = await getFile(manifestPath);
+        return parseManifestItems(manifestFile.text);
+      } catch (githubError) {
+        console.warn("GitHub manifest read failed, using published site:", githubError);
+      }
+    }
+    return fetchManifestItemsFromSite();
   }
 
   async function loadRemoveList() {
@@ -980,9 +992,9 @@
       await deleteArchiveThumbsIfExist(filename);
 
       setStatus(
-        "Removido do site: entrada no images.json, ficheiro em " +
-          archivePath +
-          "/ e miniatura(s) em thumbs/. Atualiza em 1–2 min (Ctrl+Shift+R no arquivo)."
+        "Removido no GitHub (images.json + ficheiro + miniatura). O site público pode demorar 1–5 min " +
+          "(GitHub Pages). No arquivo do site: recarrega a página (Ctrl+Shift+R). " +
+          "Se ainda vês outra peça da mesma obra, remove também essa entrada na lista."
       );
       loadRemoveList();
     } catch (error) {
