@@ -237,6 +237,22 @@
     const toggles = document.querySelectorAll("[data-cv-toggle]");
     if (!toggles.length) return;
 
+    function scrollSobreCvIntoView() {
+      const flow = document.querySelector(".sobre-overlay__flow");
+      const anchor = document.querySelector(".sobre-overlay__cv");
+      if (!flow || !anchor) return;
+
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const flowRect = flow.getBoundingClientRect();
+      const anchorRect = anchor.getBoundingClientRect();
+      const targetTop = flow.scrollTop + (anchorRect.top - flowRect.top) - 10;
+
+      flow.scrollTo({
+        top: Math.max(0, targetTop),
+        behavior: reduceMotion ? "auto" : "smooth",
+      });
+    }
+
     function setCvOpen(open) {
       document.body.classList.toggle("is-cv-open", open);
       toggles.forEach(function (button) {
@@ -244,6 +260,12 @@
       });
       const body = document.getElementById("sobre-cv-body");
       if (body) body.setAttribute("aria-hidden", open ? "false" : "true");
+
+      if (open && body) {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(scrollSobreCvIntoView);
+        });
+      }
     }
 
     toggles.forEach(function (button) {

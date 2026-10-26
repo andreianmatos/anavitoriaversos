@@ -78,19 +78,84 @@ function spaceCount(line) {
   }, 0);
 }
 
+function isOpeningMobilePoem(poem) {
+  return Boolean(
+    poem &&
+      poem.closest(".umbigo-canvas--opening") &&
+      window.matchMedia("(max-width: 1023px)").matches
+  );
+}
+
+function resetOpeningVerseLayout(verse) {
+  if (!verse) return;
+  restore(verse);
+  remember(verse);
+  verse.style.width = "100%";
+  verse.style.maxWidth = "100%";
+  verse.style.fontSize = "";
+  verse.style.height = "auto";
+  verse.style.minHeight = "";
+  verse.style.overflow = "visible";
+  const navel = verse.closest(".umbigo-navel");
+  if (navel) {
+    navel.style.width = "100%";
+    navel.style.height = "auto";
+    navel.style.maxHeight = "";
+    navel.style.overflow = "visible";
+  }
+  verse.querySelectorAll("p").forEach(function (line) {
+    line.style.whiteSpace = "normal";
+    line.style.width = "100%";
+    line.style.maxWidth = "100%";
+    line.style.overflow = "visible";
+    line.style.position = "static";
+  });
+}
+
 function shrinkVerse(verse) {
   restore(verse);
   remember(verse);
-  let widest = 0;
-  verse.querySelectorAll("p").forEach(function (line) {
-    const cs = getComputedStyle(line);
-    const prepared = prepareWithSegments(line.textContent, fontShorthand(cs), {
-      whiteSpace: "nowrap",
+  verse.style.fontSize = "";
+  const lines = verse.querySelectorAll("p");
+  if (isSimpleView()) {
+    verse.style.width = "100%";
+    verse.style.maxWidth = "100%";
+    lines.forEach(function (line) {
+      line.style.whiteSpace = "normal";
+      line.style.width = "auto";
+      line.style.maxWidth = "100%";
     });
-    widest = Math.max(widest, measureNaturalWidth(prepared));
-  });
-  const max = verse.parentElement ? verse.parentElement.clientWidth : widest;
-  verse.style.width = Math.min(widest + 2, max) + "px";
+    return;
+  }
+  const containerWidth = Math.max(
+    48,
+    (verse.parentElement && verse.parentElement.clientWidth) ||
+      verse.closest(".umbigo-poem")?.clientWidth ||
+      verse.clientWidth ||
+      0
+  );
+  function measureWidest() {
+    let widest = 0;
+    lines.forEach(function (line) {
+      const cs = getComputedStyle(line);
+      line.style.whiteSpace = "nowrap";
+      const prepared = prepareWithSegments(line.textContent.trim(), fontShorthand(cs), {
+        whiteSpace: "nowrap",
+      });
+      widest = Math.max(widest, measureNaturalWidth(prepared));
+    });
+    return widest;
+  }
+  let widest = measureWidest();
+  if (widest > containerWidth && containerWidth > 0) {
+    const baseSize = parseFloat(getComputedStyle(verse).fontSize);
+    if (Number.isFinite(baseSize) && baseSize > 0) {
+      const scaled = Math.max(13, baseSize * (containerWidth / widest) * 0.985);
+      verse.style.fontSize = scaled + "px";
+      widest = measureWidest();
+    }
+  }
+  verse.style.width = Math.min(widest + 2, containerWidth) + "px";
 }
 
 function fitNavel(navel) {
@@ -647,6 +712,7 @@ function wireOpeningRingScroll() {
 }
 
 function ensureOpeningRingLoop() {
+  if (isSimpleView()) return;
   if (openingRingLoopOn) return;
   openingRingLoopOn = true;
   (function frame() {
@@ -661,6 +727,8 @@ function ensureOpeningRingLoop() {
 }
 
 function visiblePoem() {
+  const opening = document.querySelector(".umbigo-canvas--opening .umbigo-poem:not([hidden])");
+  if (opening) return opening;
   return document.querySelector(".umbigo-poem:not([hidden])");
 }
 
@@ -896,7 +964,14 @@ function layoutPoem(poem, options) {
   setLocale(poem.getAttribute("data-lang-panel") || poem.getAttribute("lang") || "pt");
   if (withVerse) {
     if (navel) fitNavel(navel);
-    else shrinkVerse(verse);
+    const verseTarget = navel ? navel.querySelector(".umbigo-verse") : verse;
+    if (verseTarget) {
+      if (isOpeningMobilePoem(poem)) {
+        resetOpeningVerseLayout(verseTarget);
+      } else if (!navel || isSimpleView()) {
+        shrinkVerse(verseTarget);
+      }
+    }
     initPoemRing(poem);
   }
 }
@@ -969,7 +1044,7 @@ function onPointerDown(event) {
   if (label && isOpeningHeroLabel(label)) {
     return;
   }
-  if (label) {
+  if (label && !isSimpleView()) {
     syncHeroLabelPosition(false);
     heroLabelDrag = {
       label: label,
@@ -1018,7 +1093,7 @@ function onPointerUp(event) {
   if (heroFloatDrag && event.pointerId === heroFloatDrag.pointerId) {
     const fig = heroFloatDrag.fig;
     fig.classList.remove("is-dragging");
-    setHeroFloatActive(fig, fig.matches(":hover"));
+    setHeroFloatActive(fig, !isSimpleView() && fig.matches(":hover"));
     if (fig.releasePointerCapture) {
       try {
         fig.releasePointerCapture(event.pointerId);
@@ -1118,9 +1193,11 @@ function wireHeroFloats() {
     if (fig.dataset.floatWired === "1") return;
     fig.dataset.floatWired = "1";
     fig.addEventListener("pointerenter", function () {
+      if (isSimpleView()) return;
       setHeroFloatActive(fig, true);
     });
     fig.addEventListener("pointerleave", function () {
+      if (isSimpleView()) return;
       if (heroFloatDrag && heroFloatDrag.fig === fig) return;
       setHeroFloatActive(fig, false);
     });
@@ -1134,7 +1211,64 @@ function wireHeroFloats() {
   });
 }
 
+let touchRevealTap = null;
+
+function wireTouchReveals() {
+  if (document.documentElement.dataset.umbigoTouchRevealWired === "1") return;
+  document.documentElement.dataset.umbigoTouchRevealWired = "1";
+
+  document.addEventListener(
+    "pointerdown",
+    function (event) {
+      if (!isSimpleView() || event.button !== 0) return;
+      const el = event.target.closest(
+        ".umbigo-hair, .umbigo-hero__float--face, .umbigo-hero__float--box"
+      );
+      if (!el) return;
+      touchRevealTap = {
+        el: el,
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+      };
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    "pointerup",
+    function (event) {
+      if (!touchRevealTap || event.pointerId !== touchRevealTap.pointerId) return;
+      const tap = touchRevealTap;
+      touchRevealTap = null;
+      if (!isSimpleView()) return;
+      const dx = event.clientX - tap.x;
+      const dy = event.clientY - tap.y;
+      if (dx * dx + dy * dy > 576) return;
+      const el = tap.el;
+      if (!el || !el.isConnected) return;
+      if (el.classList.contains("umbigo-hair")) {
+        el.classList.toggle("is-umbigo-hair-active");
+        return;
+      }
+      if (isAnchoredHeroFloat(el)) {
+        const reveal = !el.classList.contains("is-umbigo-float-active");
+        heroFloatEls().forEach(function (fig) {
+          if (isAnchoredHeroFloat(fig)) setHeroFloatActive(fig, false);
+        });
+        if (reveal) setHeroFloatActive(el, true);
+      }
+    },
+    { passive: true }
+  );
+
+  document.addEventListener("pointercancel", function () {
+    touchRevealTap = null;
+  });
+}
+
 wireHeroFloats();
+wireTouchReveals();
 document.addEventListener("pointerdown", onPointerDown);
 document.addEventListener("pointermove", onPointerMove);
 document.addEventListener("pointerup", onPointerUp);

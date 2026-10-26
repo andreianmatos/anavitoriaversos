@@ -649,7 +649,7 @@
     }
     if (section.classList.contains("work--reinventar-aroda")) {
       requestAnimationFrame(function () {
-        initReinventarArodaDrag(section);
+        initReinventarCatavento(section);
       });
     }
     if (section.classList.contains("work--frango")) {
@@ -657,6 +657,9 @@
         initFrangoPolaroids(section, { forceLayout: true });
       });
     }
+    requestAnimationFrame(function () {
+      syncWorkBottomSpacer(section);
+    });
   }
 
   const umbigoFragmentCache = { template: null, promise: null };
@@ -2124,6 +2127,51 @@
     beginHeroSpinToBar(group);
   }
 
+  const workBottomSpacerObservers = new WeakMap();
+
+  function syncWorkBottomSpacer(section) {
+    if (!section) return;
+    const spacer = section.querySelector(":scope > .work-bottom-spacer");
+    if (!spacer) return;
+    if (section.classList.contains("work--leva")) {
+      spacer.classList.remove("is-needed");
+      return;
+    }
+    const always = section.classList.contains("work--umbigo");
+    spacer.classList.remove("is-needed");
+    const overflows = always || section.scrollHeight > section.clientHeight + 4;
+    spacer.classList.toggle("is-needed", overflows);
+  }
+
+  function observeWorkBottomSpacer(section) {
+    if (!section || typeof ResizeObserver === "undefined") return;
+    if (workBottomSpacerObservers.has(section)) return;
+    const observer = new ResizeObserver(function () {
+      syncWorkBottomSpacer(section);
+    });
+    workBottomSpacerObservers.set(section, observer);
+    Array.prototype.forEach.call(section.children, function (child) {
+      if (!child.classList.contains("work-bottom-spacer")) {
+        observer.observe(child);
+      }
+    });
+  }
+
+  function ensureWorkBottomSpacer(section) {
+    if (!section) return;
+    let spacer = section.querySelector(":scope > .work-bottom-spacer");
+    if (!spacer) {
+      spacer = document.createElement("div");
+      spacer.className = "work-bottom-spacer";
+      spacer.setAttribute("aria-hidden", "true");
+    }
+    section.appendChild(spacer);
+    observeWorkBottomSpacer(section);
+    window.requestAnimationFrame(function () {
+      syncWorkBottomSpacer(section);
+    });
+  }
+
   async function mountUmbigoWork(section, group) {
     const main = await loadUmbigoMain();
     if (!main || !section.isConnected) return;
@@ -2133,6 +2181,7 @@
       if (anchor) anchor.setAttribute("data-archive-file", entry.file);
     });
     document.dispatchEvent(new CustomEvent("umbigo-mounted"));
+    ensureWorkBottomSpacer(section);
   }
 
   function resetFrangoIntroHeading(section) {
@@ -2158,6 +2207,7 @@
     });
     resetFrangoIntroHeading(section);
     wireFrangoPolaroids();
+    wireFrangoTouchUi();
     window.requestAnimationFrame(function () {
       initFrangoPolaroids(section, { forceLayout: true });
     });
@@ -2169,6 +2219,7 @@
     if (section.classList.contains("is-active")) {
       startFrangoVideo(section);
     }
+    ensureWorkBottomSpacer(section);
   }
 
   const frangoPolaroidSpots = new WeakMap();
@@ -2331,12 +2382,21 @@
       shuffled[j] = tmp;
     }
 
+    const spreadOnPoem = isTouchLikeUi() && deckH > deckW * 0.85;
+
     shuffled.forEach(function (fig, index) {
       const w = fig.offsetWidth || fig.getBoundingClientRect().width;
       const h = fig.offsetHeight || fig.getBoundingClientRect().height;
       if (w < 2) return;
       const x = Math.random() * Math.max(0, deckW - w);
-      const y = Math.random() * Math.max(0, deckH - h);
+      let y;
+      if (spreadOnPoem && shuffled.length > 1) {
+        const slotH = deckH / shuffled.length;
+        const baseY = index * slotH;
+        y = baseY + Math.random() * Math.max(0, slotH - h);
+      } else {
+        y = Math.random() * Math.max(0, deckH - h);
+      }
       const tilt = Math.round((Math.random() * 14 - 7) * 10) / 10;
       let spot = {
         x: Math.round(x),
@@ -2352,12 +2412,49 @@
     return true;
   }
 
+  function scheduleFrangoPoemDeckRelayout(section, deck) {
+    if (!isTouchLikeUi() || !deck) return;
+    const stage = deck.closest(".frango-poem-stage");
+    if (!stage) return;
+    function fitDeckToPoem() {
+      if (!section.isConnected || !deck.isConnected) return;
+      const stageH = stage.clientHeight;
+      if (stageH < 48) return;
+      layoutFrangoPolaroidsDeck(deck);
+      deck.dataset.frangoPoemDeckSized = "1";
+    }
+    window.requestAnimationFrame(function () {
+      fitDeckToPoem();
+      window.requestAnimationFrame(fitDeckToPoem);
+      window.setTimeout(fitDeckToPoem, 120);
+    });
+  }
+
+  function watchFrangoPoemStageLayout(section) {
+    if (!isTouchLikeUi() || !section) return;
+    const stage = section.querySelector(".frango-poem-stage");
+    const deck = stage ? stage.querySelector(".frango-polaroids__deck") : null;
+    if (!stage || !deck) return;
+    if (stage.dataset.frangoPoemLayoutWatch === "1") return;
+    stage.dataset.frangoPoemLayoutWatch = "1";
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(function () {
+      if (!section.isConnected || !section.classList.contains("is-active")) return;
+      delete deck.dataset.frangoPoemDeckSized;
+      layoutFrangoPolaroidsDeck(deck);
+    });
+    observer.observe(stage);
+  }
+
   function initFrangoPolaroids(section, options) {
     if (!section) return;
     const forceLayout = Boolean(options && options.forceLayout);
     const decks = section.querySelectorAll(".frango-polaroids__deck");
     if (!decks.length) return;
     decks.forEach(function (deck) {
+      if (forceLayout) {
+        delete deck.dataset.frangoPoemDeckSized;
+      }
       const figures = deck.querySelectorAll(".frango-polaroid");
       let needsRandom = false;
       figures.forEach(function (fig) {
@@ -2368,11 +2465,21 @@
         if (!laidOut) {
           window.requestAnimationFrame(function () {
             if (!section.isConnected) return;
-            if (layoutFrangoPolaroidsDeck(deck)) return;
+            if (layoutFrangoPolaroidsDeck(deck)) {
+              scheduleFrangoPoemDeckRelayout(section, deck);
+              return;
+            }
             window.requestAnimationFrame(function () {
-              if (section.isConnected) layoutFrangoPolaroidsDeck(deck);
+              if (section.isConnected && layoutFrangoPolaroidsDeck(deck)) {
+                scheduleFrangoPoemDeckRelayout(section, deck);
+              }
             });
           });
+        } else {
+          scheduleFrangoPoemDeckRelayout(section, deck);
+        }
+        if (deck.closest(".frango-poem-stage")) {
+          watchFrangoPoemStageLayout(section);
         }
         return;
       }
@@ -2380,6 +2487,65 @@
         syncFrangoPolaroidSpot(fig, deck, false);
       });
       deck.classList.add("is-ready");
+      if (deck.closest(".frango-poem-stage")) {
+        watchFrangoPoemStageLayout(section);
+      }
+    });
+  }
+
+  function isTouchLikeUi() {
+    return window.matchMedia("(hover: none), (pointer: coarse)").matches;
+  }
+
+  function wireFrangoTouchUi() {
+    if (document.documentElement.dataset.frangoTouchUiWired === "1") return;
+    document.documentElement.dataset.frangoTouchUiWired = "1";
+
+    let panfletoTap = null;
+
+    document.addEventListener(
+      "pointerdown",
+      function (event) {
+        if (!isTouchLikeUi() || event.button !== 0) return;
+        const fig = event.target.closest(".frango-panfleto-verso");
+        if (!fig) return;
+        const section = fig.closest(".work.work--frango");
+        if (!section || !section.classList.contains("is-active")) return;
+        panfletoTap = {
+          fig: fig,
+          pointerId: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+        };
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      "pointerup",
+      function (event) {
+        if (!panfletoTap || event.pointerId !== panfletoTap.pointerId) return;
+        const tap = panfletoTap;
+        panfletoTap = null;
+        if (!isTouchLikeUi()) return;
+        const dx = event.clientX - tap.x;
+        const dy = event.clientY - tap.y;
+        if (dx * dx + dy * dy > 576) return;
+        const fig = tap.fig;
+        if (!fig.isConnected) return;
+        const section = fig.closest(".work.work--frango");
+        if (!section || !section.classList.contains("is-active")) return;
+        const reveal = !fig.classList.contains("is-panfleto-revealed");
+        section.querySelectorAll(".frango-panfleto-verso").forEach(function (node) {
+          node.classList.remove("is-panfleto-revealed");
+        });
+        if (reveal) fig.classList.add("is-panfleto-revealed");
+      },
+      { passive: true }
+    );
+
+    document.addEventListener("pointercancel", function () {
+      panfletoTap = null;
     });
   }
 
@@ -2387,36 +2553,32 @@
     if (document.documentElement.dataset.frangoPolaroidDragWired === "1") return;
     document.documentElement.dataset.frangoPolaroidDragWired = "1";
 
-    document.addEventListener("pointerdown", function (event) {
-      if (event.button !== 0) return;
-      const fig = event.target.closest(".work--frango .frango-polaroid");
-      if (!fig) return;
-      const section = fig.closest(".work.work--frango");
-      if (!section || !section.classList.contains("is-active")) return;
-      const deck = fig.closest(".frango-polaroids__deck");
-      if (!deck) return;
-      syncFrangoPolaroidSpot(fig, deck, false);
-      const spot = frangoPolaroidSpots.get(fig);
-      if (!spot) return;
+    let frangoPolaroidPending = null;
+    const FRANGO_POLAROID_DRAG_SLOP_SQ = 64;
+
+    function beginFrangoPolaroidDrag(state, event) {
+      const fig = state.fig;
       frangoPolaroidDrag = {
         fig: fig,
-        deck: deck,
-        section: section,
-        pointerId: event.pointerId,
+        deck: state.deck,
+        section: state.section,
+        pointerId: state.pointerId,
         pointerX: event.clientX,
         pointerY: event.clientY,
-        originX: spot.x,
-        originY: spot.y,
-        tilt: spot.tilt,
-        baseZ: fig.style.zIndex,
+        originX: state.originX,
+        originY: state.originY,
+        tilt: state.tilt,
+        baseZ: state.baseZ,
       };
       fig.style.zIndex = "16";
       fig.classList.add("is-dragging");
       if (fig.setPointerCapture) fig.setPointerCapture(event.pointerId);
-      event.preventDefault();
-    });
+    }
 
     function endFrangoPolaroidDrag(event) {
+      if (frangoPolaroidPending && event.pointerId === frangoPolaroidPending.pointerId) {
+        frangoPolaroidPending = null;
+      }
       if (!frangoPolaroidDrag || event.pointerId !== frangoPolaroidDrag.pointerId) return;
       const fig = frangoPolaroidDrag.fig;
       fig.style.zIndex = frangoPolaroidDrag.baseZ || "";
@@ -2431,18 +2593,71 @@
       frangoPolaroidDrag = null;
     }
 
-    document.addEventListener("pointermove", function (event) {
-      if (!frangoPolaroidDrag || event.pointerId !== frangoPolaroidDrag.pointerId) return;
-      const fig = frangoPolaroidDrag.fig;
-      const deck = frangoPolaroidDrag.deck;
-      const spot = applyFrangoPolaroidSpot(fig, deck, {
-        x: frangoPolaroidDrag.originX + (event.clientX - frangoPolaroidDrag.pointerX),
-        y: frangoPolaroidDrag.originY + (event.clientY - frangoPolaroidDrag.pointerY),
-        tilt: frangoPolaroidDrag.tilt,
-        z: parseInt(fig.style.zIndex, 10) || 1,
-      });
-      frangoPolaroidSpots.set(fig, spot);
-    });
+    document.addEventListener(
+      "pointerdown",
+      function (event) {
+        if (event.button !== 0) return;
+        const fig = event.target.closest(".work--frango .frango-polaroid");
+        if (!fig) return;
+        const section = fig.closest(".work.work--frango");
+        if (!section || !section.classList.contains("is-active")) return;
+        const deck = fig.closest(".frango-polaroids__deck");
+        if (!deck) return;
+        syncFrangoPolaroidSpot(fig, deck, false);
+        const spot = frangoPolaroidSpots.get(fig);
+        if (!spot) return;
+        const state = {
+          fig: fig,
+          deck: deck,
+          section: section,
+          pointerId: event.pointerId,
+          pointerX: event.clientX,
+          pointerY: event.clientY,
+          originX: spot.x,
+          originY: spot.y,
+          tilt: spot.tilt,
+          baseZ: fig.style.zIndex,
+        };
+        if (isTouchLikeUi()) {
+          frangoPolaroidPending = state;
+          return;
+        }
+        beginFrangoPolaroidDrag(state, event);
+        event.preventDefault();
+      },
+      { passive: false }
+    );
+
+    document.addEventListener(
+      "pointermove",
+      function (event) {
+        if (
+          frangoPolaroidPending &&
+          event.pointerId === frangoPolaroidPending.pointerId &&
+          !frangoPolaroidDrag
+        ) {
+          const dx = event.clientX - frangoPolaroidPending.pointerX;
+          const dy = event.clientY - frangoPolaroidPending.pointerY;
+          if (dx * dx + dy * dy >= FRANGO_POLAROID_DRAG_SLOP_SQ) {
+            const pending = frangoPolaroidPending;
+            frangoPolaroidPending = null;
+            beginFrangoPolaroidDrag(pending, event);
+          }
+        }
+        if (!frangoPolaroidDrag || event.pointerId !== frangoPolaroidDrag.pointerId) return;
+        const fig = frangoPolaroidDrag.fig;
+        const deck = frangoPolaroidDrag.deck;
+        const spot = applyFrangoPolaroidSpot(fig, deck, {
+          x: frangoPolaroidDrag.originX + (event.clientX - frangoPolaroidDrag.pointerX),
+          y: frangoPolaroidDrag.originY + (event.clientY - frangoPolaroidDrag.pointerY),
+          tilt: frangoPolaroidDrag.tilt,
+          z: parseInt(fig.style.zIndex, 10) || 1,
+        });
+        frangoPolaroidSpots.set(fig, spot);
+        event.preventDefault();
+      },
+      { passive: false }
+    );
 
     document.addEventListener("pointerup", endFrangoPolaroidDrag);
     document.addEventListener("pointercancel", endFrangoPolaroidDrag);
@@ -2563,6 +2778,53 @@
     document.addEventListener("pointercancel", endReinventarFloatDrag);
   }
 
+  const reinventarCataventoRot = new WeakMap();
+  let reinventarCataventoAnim = null;
+
+  function spinReinventarCatavento(fig) {
+    if (!fig || reinventarCataventoAnim) return;
+    const img = fig.querySelector(".reinventar-aroda__catavento-img");
+    if (!img) return;
+    const fromDeg = reinventarCataventoRot.get(fig) || 0;
+    const toDeg = fromDeg + 360;
+    const reduced = reducedMotion.matches;
+    if (reduced) {
+      reinventarCataventoRot.set(fig, toDeg);
+      img.style.transform = "rotate(" + toDeg + "deg)";
+      return;
+    }
+    reinventarCataventoAnim = img.animate(
+      [
+        { transform: "rotate(" + fromDeg + "deg)" },
+        { transform: "rotate(" + toDeg + "deg)" },
+      ],
+      { duration: 1100, easing: "cubic-bezier(0.33, 0.12, 0.2, 1)" }
+    );
+    reinventarCataventoAnim.finished
+      .then(function () {
+        reinventarCataventoRot.set(fig, toDeg);
+        img.style.transform = "rotate(" + toDeg + "deg)";
+      })
+      .catch(function () {})
+      .finally(function () {
+        reinventarCataventoAnim = null;
+      });
+  }
+
+  function initReinventarCatavento(section) {
+    const fig = section ? section.querySelector("[data-reinventar-catavento]") : null;
+    if (!fig || fig.dataset.reinventarCataventoWired === "1") return;
+    fig.dataset.reinventarCataventoWired = "1";
+    fig.addEventListener("click", function () {
+      spinReinventarCatavento(fig);
+    });
+    fig.addEventListener("keydown", function (event) {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      spinReinventarCatavento(fig);
+    });
+  }
+
   async function mountReinventarArodaWork(section, group) {
     const main = await loadReinventarArodaMain();
     if (!main || !section.isConnected) return;
@@ -2571,11 +2833,24 @@
       const anchor = findWorkAnchor(section, entry.file);
       if (anchor) anchor.setAttribute("data-archive-file", entry.file);
     });
-    wireReinventarArodaDrag();
     requestAnimationFrame(function () {
-      initReinventarArodaDrag(section);
+      initReinventarCatavento(section);
+      initReinventarCredits(section);
     });
     section.scrollTo(0, 0);
+    ensureWorkBottomSpacer(section);
+  }
+
+  function initReinventarCredits(section) {
+    import("./reinventar-credits.js")
+      .then(function (mod) {
+        if (section.isConnected && mod.wireReinventarCredits) {
+          mod.wireReinventarCredits(section);
+        }
+      })
+      .catch(function (error) {
+        console.error("Nao foi possivel ligar creditos reinventar a roda", error);
+      });
   }
 
   async function mountLevaWork(section, group) {
@@ -2596,6 +2871,7 @@
         mountLevaLegend(legendHost);
       }
     }
+    ensureWorkBottomSpacer(section);
   }
 
   async function renderWorks(items) {
@@ -2684,6 +2960,7 @@
       }
       section.appendChild(layout);
       applyWorkCopy(section, manifestEntry);
+      ensureWorkBottomSpacer(section);
 
       works.appendChild(section);
     }
@@ -2822,6 +3099,8 @@
   }
 
   async function init() {
+    wireFrangoPolaroids();
+    wireFrangoTouchUi();
     loadUmbigoMain().catch(function () {});
     loadLevaMain().catch(function () {});
     loadFrangoMain().catch(function () {});
@@ -2876,6 +3155,20 @@
       if (shouldRelayoutArchive(archivePanel.clientWidth || width)) {
         scheduleArchivePanelRender();
       }
+    }
+    if (works && relayoutArchiveWidth) {
+      const activeFrango = works.querySelector(".work.work--frango.is-active");
+      if (activeFrango) {
+        window.requestAnimationFrame(function () {
+          if (activeFrango.isConnected) {
+            initFrangoPolaroids(activeFrango, { forceLayout: true });
+          }
+        });
+      }
+    }
+    if (works) {
+      const activeWork = works.querySelector(".work.is-active");
+      if (activeWork) syncWorkBottomSpacer(activeWork);
     }
   }
 

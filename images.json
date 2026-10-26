@@ -64,6 +64,11 @@
       "title": "PRIMEIRA QUEDA"
     },
     {
+      "file": "reinventar-a-roda/reinventar a roda.png",
+      "title": "REINVENTAR A RODA",
+      "href": "reinventar-a-roda.html"
+    },
+    {
       "file": "de-quem-vens/umbigo gif.gif",
       "title": "UMBIGO GIF"
     },
@@ -71,42 +76,6 @@
       "file": "de-quem-vens/umbigo.jpg",
       "title": "UMBIGO",
       "href": "umbigo.html"
-    },
-    {
-      "file": "reinventar-a-roda/tshirt foto.png",
-      "title": "TSHIRT",
-      "href": "reinventar-a-roda.html"
-    },
-    {
-      "file": "um pneu.jpg",
-      "title": "UM PNEU,",
-      "text": [
-        "tinta spray preta, uma jante cor de rosa em forma de estrela, há buracos em tudo é assim que a luz entra."
-      ]
-    },
-    {
-      "file": "caderno3png.png",
-      "title": "CÃO QUE LADRA NÃO MORDE",
-      "text": [
-        "cão raivoso",
-        "série autobiográfica",
-        "Desabafos do caderno"
-      ]
-    },
-    {
-      "file": "cuidado com o cao (1).png",
-      "title": "CUIDADO COM O CÃO",
-      "text": [
-        "série autobiográfica",
-        "azulejo 9,50x9,50cm"
-      ]
-    },
-    {
-      "file": "caderno8.png",
-      "title": "ESTUDOS DE OBJETO",
-      "text": [
-        "desenhos de Escultura em vidro soprado e madeiras"
-      ]
     }
   ]
 }
