@@ -1,12 +1,13 @@
-{
-  "items": [
-    {
-      "file": "consequencias/reinventararoda.jpg",
-      "title": "foto amarela"
-    },
-    {
-      "file": "consequencias/rabiscos grosso.png",
-      "title": "rabiscos"
-    }
-  ]
-}
+[
+  {
+    "file": "consequencias/reinventararoda.jpg",
+    "title": "foto amarela"
+  },
+  {
+    "file": "consequencias/rabiscos grosso.png",
+    "title": "rabiscos"
+  },
+  {
+    "file": "consequencias/mãos de criança.png"
+  }
+]

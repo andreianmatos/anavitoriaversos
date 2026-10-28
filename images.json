@@ -1,25 +1,6 @@
 {
   "items": [
     {
-      "file": "quem-veio-primeiro/frango.png",
-      "title": "FRANGO",
-      "href": "quem-veio-primeiro.html",
-      "text": [
-        "LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT. PELLENTESQUE HABITANT MORBI TRISTIQUE SENECTUS ET NETUS ET MALESUADA FAMES AC TURPIS EGESTAS. VESTIBULUM TORTOR QUAM, FEUGIAT VITAE, ULTRICIES EGET, TEMPOR SIT AMET, ANTE.",
-        "DONEC EU LIBERO SIT AMET QUAM EGESTAS SEMPER. AENEAN ULTRICIES MI VITAE EST. MAURIS PLACERAT ELEIFEND LEO. QUISQUE SIT AMET EST ET SAPIEN ULLAMCORPER PHARETRA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS NISI UT ALIQUIP EX EA COMMODO CONSEQUAT.",
-        "DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM."
-      ]
-    },
-    {
-      "file": "quem-veio-primeiro/frango(1).png",
-      "title": "FRANGO",
-      "text": [
-        "SED UT PERSPICIATIS UNDE OMNIS ISTE NATUS ERROR SIT VOLUPTATEM ACCUSANTIUM DOLOREMQUE LAUDANTIUM, TOTAM REM APERIAM, EAQUE IPSA QUAE AB ILLO INVENTORE VERITATIS ET QUASI ARCHITECTO BEATAE VITAE DICTA SUNT EXPLICABO.",
-        "NEMO ENIM IPSAM VOLUPTATEM QUIA VOLUPTAS SIT ASPERNATUR AUT ODIT AUT FUGIT, SED QUIA CONSEQUUNTUR MAGNI DOLORES EOS QUI RATIONE VOLUPTATEM SEQUI NESCIUNT. NEQUE PORRO QUISQUAM EST, QUI DOLOREM IPSUM QUIA DOLOR SIT AMET.",
-        "AT VERO EOS ET ACCUSAMUS ET IUSTO ODIO DIGNISSIMOS DUCIMUS QUI BLANDITIIS PRAESENTIUM VOLUPTATUM DELENITI ATQUE CORRUPTI QUOS DOLORES ET QUAS MOLESTIAS EXCEPTURI SINT OCCAECATI CUPIDITATE NON PROVIDENT."
-      ]
-    },
-    {
       "file": "leva-me-de-volta/in utero 3D.png",
       "title": "IN UTERO 3D",
       "displayTitle": "Leva-me de volta!",
@@ -30,33 +11,6 @@
         "Tinta da china sobre papel kraft, vidros, madeiras, metais.",
         "Sobre nascer, crescer e viver. Sobre ser dependente. Sobre ter medo e deixar de ter.",
         "Não há mais para dizer para além do que já está escrito."
-      ]
-    },
-    {
-      "file": "natureza mae 2.jpg",
-      "title": "NATUREZA MAE",
-      "text": [
-        "CURABITUR ULLAMCORPER ULTRICIES NISI. NAM EGET DUI. ETIAM RHONCUS. MAECENAS TEMPUS, TELLUS EGET CONDIMENTUM RHONCUS, SEM QUAM SEMPER LIBERO, SIT AMET ADIPISCING SEM NEQUE SED IPSUM.",
-        "NULLAM QUIS ANTE. ETIAM SIT AMET ORCI EGET EROS FAUCIBUS TINCIDUNT. DUIS LEO. SED FRINGILLA MAURIS SIT AMET NIBH. DONEC SODALES SAGITTIS MAGNA. SED CONSEQUAT, LEO EGET BIBENDUM SODALES, AUGUE VELIT CURSUS NUNC.",
-        "QUISQUE RUTRUM. AENEAN IMPERDIET. ETIAM ULTRICIES NISI VEL AUGUE. CURABITUR ULLAMCORPER ULTRICIES NISI. NAM EGET DUI. ETIAM RHONCUS MAECENAS TEMPUS TELLUS EGET CONDIMENTUM RHONCUS."
-      ]
-    },
-    {
-      "file": "natureza mae.png",
-      "title": "NATUREZA MAE",
-      "text": [
-        "LOREM IPSUM DOLOR SIT AMET, CONSECTETUR ADIPISCING ELIT, SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA. UT ENIM AD MINIM VENIAM, QUIS NOSTRUD EXERCITATION ULLAMCO LABORIS.",
-        "DUIS AUTE IRURE DOLOR IN REPREHENDERIT IN VOLUPTATE VELIT ESSE CILLUM DOLORE EU FUGIAT NULLA PARIATUR. EXCEPTEUR SINT OCCAECAT CUPIDATAT NON PROIDENT, SUNT IN CULPA QUI OFFICIA DESERUNT MOLLIT ANIM ID EST LABORUM.",
-        "PHASELLUS VIVERRA NULLA UT METUS VARIUS LAOREET. QUISQUE RUTRUM. AENEAN IMPERDIET. ETIAM ULTRICIES NISI VEL AUGUE. CURABITUR ULLAMCORPER ULTRICIES NISI. NAM EGET DUI."
-      ]
-    },
-    {
-      "file": "o pilas.jpg",
-      "title": "O PILAS",
-      "text": [
-        "FUSCE COMMODO ALIQUAM ARCU. MAECENAS VESTIBULUM MOLLIS DIAM. PELLENTESQUE UT NEQUE. PELLENTESQUE HABITANT MORBI TRISTIQUE SENECTUS ET NETUS ET MALESUADA FAMES AC TURPIS EGESTAS.",
-        "IN AC FELIS QUIS TORTOR MALESUADA PRETIUM. PELLENTESQUE AUCTOR NEQUE NEC URNA. PROIN SAPIEN IPSUM, PORTA A, AUCTOR QUIS, EUISMOD UT, MI. AENEAN VIVERRA RHONCUS PEDE.",
-        "PRAESENT BLANDIT LAOREET NIBH. FUSCE CONVALLIS METUS ID FELIS LUCTUS ADIPISCING. PELLENTESQUE EGESTAS, NEQUE SIT AMET CONVALLIS PULVINAR, JUSTO NULLA ELEIFEND AUGUE, AC AUCTOR ORCI LEO NON EST."
       ]
     },
     {
@@ -76,6 +30,171 @@
       "file": "de-quem-vens/umbigo.jpg",
       "title": "UMBIGO",
       "href": "umbigo.html"
+    },
+    {
+      "file": "caderno8.png",
+      "title": "ESTUDOS DE OBJETO",
+      "text": [
+        "desenhos de Escultura em vidro soprado e madeiras"
+      ]
+    },
+    {
+      "file": "nao sou ninguem.png",
+      "title": "NÃO SOU NINGUÉM SEM O MEU AMIGO",
+      "text": [
+        "NÃO SEI VIVER SEM O TEU MIMO",
+        "2025",
+        "FEITO NO PAINT. SAGA DE DESENHOS FEITOS EM DESABAFO"
+      ]
+    },
+    {
+      "file": "inveja é guia.png",
+      "title": "SE CALHAR A INVEJA QUE SINTO",
+      "text": [
+        "é o que me vai guiar",
+        "2025",
+        "FEITO NO PAINT. SAGA DE DESENHOS FEITOS EM DESABAFO"
+      ]
+    },
+    {
+      "file": "continente editado.jpg",
+      "title": "SAIR À RUA PARA RECONHECER PADRÕES DE COR",
+      "text": [
+        "2026"
+      ]
+    },
+    {
+      "file": "caderno6.png",
+      "title": "ESTUDOS DE OBJETO",
+      "text": [
+        "pensamentos para esculturas em vidro soprado",
+        "2025"
+      ]
+    },
+    {
+      "file": "se se se.png",
+      "title": "SE UMA ESTRELA É UM PENTÁGONO",
+      "text": [
+        "e um pentágono é uma roda,",
+        "eu que tenho cinto pontas",
+        "sou uma estrela que roda",
+        "2026"
+      ]
+    },
+    {
+      "file": "um pneu.jpg",
+      "title": "UM PNEU,",
+      "text": [
+        "tinta spray preta,",
+        "uma jante cor de rosa em forma de estrela,",
+        "há buracos em tudo é assim que a luz entra.",
+        "2026"
+      ]
+    },
+    {
+      "file": "orgaos reprodutores cima (1).jpeg",
+      "title": "OBJETO CORPO",
+      "text": [
+        "órgão reprodutor feminino",
+        "2023"
+      ]
+    },
+    {
+      "file": "caderno5.png",
+      "title": "ESTUDOS DE OBJETO",
+      "text": [
+        "de frente e de lado",
+        "2025"
+      ]
+    },
+    {
+      "file": "joelho esfolado.JPEG",
+      "title": "POR ENTRE PERNAS DO ABANDONO,",
+      "text": [
+        "deixei de cair."
+      ]
+    },
+    {
+      "file": "cuidado com o cao (1)(1).png",
+      "title": "CUIDADO COM O CÃO",
+      "text": [
+        "série autobiográfica",
+        "azulejo 9,50x9,50cm",
+        "2025"
+      ]
+    },
+    {
+      "file": "reinventar-a-roda/rita super 8.jpg",
+      "title": "RITA SUPER 8",
+      "href": "reinventar-a-roda.html"
+    },
+    {
+      "file": "quem-veio-primeiro/frango pb.png",
+      "title": "FRANGO PB",
+      "href": "quem-veio-primeiro.html"
+    },
+    {
+      "file": "quem-veio-primeiro/frango fotogramas.png",
+      "title": "FRANGO FOTOGRAMAS",
+      "href": "quem-veio-primeiro.html"
+    },
+    {
+      "file": "caderno2.png",
+      "title": "ESTUDOS DE OBJETO",
+      "text": [
+        "aprender a ouvir de perto",
+        "2025"
+      ]
+    },
+    {
+      "file": "reinventar-a-roda/colagem bebé.png",
+      "title": "COLAGEM BEBÉ",
+      "href": "reinventar-a-roda.html"
+    },
+    {
+      "file": "dentes.jpg",
+      "title": "CÃO RAIVOSO",
+      "text": [
+        "Série autobiográfica",
+        "lápis de cor sobre papel kraft",
+        "2025"
+      ]
+    },
+    {
+      "file": "cuidado com o cao2.png",
+      "title": "CUIDADO COM O CÃO",
+      "text": [
+        "cão raivoso",
+        "série autobiográfica",
+        "lápis de cor sobre papel",
+        "10x10cm",
+        "2025"
+      ]
+    },
+    {
+      "file": "nascimento do boneco estrela.jpg",
+      "title": "NASCIMENTO DO BONECO ESTRELA",
+      "text": [
+        "pensamentos",
+        "2026"
+      ]
+    },
+    {
+      "file": "reinventar-a-roda/super8.jpg",
+      "title": "SUPER8",
+      "href": "reinventar-a-roda.html"
+    },
+    {
+      "file": "reinventar-a-roda/enquadrada.jpg",
+      "title": "ENQUADRADA",
+      "href": "reinventar-a-roda.html"
+    },
+    {
+      "file": "mashup de algumas das fotos2.png",
+      "title": "ÁRVORE GENEOLÓGICA",
+      "text": [
+        "2023"
+      ]
     }
   ]
 }

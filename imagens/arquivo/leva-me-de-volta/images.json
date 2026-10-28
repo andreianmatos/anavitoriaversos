@@ -1,12 +1,13 @@
-{
-  "items": [
-    {
-      "file": "in utero 3D.png",
-      "title": "in utero 3D"
-    },
-    {
-      "file": "primeira queda.png",
-      "title": "primeira queda"
-    }
-  ]
-}
+[
+  {
+    "file": "in utero 3D.png",
+    "title": "in utero 3D"
+  },
+  {
+    "file": "primeira queda.png",
+    "title": "primeira queda"
+  },
+  {
+    "file": "consequencias/caderno7.png"
+  }
+]
