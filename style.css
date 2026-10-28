@@ -6268,26 +6268,12 @@ a.sobre-roll__title:hover {
     cursor: grabbing;
   }
 
-  .reinventar-aroda__credit-swap {
-    display: inline;
-    width: auto !important;
-    white-space: normal;
-  }
+}
 
-  .reinventar-aroda__credit-term,
-  .reinventar-aroda__credit-name {
-    position: static;
-    opacity: 1 !important;
-    visibility: visible !important;
-    transition: none;
-  }
-
-  .reinventar-aroda__credit-name::before {
-    content: " (";
-  }
-
-  .reinventar-aroda__credit-name::after {
-    content: ")";
+@media (hover: hover) and (pointer: fine) {
+  .reinventar-aroda__project-credits .reinventar-aroda__credit-sep,
+  .reinventar-aroda__project-credits .reinventar-aroda__credit-plain {
+    display: none;
   }
 }
 
@@ -6580,6 +6566,10 @@ a.sobre-roll__title:hover {
   letter-spacing: inherit;
 }
 
+.reinventar-aroda__credit-plain {
+  display: none;
+}
+
 .reinventar-aroda__project-credits.umbigo-prose--montserrat .reinventar-aroda__credit-link {
   display: inline;
   color: var(--accent);
@@ -6630,12 +6620,16 @@ a.sobre-roll__title:hover {
   pointer-events: none;
 }
 
-.reinventar-aroda__credit-link.is-name-visible .reinventar-aroda__credit-term {
+.reinventar-aroda__credit-link.is-name-visible .reinventar-aroda__credit-term,
+.reinventar-aroda__credit-link:hover .reinventar-aroda__credit-term,
+.reinventar-aroda__credit-link:focus-visible .reinventar-aroda__credit-term {
   opacity: 0;
   visibility: hidden;
 }
 
-.reinventar-aroda__credit-link.is-name-visible .reinventar-aroda__credit-name {
+.reinventar-aroda__credit-link.is-name-visible .reinventar-aroda__credit-name,
+.reinventar-aroda__credit-link:hover .reinventar-aroda__credit-name,
+.reinventar-aroda__credit-link:focus-visible .reinventar-aroda__credit-name {
   opacity: 1;
   visibility: visible;
 }
@@ -6845,6 +6839,32 @@ a.sobre-roll__title:hover {
 
   .reinventar-aroda__project-credits.umbigo-prose--montserrat .reinventar-aroda__credit-link {
     white-space: normal;
+  }
+
+  .reinventar-aroda__credit-swap {
+    display: inline !important;
+    width: auto !important;
+    overflow: visible;
+    padding-inline-end: 0;
+  }
+
+  .reinventar-aroda__credit-term {
+    display: inline;
+    opacity: 1 !important;
+    visibility: visible !important;
+    white-space: normal;
+  }
+
+  .reinventar-aroda__credit-name,
+  .reinventar-aroda__credit-plain {
+    display: none !important;
+  }
+
+  .reinventar-aroda__credit-link:hover .reinventar-aroda__credit-term,
+  .reinventar-aroda__credit-link:focus-visible .reinventar-aroda__credit-term,
+  .reinventar-aroda__credit-link.is-name-visible .reinventar-aroda__credit-term {
+    opacity: 1 !important;
+    visibility: visible !important;
   }
 }
 
@@ -8179,13 +8199,18 @@ body.leva-page.arquivo-page > .leva {
   position: relative;
   --sobre-body: clamp(0.46rem, 0.52vw, 0.62rem);
   --sobre-cv: clamp(0.54rem, 0.6vw, 0.72rem);
-  --sobre-meta: clamp(0.5rem, 0.56vw, 0.66rem);
-  --sobre-credit: clamp(0.44rem, 0.5vw, 0.58rem);
+  --sobre-meta: clamp(0.5rem, 0.75vw, 0.82rem);
+  --sobre-credit: clamp(0.44rem, 0.64vw, 0.7rem);
+  --sobre-duo-h: min(28vh, 14.5rem);
+  --sobre-face-h: min(58vh, 34vw);
+  --sobre-side-w: minmax(11rem, 34vw);
+  --sobre-pad-x: clamp(0.75rem, 2vw, 1.65rem);
+  --sobre-pad-right: clamp(0.08rem, 0.35vw, 0.22rem);
   flex: 1 1 auto;
   height: 100%;
   min-height: 0;
-  padding: calc(1.65rem * var(--ui-scale)) clamp(0.75rem, 2vw, 1.65rem)
-    calc(0.65rem * var(--ui-scale));
+  padding: calc(1.65rem * var(--ui-scale)) var(--sobre-pad-right)
+    clamp(0.75rem, 2vw, 1.65rem) var(--sobre-pad-x);
   border: none;
   border-radius: 0;
   background: transparent;
@@ -8240,33 +8265,36 @@ body.leva-page.arquivo-page > .leva {
 .sobre-overlay__scroll {
   height: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding-right: 0.1rem;
 }
 
 .sobre-overlay__stage {
   display: grid;
-  grid-template-columns: minmax(0, 1.26fr) minmax(8.5rem, min(37vw, 17.5rem));
-  gap: clamp(0.35rem, 1vw, 0.85rem);
+  grid-template-columns: minmax(0, 1fr) var(--sobre-side-w);
+  gap: clamp(0.5rem, 1.2vw, 1rem);
   align-items: stretch;
   height: 100%;
   min-height: 0;
-  padding-bottom: clamp(0.35rem, 1.2vh, 0.85rem);
+  padding-bottom: 0;
   box-sizing: border-box;
 }
 
 .sobre-overlay__flow {
   min-width: 0;
   min-height: 0;
+  height: 100%;
   max-height: 100%;
   display: flex;
   flex-direction: column;
-  gap: clamp(0.35rem, 0.85vh, 0.65rem);
+  justify-content: safe center;
+  gap: 0;
   overflow-x: hidden;
-  overflow-y: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  padding-right: 0.15rem;
+  padding-right: 0;
 }
 
 body.is-cv-open .sobre-overlay__flow {
@@ -8280,16 +8308,20 @@ body.is-cv-open .sobre-overlay__flow {
 .sobre-overlay__side {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
+  justify-content: flex-start;
   gap: 0;
   position: relative;
   top: auto;
   align-self: start;
-  justify-self: end;
+  justify-self: stretch;
   min-width: 0;
   flex-shrink: 0;
   overflow: visible;
   pointer-events: none;
+  margin-top: 0;
+  container-type: inline-size;
+  container-name: sobre-side;
 }
 
 .sobre-overlay__side .sobre-overlay__ping {
@@ -8301,7 +8333,7 @@ body.is-cv-open .sobre-overlay__flow {
   width: 100%;
   flex-shrink: 0;
   overflow: visible;
-  padding-bottom: clamp(3.95rem, 10.5vh, 5.15rem);
+  padding-bottom: 0;
   pointer-events: none;
 }
 
@@ -8317,118 +8349,76 @@ body.is-cv-open .sobre-overlay__flow {
   display: flex;
   justify-content: center;
   width: 100%;
+  overflow: visible;
 }
 
 .sobre-overlay .sobre-photo img {
-  width: auto;
-  max-width: 88%;
-  max-height: min(42vh, 12.45rem);
-  margin-inline: auto;
-  object-fit: contain;
-  object-position: top center;
-}
-
-.sobre-overlay__star-on-photo {
-  position: absolute;
-  z-index: 2;
-  left: 51%;
-  top: auto;
-  bottom: clamp(0.5rem, 1.15vh, 0.9rem);
-  width: min(86%, clamp(6.15rem, 18vw, 10rem));
-  margin: 0;
-  transform: translate(-48%, -9%) rotate(9deg);
-  pointer-events: none;
-}
-
-.sobre-overlay__star-on-photo img {
-  display: block;
   width: 100%;
+  max-width: 100%;
   height: auto;
+  max-height: none;
+  margin-left: auto;
+  margin-right: auto;
   object-fit: contain;
-  object-position: center;
+  object-position: center top;
 }
 
 .sobre-overlay__duo {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: end;
+  display: block;
+  flex: 0 0 auto;
   width: 100%;
-  min-height: clamp(9.25rem, 22vh, 12.5rem);
-  margin-top: auto;
-  padding-top: clamp(1.65rem, 4.5vh, 2.35rem);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
   align-self: stretch;
   pointer-events: none;
 }
 
-.sobre-overlay__duo-photo {
-  margin: 0;
-  align-self: end;
+.sobre-overlay__duo-art {
+  margin: 0 auto;
+  width: 100%;
+  overflow: hidden;
+  aspect-ratio: 2.7 / 1;
 }
 
-.sobre-overlay__duo-photo--left {
-  justify-self: start;
-}
-
-.sobre-overlay__duo-photo--right {
-  justify-self: end;
-}
-
-.sobre-overlay__duo-photo img {
-  display: block;
-  width: clamp(8.15rem, 34vw, 14.5rem);
-  max-height: clamp(7.85rem, 21vh, 11.75rem);
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 0.12rem 0.35rem rgb(0 0 0 / 0.18));
-}
-
-.sobre-overlay__duo-photo--left img {
-  object-position: left bottom;
-}
-
-.sobre-overlay__duo-photo--right img {
-  object-position: right bottom;
-}
-
-.sobre-overlay__duo-mark {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  top: auto;
-  bottom: clamp(-0.45rem, -0.75vh, 0.05rem);
-  width: min(96%, clamp(13.25rem, 56vw, 19.75rem));
-  margin: 0;
-  transform: translate(-50%, 10%) rotate(-5deg);
-  transform-origin: 50% 72%;
-  pointer-events: none;
-}
-
-.sobre-overlay__duo-mark img {
+.sobre-overlay__duo-art img {
   display: block;
   width: 100%;
-  height: auto;
-  object-fit: contain;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0 auto;
+  object-fit: cover;
+  object-position: center;
 }
 
 .sobre-overlay__left-stack {
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
+  min-height: min-content;
   min-width: 0;
-  height: 100%;
-  padding-left: clamp(0.55rem, 2.1vw, 1.25rem);
+  height: auto;
+  padding: 0;
   box-sizing: border-box;
   justify-content: flex-start;
+  gap: clamp(0.85rem, 3.2vh, 2rem);
 }
 
 .sobre-overlay__bio-wrap {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 82%;
+  max-width: 42rem;
   min-width: 0;
-  min-height: 0;
-  padding-top: clamp(0.25rem, 1vh, 0.65rem);
-  padding-right: clamp(0rem, 1.5vw, 0.5rem);
+  min-height: min-content;
+  overflow: visible;
+  padding: 0;
+  margin-inline: auto;
+  align-self: center;
 }
 
 .sobre-overlay__aniv-row {
@@ -8485,7 +8475,9 @@ body.is-cv-open .sobre-overlay__flow {
   color: inherit;
   text-align: left;
   text-wrap: pretty;
-  hyphens: manual;
+  hyphens: none;
+  overflow-wrap: break-word;
+  word-break: normal;
   letter-spacing: 0.036em;
 }
 
@@ -8844,22 +8836,18 @@ body.is-cv-open .sobre-overlay .sobre-cv-panel__body .sobre-exposicoes li:nth-ch
   line-height: 1.35;
 }
 
-/* Monitor largo: só o duo + Vitória crescem juntos (ThinkPad ~1920px fica igual) */
+@media (min-width: 1600px) {
+  .sobre-overlay {
+    --sobre-side-w: minmax(12.5rem, 36vw);
+    --sobre-face-h: min(62vh, 36vw);
+  }
+}
+
 @media (min-width: 2100px) {
-  .sobre-overlay__duo {
-    font-size: clamp(1rem, calc(1rem + (100vw - 2100px) / 2200), 1.36rem);
-    min-height: clamp(9.25em, 22vh, 12.5em);
-    padding-top: clamp(1.65em, 4.5vh, 2.35em);
-  }
-
-  .sobre-overlay__duo-photo img {
-    width: clamp(8.15em, 34vw, 14.5em);
-    max-height: clamp(7.85em, 21vh, 11.75em);
-  }
-
-  .sobre-overlay__duo-mark {
-    width: min(96%, clamp(13.25em, 56vw, 19.75em));
-    bottom: clamp(-0.45em, -0.75vh, 0.05em);
+  .sobre-overlay {
+    --sobre-duo-h: min(32vh, 22vw);
+    --sobre-side-w: minmax(14rem, 38vw);
+    --sobre-face-h: min(66vh, 38vw);
   }
 }
 
@@ -8868,18 +8856,26 @@ body.is-cv-open .sobre-overlay .sobre-cv-panel__body .sobre-exposicoes li:nth-ch
     --sobre-body: clamp(0.44rem, 2.65vw, 0.56rem);
     --sobre-meta: clamp(0.48rem, 2.45vw, 0.6rem);
     --sobre-credit: clamp(0.42rem, 2.2vw, 0.52rem);
+    --sobre-duo-h: min(28vw, 11rem);
+    --sobre-face-h: 15.5rem;
   }
 
   .sobre-overlay__left-stack {
     height: auto;
     gap: clamp(0.85rem, 3.5vw, 1.35rem);
-    padding-left: clamp(0.3rem, 2.2vw, 0.65rem);
+    padding-left: clamp(0.45rem, 2.4vw, 0.8rem);
+    padding-right: clamp(0.45rem, 2.4vw, 0.8rem);
+    justify-content: center;
   }
 
   .sobre-overlay__bio-wrap {
     flex: 0 0 auto;
     position: relative;
     z-index: 1;
+    justify-content: flex-start;
+    width: 86%;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .sobre-overlay__panel {
@@ -8890,9 +8886,11 @@ body.is-cv-open .sobre-overlay .sobre-cv-panel__body .sobre-exposicoes li:nth-ch
   .sobre-overlay__stage {
     display: flex;
     flex-direction: column;
+    justify-content: safe center;
     height: 100%;
     min-height: 0;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding-bottom: 1.55rem;
     box-sizing: border-box;
   }
@@ -8904,7 +8902,7 @@ body.is-cv-open .sobre-overlay .sobre-cv-panel__body .sobre-exposicoes li:nth-ch
   }
 
   .sobre-overlay__flow {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-height: 0;
     max-height: none;
   }
@@ -8926,30 +8924,31 @@ body.is-cv-open .sobre-overlay .sobre-cv-panel__body .sobre-exposicoes li:nth-ch
     gap: 0;
   }
 
+  .sobre-overlay .sobre-photo img {
+    width: 100%;
+    max-width: 100%;
+    max-height: var(--sobre-face-h);
+  }
+
   .sobre-overlay__duo {
     width: 100%;
-    min-height: clamp(6.5rem, 28vw, 8.75rem);
-    margin-top: 0;
-    padding-top: clamp(2rem, 9vw, 2.85rem);
+    min-height: 0;
+    margin-top: 0.35rem;
+    margin-left: 0;
+    padding: 0;
     flex-shrink: 0;
   }
 
-  .sobre-overlay__duo-photo img {
-    width: clamp(6.65rem, 44vw, 9.75rem);
-    max-height: clamp(6.35rem, 21vw, 8.75rem);
+  .sobre-overlay__duo-art {
+    aspect-ratio: 2.55 / 1;
   }
 
-  .sobre-overlay__duo-mark {
-    left: 50%;
-    bottom: 0.2rem;
-    width: min(98%, clamp(11.5rem, 72vw, 14.25rem));
-    transform: translate(-50%, 0) rotate(-4deg);
-    transform-origin: 50% 72%;
-  }
-
-  .sobre-overlay .sobre-photo img {
-    max-width: 82%;
-    max-height: 5.85rem;
+  .sobre-overlay__duo-art img {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0 auto;
   }
 
   .sobre-overlay__ping {
@@ -8966,15 +8965,6 @@ body.is-cv-open .sobre-overlay .sobre-cv-panel__body .sobre-exposicoes li:nth-ch
 
   .sobre-overlay__portrait-top {
     padding-bottom: 0;
-  }
-
-  .sobre-overlay__star-on-photo {
-    top: auto;
-    left: 52%;
-    bottom: 0;
-    width: min(58%, 4.65rem);
-    transform: translate(-42%, 12%) rotate(9deg);
-    z-index: 2;
   }
 
   .sobre-overlay__aniv-row {

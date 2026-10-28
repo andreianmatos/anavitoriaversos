@@ -206,6 +206,59 @@
     return basename(file).replace(/\.[^.]+$/, "");
   }
 
+  function documentLang() {
+    return document.documentElement.lang === "en" ? "en" : "pt";
+  }
+
+  function filledText(value) {
+    return typeof value === "string" && value.trim() ? value.trim() : "";
+  }
+
+  /** EN title is optional. Empty/missing titleEn keeps the PT title. */
+  function resolveWorkTitle(entry) {
+    if (!entry) return "";
+    const lang = documentLang();
+    if (lang === "en") {
+      const enTitle = filledText(entry.titleEn);
+      if (enTitle) return enTitle;
+    }
+    if (entry.title && typeof entry.title === "object") {
+      return (
+        filledText(entry.title[lang]) ||
+        filledText(entry.title.pt) ||
+        filledText(entry.title.en) ||
+        titleFromFile(entry.file)
+      );
+    }
+    return filledText(entry.title) || titleFromFile(entry.file);
+  }
+
+  function mapTextParagraphs(parts) {
+    return parts
+      .map(function (part) {
+        return String(part || "").trim();
+      })
+      .filter(Boolean);
+  }
+
+  function localizedTextParagraphs(entry, lang) {
+    if (!entry) return [];
+    if (lang === "en" && Array.isArray(entry.textEn)) {
+      const enParts = mapTextParagraphs(entry.textEn);
+      if (enParts.length) return enParts;
+    }
+    if (Array.isArray(entry.text)) {
+      return mapTextParagraphs(entry.text);
+    }
+    if (entry.text && typeof entry.text === "object") {
+      const bucket = entry.text[lang] || entry.text.pt || entry.text.en;
+      if (Array.isArray(bucket)) return mapTextParagraphs(bucket);
+      if (typeof bucket === "string" && bucket.trim()) return [bucket.trim()];
+    }
+    const resolved = resolveWorkText(entry);
+    return resolved ? [resolved] : [];
+  }
+
   function workSlug(title) {
     return String(title || "")
       .normalize("NFD")
@@ -302,7 +355,11 @@
   /** Optional manifest fields: text, copy, caption, description (string or { pt, en }). */
   function resolveWorkText(entry) {
     if (!entry) return "";
-    const lang = document.documentElement.lang === "en" ? "en" : "pt";
+    const lang = documentLang();
+    if (lang === "en" && Array.isArray(entry.textEn)) {
+      const enParts = mapTextParagraphs(entry.textEn);
+      if (enParts.length) return enParts.join("\n\n");
+    }
     if (Array.isArray(entry.text)) {
       return entry.text.join("\n\n");
     }
@@ -335,13 +392,7 @@
 
   function workTextParts(entry) {
     if (!entry) return [];
-    if (Array.isArray(entry.text)) {
-      return entry.text.map(function (part) {
-        return String(part || "").trim();
-      }).filter(Boolean);
-    }
-    const text = resolveWorkText(entry);
-    return text ? [text] : [];
+    return localizedTextParagraphs(entry, documentLang());
   }
 
   function paintWorkText(textEl, parts) {
@@ -365,7 +416,7 @@
     const copyWrap = section.querySelector(".work__copy");
     if (!textEl || !copyWrap) return;
     const parts = workTextParts(entry);
-    const title = entry ? entry.title || titleFromFile(entry.file) : "";
+    const title = entry ? resolveWorkTitle(entry) : "";
     if (titleEl) titleEl.textContent = title;
     paintWorkText(textEl, parts);
     copyWrap.hidden = !parts.length && !title;
@@ -376,6 +427,16 @@
       const file = section.getAttribute("data-work-file");
       if (!file) return;
       applyWorkCopy(section, manifestEntryForFile(file));
+    });
+  }
+
+  function refreshArchivePanelLabels() {
+    if (!archivePanel) return;
+    archivePanel.querySelectorAll("[data-archive-file]").forEach(function (button) {
+      const file = button.getAttribute("data-archive-file");
+      if (!file) return;
+      const entry = manifestEntryForFile(file);
+      if (entry) button.setAttribute("aria-label", resolveWorkTitle(entry));
     });
   }
 
@@ -501,7 +562,7 @@
     let reinventarArodaGroup = null;
 
     items.forEach(function (entry, index) {
-      const title = entry.title || titleFromFile(entry.file);
+      const title = resolveWorkTitle(entry);
 
       if (isUmbigoEntry(entry)) {
         if (!umbigoGroup) {
@@ -1352,7 +1413,7 @@
     }, 12000);
 
     files.forEach(function (entry, orderIndex) {
-      const title = entry.title || titleFromFile(entry.file);
+      const title = resolveWorkTitle(entry);
       const group = findGroupForFile(entry.file);
 
       const button = document.createElement("button");
@@ -1479,6 +1540,8 @@
   }
 
   function updateWorkChrome() {
+    refreshWorkCopyTexts();
+    refreshArchivePanelLabels();
     syncStarRollMotion();
   }
 
@@ -2842,7 +2905,7 @@
   }
 
   function initReinventarCredits(section) {
-    import("./reinventar-credits.js")
+    import("./reinventar-credits.js?v=6")
       .then(function (mod) {
         if (section.isConnected && mod.wireReinventarCredits) {
           mod.wireReinventarCredits(section);
@@ -3068,9 +3131,21 @@
   }
 
   async function loadManifest() {
-      const response = await fetch(archiveManifestFetchUrl(manifestUrl), { cache: "no-store" });
+    const fetchUrl =
+      typeof archiveManifestFetchUrl === "function"
+        ? archiveManifestFetchUrl(manifestUrl)
+        : manifestUrl;
+    const response = await fetch(fetchUrl, { cache: "no-store" });
     if (!response.ok) throw new Error("manifest");
-    manifest = parseArchiveManifest(await response.json());
+    const data = await response.json();
+    manifest =
+      typeof parseArchiveManifest === "function"
+        ? parseArchiveManifest(data)
+        : Array.isArray(data)
+          ? data
+          : data && Array.isArray(data.items)
+            ? data.items
+            : [];
     groups = groupEntries(manifest);
     assignWorkPaths(groups);
   }

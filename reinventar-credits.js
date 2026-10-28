@@ -53,7 +53,7 @@ function setSwapWidth(swap, px) {
 function widthForVisible(link) {
   const state = linkState.get(link);
   if (!state) return 0;
-  const showingName = link.classList.contains("is-name-visible");
+  const showingName = link.classList.contains("is-name-visible") || link.matches(":hover, :focus-visible");
   const el = showingName ? state.nameEl : state.termEl;
   return measureSpanWidth(el, state.font);
 }
@@ -71,9 +71,15 @@ function remeasureLink(link) {
   applyLinkWidth(link);
 }
 
+function isStaticCredits() {
+  return window.matchMedia("(hover: none), (pointer: coarse), (max-width: 1023px)").matches;
+}
+
 function wireCreditLink(link) {
   if (wired.has(link)) return;
   wired.add(link);
+
+  if (isStaticCredits()) return;
 
   remeasureLink(link);
 
@@ -91,13 +97,12 @@ function wireCreditLink(link) {
     }, 170);
   }
 
-  const touchUi = window.matchMedia("(hover: none), (pointer: coarse)").matches;
-  if (!touchUi) {
-    link.addEventListener("mouseenter", showName);
-    link.addEventListener("mouseleave", showTerm);
-    link.addEventListener("focus", showName);
-    link.addEventListener("blur", showTerm);
-  }
+  applyLinkWidth(link);
+
+  link.addEventListener("mouseenter", showName);
+  link.addEventListener("mouseleave", showTerm);
+  link.addEventListener("focus", showName);
+  link.addEventListener("blur", showTerm);
 }
 
 function wireAll(root) {

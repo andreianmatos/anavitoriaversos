@@ -3,6 +3,16 @@
 
   function workTextParts(entry) {
     if (!entry) return [];
+    var lang =
+      typeof document !== "undefined" && document.documentElement.lang === "en" ? "en" : "pt";
+    if (lang === "en" && Array.isArray(entry.textEn)) {
+      var enParts = entry.textEn
+        .map(function (part) {
+          return String(part || "").trim();
+        })
+        .filter(Boolean);
+      if (enParts.length) return enParts;
+    }
     if (Array.isArray(entry.text)) {
       return entry.text
         .map(function (part) {

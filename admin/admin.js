@@ -29,7 +29,12 @@
   var paginaWrap;
   var obraFieldsEl;
   var titleInput;
+  var titleEnInput;
   var textInput;
+  var textEnInput;
+  var textWrap;
+  var textEnWrap;
+  var titleEnWrap;
   var saveBtn;
   var loginBtn;
   var logoutBtn;
@@ -110,8 +115,11 @@
     if (paginaInput) paginaInput.disabled = isArquivo;
     if (titleInput) titleInput.disabled = false;
     if (textInput) textInput.disabled = !isArquivo;
-    var textLabel = textInput && textInput.closest(".admin-label");
-    if (textLabel) textLabel.hidden = !isArquivo;
+    if (textEnInput) textEnInput.disabled = !isArquivo;
+    if (titleEnInput) titleEnInput.disabled = !isArquivo;
+    if (textWrap) textWrap.hidden = !isArquivo;
+    if (textEnWrap) textEnWrap.hidden = !isArquivo;
+    if (titleEnWrap) titleEnWrap.hidden = !isArquivo;
   }
 
   function populatePageSelect() {
@@ -664,7 +672,7 @@
     }, 2500);
   }
 
-  async function uploadViaGitHub(file, title, textParagraphs) {
+  async function uploadViaGitHub(file, title, titleEn, textParagraphs, textEnParagraphs) {
     var manifestFile = await getFile(manifestPath);
     var manifest = JSON.parse(manifestFile.text);
     if (!manifest.items || !Array.isArray(manifest.items)) manifest.items = [];
@@ -686,9 +694,13 @@
 
     var entryTitle =
       title && title.trim() ? title.trim().toUpperCase() : titleFromFilename(filename);
+    var entryTitleEn = titleEn && titleEn.trim() ? titleEn.trim().toUpperCase() : "";
     var text = Array.isArray(textParagraphs) ? textParagraphs : [];
+    var textEn = Array.isArray(textEnParagraphs) ? textEnParagraphs : [];
     var entry = { file: filename, title: entryTitle };
+    if (entryTitleEn) entry.titleEn = entryTitleEn;
     if (text.length) entry.text = text;
+    if (textEn.length) entry.textEn = textEn;
     manifest.items.push(entry);
 
     var manifestText = JSON.stringify(manifest, null, 2) + "\n";
@@ -754,7 +766,9 @@
 
     var page = selectedCustomPage();
     var title = titleInput.value.trim();
+    var titleEn = titleEnInput && titleEnInput.value.trim();
     var textParagraphs = parseTextParagraphs(textInput && textInput.value);
+    var textEnParagraphs = parseTextParagraphs(textEnInput && textEnInput.value);
     if (publishMode() === "pagina" && !page) {
       setStatus("Escolhe a página.", true);
       return;
@@ -779,7 +793,7 @@
         );
         loadRemoveList();
       } else {
-        result = await uploadViaGitHub(file, title, textParagraphs);
+        result = await uploadViaGitHub(file, title, titleEn, textParagraphs, textEnParagraphs);
         setStatus(
           "Publicado: " +
             result.filename +
@@ -788,7 +802,9 @@
       }
       fileInput.value = "";
       titleInput.value = "";
+      if (titleEnInput) titleEnInput.value = "";
       if (textInput) textInput.value = "";
+      if (textEnInput) textEnInput.value = "";
       if (fileNameEl) fileNameEl.textContent = "";
       loadRemoveList();
     } catch (error) {
@@ -1057,7 +1073,12 @@
     paginaWrap = $("admin-pagina-wrap");
     obraFieldsEl = $("admin-obra-fields");
     titleInput = $("admin-title");
+    titleEnInput = $("admin-title-en");
     textInput = $("admin-text");
+    textEnInput = $("admin-text-en");
+    textWrap = $("admin-text-wrap");
+    textEnWrap = $("admin-text-en-wrap");
+    titleEnWrap = $("admin-title-en-wrap");
     saveBtn = $("admin-save");
     loginBtn = $("admin-login");
     logoutBtn = $("admin-logout");

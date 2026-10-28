@@ -18,12 +18,24 @@
     const itemPad = Math.max(6, Math.round(8 * scale));
     const chromePad = Math.max(4, Math.round(6 * scale));
     const innerW = Math.max(48, width - padding * 2);
+    const narrow = innerW < 400;
     let innerH = Math.max(48, height - padding * 2);
     if (page) {
       innerH = Math.max(innerH, Math.round(height * 1.35));
+    } else if (panel) {
+      const approxItem = Math.min(
+        innerW * (narrow ? 0.3 : 0.24),
+        height * 0.36,
+        260 * scale
+      );
+      const colsGuess = Math.max(3, Math.floor(innerW / Math.max(96, approxItem + gap)));
+      const rowsGuess = Math.max(1, Math.ceil(count / colsGuess));
+      innerH = Math.max(
+        innerH,
+        Math.round(rowsGuess * (approxItem + gap) + padding)
+      );
     }
     const fill = Math.min(1, 16 / Math.max(count, 1));
-    const narrow = innerW < 400;
     const sparse = count <= 10;
 
     let minRatio = (narrow ? 0.26 : 0.22) + 0.08 * fill;
@@ -232,8 +244,7 @@
     const minTop = layout.padding;
     const outer = outerSize(layout, itemW, itemH);
     const maxLeft = Math.max(layout.padding, layout.panelWidth - layout.padding - outer.w);
-    const panelSpread =
-      layout.panel ? Math.min(2.35, 0.92 + layout.itemCount * 0.12) : 1.02;
+    const panelSpread = layout.panel ? 1 : 1.02;
     const spreadH = layout.innerH * (layout.page ? 1.08 : panelSpread);
     const region = spreadRegion(layout, placeIndex, minTop);
     const rndBetween = function (min, max) {
@@ -318,8 +329,26 @@
 
   function fallbackStackRect(button, placed, layout, itemW, itemH) {
     const outer = outerSize(layout, itemW, itemH);
-    const left = layout.padding;
-    const top = placedBottom(placed) + layout.padding;
+    const maxLeft = Math.max(layout.padding, layout.panelWidth - layout.padding - outer.w);
+    const stepY = Math.max(layout.gap, Math.round(outer.h * 0.42));
+    let scanTop = Math.max(layout.padding, placedBottom(placed) + layout.gap * 0.4);
+    const slots = 8;
+    const origin = placed.length + 3;
+
+    for (let band = 0; band < 48; band += 1) {
+      for (let s = 0; s < slots; s += 1) {
+        const mix = ((s + 1) * 0.6180339887 + origin * 0.37) % 1;
+        const left = layout.padding + (maxLeft - layout.padding) * mix;
+        const rect = tryRect(button, placed, layout, itemW, itemH, left, scanTop);
+        if (rect) {
+          return rect;
+        }
+      }
+      scanTop += stepY;
+    }
+
+    const left = layout.padding + (maxLeft - layout.padding) * (((origin * 0.6180339887) % 1));
+    const top = placedBottom(placed) + layout.gap;
     button.style.left = Math.round(left) + "px";
     button.style.top = Math.round(top) + "px";
     const rect = hitBox(left, top, outer.w, outer.h, layout);

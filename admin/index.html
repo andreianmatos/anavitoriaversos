@@ -88,17 +88,38 @@
 
         <div class="admin-obra-fields" id="admin-obra-fields">
           <label class="admin-label">
-            <span>Título</span>
+            <span>Título (português)</span>
             <input class="admin-input" type="text" id="admin-title" autocomplete="off" placeholder="Ex.: FRANGO">
           </label>
 
-          <label class="admin-label">
-            <span>Texto</span>
+          <label class="admin-label" id="admin-title-en-wrap">
+            <span>Título (inglês)</span>
+            <input
+              class="admin-input"
+              type="text"
+              id="admin-title-en"
+              autocomplete="off"
+              placeholder="Opcional — ex.: CHICKEN"
+            >
+          </label>
+
+          <label class="admin-label" id="admin-text-wrap">
+            <span>Texto (português)</span>
             <textarea
               class="admin-textarea"
               id="admin-text"
               rows="6"
               placeholder="Parágrafos separados por linha em branco"
+            ></textarea>
+          </label>
+
+          <label class="admin-label" id="admin-text-en-wrap">
+            <span>Texto (inglês)</span>
+            <textarea
+              class="admin-textarea"
+              id="admin-text-en"
+              rows="6"
+              placeholder="Opcional — parágrafos separados por linha em branco"
             ></textarea>
           </label>
         </div>
@@ -126,6 +147,6 @@
     </div>
   </div>
 
-  <script src="admin.js?v=36"></script>
+  <script src="admin.js?v=37"></script>
 </body>
 </html>

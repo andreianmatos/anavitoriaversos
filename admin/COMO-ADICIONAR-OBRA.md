@@ -11,9 +11,14 @@ O site **não precisa** do `/admin` para funcionar. Esta é a forma mais fácil 
 {
   "file": "minha-obra.png",
   "title": "TÍTULO DA OBRA",
+  "titleEn": "WORK TITLE (optional)",
   "text": [
     "Primeiro parágrafo.",
     "Segundo parágrafo."
+  ],
+  "textEn": [
+    "First paragraph (optional).",
+    "Second paragraph."
   ]
 }
 ```

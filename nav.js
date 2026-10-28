@@ -121,7 +121,9 @@
         return false;
       }
       if (node.closest) {
-        return Boolean(node.closest("a, button, [role='button']"));
+        return Boolean(
+          node.closest("a, button, [role='button'], .frango-polaroid")
+        );
       }
       return false;
     }
